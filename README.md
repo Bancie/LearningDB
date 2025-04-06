@@ -8,6 +8,7 @@ erDiagram
         NVARCHAR(100) TENMH
         INT HOCKI
         INT TINCHI
+        VARCHAR(50) KIENTHUC
     }
 
     SINHVIEN {

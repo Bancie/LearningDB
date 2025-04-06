@@ -1,0 +1,6 @@
+SELECT TOP (1000) [MAMH]
+      ,[TENMH]
+      ,[HOCKI]
+      ,[TINCHI]
+      ,[KIENTHUC]
+  FROM [master].[dbo].[MONHOC]
