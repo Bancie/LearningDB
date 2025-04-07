@@ -1,7 +1,8 @@
-# LearningDB
-
-## RDM
+# RDM
 ```mermaid
+---
+title: study
+---
 erDiagram
     MONHOC {
         VARCHAR(6) MAMH PK
