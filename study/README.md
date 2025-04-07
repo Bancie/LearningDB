@@ -5,24 +5,24 @@ title: study
 ---
 erDiagram
     MONHOC {
-        VARCHAR(6) MAMH PK
-        NVARCHAR(100) TENMH
-        INT HOCKI
-        INT TINCHI
-        VARCHAR(50) KIENTHUC
+        MAMH VARCHAR(6) PK
+        TENMH NVARCHAR(100)
+        HOCKI INT
+        TINCHI INT
+        KIENTHUC VARCHAR(50)
     }
 
     SINHVIEN {
-        VARCHAR(10) MSSV PK
-        NVARCHAR(100) HOTEN
-        FLOAT GPA
-        NVARCHAR(50) XEPLOAI
+        MSSV VARCHAR(10) PK
+        HOTEN NVARCHAR(100)
+        GPA FLOAT
+        XEPLOAI NVARCHAR(50)
     }
 
     KETQUA {
-        VARCHAR(10) MSSV PK, FK
-        VARCHAR(6) MAMH PK, FK
-        FLOAT DIEM
+        MSSV VARCHAR(10) PK, FK
+        MAMH VARCHAR(6) PK, FK
+        DIEM FLOAT
     }
 
     SINHVIEN ||--o{ KETQUA : has
