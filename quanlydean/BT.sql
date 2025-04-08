@@ -100,14 +100,47 @@ FROM DEAN
 
 -- 13. Cho biết số lượng đề án do phòng 'Nghiên Cứu' chủ trì
 
-SELECT *
-FROM PHONGBAN
-
 SELECT COUNT(MADA) AS SLDA
 FROM DEAN JOIN PHONGBAN ON PHONG = MAPHG
+WHERE TENPHG = N'Nghiên cứu'
+
+-- 14. Cho biết lương trung bình của các nữ nhân viên
+
+SELECT *
+FROM NHANVIEN
+
+SELECT AVG(LUONG) AS LUONG_TB_NU
+FROM NHANVIEN
+WHERE PHAI = 'Nu'
 
 -- 15. Với mỗi nhân viên, cho biết số lượng nhân viên mà nhân viên đó quản lý trực tiếp.
 
-SELECT MA_NQL, COUNT(MANV) AS SL
+SELECT *
 FROM NHANVIEN
-GROUP BY MA_NQL
+
+SELECT TENNV 
+FROM NHANVIEN NV JOIN NHANVIEN QL ON NV.MANV = QL.MA_NQL
+
+-- 16. Với mỗi phòng ban, liệt kê tên phòng ban (TENPHG) và lương trung bình của những nhân viên làm việc cho phòng ban đó.
+
+SELECT TENPHG, AVG(LUONG) AS LUONG_NV
+FROM PHONGBAN JOIN NHANVIEN ON MAPHG = PHG
+GROUP BY TENPHG
+
+-- 17. Với mỗi phòng ban, cho biết tên phòng ban và số lượng đề án mà phòng ban đó chủ trì
+
+SELECT TENPHG, COUNT(MADA) SLDA
+FROM PHONGBAN JOIN DEAN ON MAPHG = PHONG
+GROUP BY TENPHG
+
+-- 18. Với mỗi phòng ban, cho biết tên phòng ban, họ tên người trưởng phòng và số lượng đề án mà phòng ban đó chủ trì
+
+FROM PHONGBAN JOIN NHANVIEN ON MAPHG = PHG
+
+-- 19. Với mỗi phòng ban có mức lương trung bình lớn hơn 40,000, cho biết tên phòng ban và số lượng đề án mà phòng ban đó chủ trì.
+
+SELECT TENPHG, COUNT(MADA) SLDA, AVG(LUONG) LUONG
+FROM PHONGBAN, NHANVIEN, DEAN
+WHERE MAPHG = PHONG AND MAPHG = PHG
+GROUP BY TENPHG
+HAVING AVG(LUONG) > 10000
