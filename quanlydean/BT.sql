@@ -135,7 +135,7 @@ GROUP BY TENPHG
 
 -- 18. Với mỗi phòng ban, cho biết tên phòng ban, họ tên người trưởng phòng và số lượng đề án mà phòng ban đó chủ trì
 
-FROM PHONGBAN JOIN NHANVIEN ON MAPHG = PHG
+-- FROM PHONGBAN JOIN NHANVIEN ON MAPHG = PHG
 
 -- 19. Với mỗi phòng ban có mức lương trung bình lớn hơn 40,000, cho biết tên phòng ban và số lượng đề án mà phòng ban đó chủ trì.
 
