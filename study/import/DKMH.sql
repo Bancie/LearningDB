@@ -145,5 +145,32 @@ VALUES
     ('BORO11', '2025-04-10', '07', 2, 4, 2, 'C.SBCH3', 'Đ.M.Quân'),
     ('BORO11', '2025-04-10', '07', 5, 1, 3, 'C.SBCH1', 'Đ.M.Quân');
 
+UPDATE DKMH
+SET GVIEN = N'D.N.Trường'
+WHERE GVIEN = 'D.N.Trường';
+
+-- Update 'P.P.Vĩnh'
+UPDATE DKMH SET GVIEN = N'P.P.Vĩnh' WHERE GVIEN = 'P.P.Vĩnh';
+
+-- Update 'N.T.V.Hà'
+UPDATE DKMH SET GVIEN = N'N.T.V.Hà' WHERE GVIEN = 'N.T.V.Hà';
+
+-- Update 'H.T.K.Quyên'
+UPDATE DKMH SET GVIEN = N'H.T.K.Quyên' WHERE GVIEN = 'H.T.K.Quyên';
+
+-- Update 'M.T.Hiệp'
+UPDATE DKMH SET GVIEN = N'M.T.Hiệp' WHERE GVIEN = 'M.T.Hiệp';
+
+-- Update 'P.V.Phương'
+UPDATE DKMH SET GVIEN = N'P.V.Phương' WHERE GVIEN = 'P.V.Phương';
+
+-- Update 'D.N.Trường'
+
+-- Update 'T.N.Cương'
+UPDATE DKMH SET GVIEN = N'T.N.Cương' WHERE GVIEN = 'T.N.Cương';
+
+-- Update 'Đ.M.Quân'
+UPDATE DKMH SET GVIEN = N'Đ.M.Quân' WHERE GVIEN = 'Đ.M.Quân';
+
 SELECT *
 FROM DKMH
