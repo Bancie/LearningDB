@@ -26,6 +26,18 @@ erDiagram
         DIEM_CHU VARCHAR(1)
     }
 
+    DKMH {
+        MAMH VARCHAR(6) PK, FK
+        NGDK DATE PK
+        NHOM VARCHAR(2) PK
+        THU INT
+        TIETBD INT
+        SOTIET INT
+        PHONG VARCHAR(10)
+        GVIEN NVARCHAR(100)
+    }
+
     SINHVIEN ||--o{ KETQUA : has
     MONHOC   ||--o{ KETQUA : includes
+    MONHOC o{--o{ DKMH : has
 ```
