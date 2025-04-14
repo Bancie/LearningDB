@@ -115,11 +115,11 @@ WHERE PHAI = 'Nu'
 
 -- 15. Với mỗi nhân viên, cho biết số lượng nhân viên mà nhân viên đó quản lý trực tiếp.
 
-SELECT *
-FROM NHANVIEN
+-- SELECT *
+-- FROM NHANVIEN
 
-SELECT TENNV 
-FROM NHANVIEN NV JOIN NHANVIEN QL ON NV.MANV = QL.MA_NQL
+-- SELECT TENNV 
+-- FROM NHANVIEN NV JOIN NHANVIEN QL ON NV.MANV = QL.MA_NQL
 
 -- 16. Với mỗi phòng ban, liệt kê tên phòng ban (TENPHG) và lương trung bình của những nhân viên làm việc cho phòng ban đó.
 
@@ -135,7 +135,7 @@ GROUP BY TENPHG
 
 -- 18. Với mỗi phòng ban, cho biết tên phòng ban, họ tên người trưởng phòng và số lượng đề án mà phòng ban đó chủ trì
 
--- FROM PHONGBAN JOIN NHANVIEN ON MAPHG = PHG
+
 
 -- 19. Với mỗi phòng ban có mức lương trung bình lớn hơn 40,000, cho biết tên phòng ban và số lượng đề án mà phòng ban đó chủ trì.
 
@@ -144,3 +144,13 @@ FROM PHONGBAN, NHANVIEN, DEAN
 WHERE MAPHG = PHONG AND MAPHG = PHG
 GROUP BY TENPHG
 HAVING AVG(LUONG) > 10000
+
+-- 20. Cho biết số đề án diễn ra tại từng địa điểm
+-- 21. Cho biết danh sách các đề án (MADA) có: nhân công với họ (HONV) là ‘Dinh’ hoặc , có người trưởng phòng chủ trì đề án với họ (HONV) là ‘Dinh’.
+-- 22. Danh sách những nhân viên (HONV, TENLOT, TENNV) có trên 2 thân nhân.
+-- 23. Danh sách những nhân viên (HONV, TENLOT, TENNV) không có thân nhân nào.
+-- 24. Danh sách những trưởng phòng (HONV, TENLOT, TENNV) có tối thiểu một thân nhân.
+-- 25. Tìm họ (HONV) của những trưởng phòng chưa có gia đình.
+-- 26. Danh sách những nhân viên (HONV, TENLOT, TENNV) làm việc trong mọi đề án của công ty
+-- 27. Danh sách những nhân viên (HONV, TENLOT, TENNV) được phân công tất cả đề án do phòng số 4 chủ trì.
+-- 28. Tìm những nhân viên (HONV, TENLOT, TENNV) được phân công tất cả đề án mà nhân viên Đinh Bá Tiến làm việc
