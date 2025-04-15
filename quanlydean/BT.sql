@@ -135,7 +135,14 @@ GROUP BY TENPHG
 
 -- 18. Với mỗi phòng ban, cho biết tên phòng ban, họ tên người trưởng phòng và số lượng đề án mà phòng ban đó chủ trì
 
-
+SELECT 
+    PB.TENPHG AS TenPhongBan,
+    CONCAT(NV.HONV, ' ', NV.TENLOT, ' ', NV.TENNV) AS TruongPhong,
+    COUNT(DA.MADA) AS SoLuongDeAn
+FROM PHONGBAN PB
+JOIN NHANVIEN NV ON PB.TRPHG = NV.MANV
+LEFT JOIN DEAN DA ON PB.MAPHG = DA.PHONG
+GROUP BY PB.TENPHG, NV.HONV, NV.TENLOT, NV.TENNV
 
 -- 19. Với mỗi phòng ban có mức lương trung bình lớn hơn 40,000, cho biết tên phòng ban và số lượng đề án mà phòng ban đó chủ trì.
 
@@ -146,6 +153,9 @@ GROUP BY TENPHG
 HAVING AVG(LUONG) > 10000
 
 -- 20. Cho biết số đề án diễn ra tại từng địa điểm
+
+
+
 -- 21. Cho biết danh sách các đề án (MADA) có: nhân công với họ (HONV) là ‘Dinh’ hoặc , có người trưởng phòng chủ trì đề án với họ (HONV) là ‘Dinh’.
 -- 22. Danh sách những nhân viên (HONV, TENLOT, TENNV) có trên 2 thân nhân.
 -- 23. Danh sách những nhân viên (HONV, TENLOT, TENNV) không có thân nhân nào.
@@ -154,3 +164,21 @@ HAVING AVG(LUONG) > 10000
 -- 26. Danh sách những nhân viên (HONV, TENLOT, TENNV) làm việc trong mọi đề án của công ty
 -- 27. Danh sách những nhân viên (HONV, TENLOT, TENNV) được phân công tất cả đề án do phòng số 4 chủ trì.
 -- 28. Tìm những nhân viên (HONV, TENLOT, TENNV) được phân công tất cả đề án mà nhân viên Đinh Bá Tiến làm việc
+
+select NV.[MANV],NV.[HONV],NV.[TENLOT],NV.[TENNV]
+from [dbo].[NHANVIEN] as NV,[dbo].[PHANCONG] AS PC
+WHERE PC.[MA_NVIEN]=NV.[MANV]
+GROUP BY NV.[MANV],NV.[HONV],NV.[TENLOT],NV.[TENNV]
+HAVING COUNT(distinct PC.[MADA])=(
+    SELECT COUNT(DA1.[MADA])
+    FROM [dbo].[DEAN] AS DA1
+)
+ select *
+ from phancong
+
+SELECT COUNT(MADA)
+FROM DEAN
+
+SELECT HONV + ' ' + TENLOT + ' ' + TENNV, COUNT(DISTINCT MADA)
+FROM PHANCONG JOIN NHANVIEN ON MA_NVIEN = MANV
+GROUP BY HONV, TENLOT, TENNV
