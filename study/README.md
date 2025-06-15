@@ -4,40 +4,51 @@
 title: study
 ---
 erDiagram
-    MONHOC {
-        MAMH VARCHAR(6) PK
-        TENMH NVARCHAR(100)
-        HOCKI INT
-        TINCHI INT
-        KIENTHUC VARCHAR(50)
+    
+    USER {
+        USER_ID VARCHAR(10) PK
+        NAME NVARCHAR(100)
+        BIRTH DATE
+        GENDER NVARCHAR(10)
+        MAJOR NVARCHAR(100)
     }
 
-    SINHVIEN {
-        MSSV VARCHAR(10) PK
-        HOTEN NVARCHAR(100)
-        KHOA INT
+    ACTIVITY {
+        ACTIVITY_ID VARCHAR(10) PK
+        NAME NVARCHAR(100)
+        CATEGORY NVARCHAR(100)
+        SUBCATEGORY NVARCHAR(100)
+        SUBSUBCATE NVARCHAR(100)
+        LEVEL NVARCHAR(100)
     }
 
-    KETQUA {
-        MSSV VARCHAR(10) PK, FK
-        MAMH VARCHAR(6) PK, FK
-        DIEM_HE10 FLOAT
-        DIEM_HE4 FLOAT
-        DIEM_CHU VARCHAR(1)
+    ACTIVITY_LOG {
+        USER_ID VARCHAR(10) PK, FK
+        ACTIVITY_ID VARCHAR(10) PK, FK
+        TIMESTAMP DATE PK
+        ENDTIME DATE
+        BREAK INT
+        TIMEBREAK FLOAT
+        DEVICE NVARCHAR(100)
+        LOCATION NVARCHAR(100)
+        PUBLIC INT
+        WEATHER NVARCHAR(100)
+        TEMPERATURE NVARCHAR(100)
+        MOOD NVARCHAR(100)
+        HEALTH NVARCHAR(100)
+        STATUS NVARCHAR(100)
+        ENERGY INT
     }
 
-    DKMH {
-        MAMH VARCHAR(6) PK, FK
-        NGDK DATE PK
-        NHOM VARCHAR(2) PK
-        THU INT
-        TIETBD INT
-        SOTIET INT
-        PHONG VARCHAR(10)
-        GVIEN NVARCHAR(100)
+    PERFORMANCE_SCORE {
+        USER_ID VARCHAR(10) PK, FK
+        ACTIVITY_ID VARCHAR(10) PK, FK
+        TIMESTAMP DATE PK, FK
+        SCORE_TYPE NVARCHAR(100)
+        SCORE FLOAT
     }
 
-    SINHVIEN ||--o{ KETQUA : has
-    MONHOC   ||--o{ KETQUA : includes
-    MONHOC o{--o{ DKMH : has
+    USER o{--|| ACTIVITY_LOG : has
+    ACTIVITY o{--|| ACTIVITY_LOG : has
+    ACTIVITY_LOG ||--|| PERFORMANCE_SCORE : has
 ```
