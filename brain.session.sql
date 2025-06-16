@@ -1,8 +1,9 @@
 -- Create the database
-DROP DATABASE IF EXISTS BigBrain;
-CREATE DATABASE BigBrain;
+-- DROP DATABASE IF EXISTS BigBrain;
+-- CREATE DATABASE BigBrain;
 -- Select the database
-USE BigBrain;
+
+USE mysql;
 
 -- USER Table
 CREATE TABLE `USER` (

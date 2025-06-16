@@ -11,7 +11,7 @@
             "driver": "MySQL",
             "name": "brain",
             "username": "root",
-            "database": "bancienguyen"
+            "database": "mysql"
         }
     ]
 }
