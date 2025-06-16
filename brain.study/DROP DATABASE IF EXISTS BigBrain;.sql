@@ -1,7 +1,5 @@
--- Create the database
 DROP DATABASE IF EXISTS BigBrain;
 CREATE DATABASE BigBrain;
--- Select the database
 USE BigBrain;
 
 -- USER Table
