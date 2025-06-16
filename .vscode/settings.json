@@ -12,6 +12,21 @@
             "name": "brain",
             "username": "root",
             "database": "mysql"
+        },
+        {
+            "connectionTimeout": 15,
+            "mssqlOptions": {
+                "appName": "SQLTools",
+                "useUTC": true,
+                "encrypt": true,
+                "trustServerCertificate": false
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 1433,
+            "driver": "MSSQL",
+            "name": "brain",
+            "username": "root"
         }
     ]
 }
