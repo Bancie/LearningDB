@@ -11,6 +11,7 @@ erDiagram
         BIRTH DATE
         GENDER NVARCHAR(10)
         MAJOR NVARCHAR(100)
+        LOCATION NVARCHAR(100)
     }
 
     ACTIVITY {
@@ -38,10 +39,15 @@ erDiagram
         DAY_ID INT FK
         START TIME
         FINISH TIME
+        AC_ON BOOLEAN
+        AC_TEMP FLOAT
         DEVICE NVARCHAR(100)
         LOCATION NVARCHAR(100)
         WEATHER NVARCHAR(100)
         TEMPERATURE FLOAT
+        AQI INT
+        PM25 INT
+        HUMIDITY INT
         MOOD NVARCHAR(100)
         HEALTH NVARCHAR(100)
         ENERGY NVARCHAR(100)
@@ -70,6 +76,29 @@ erDiagram
         LOCATION NVARCHAR(100)
     }
 
+    WASH_LOG {
+        WASH_LOG_ID INT PK
+        USER_ID INT FK
+        DAY_ID INT FK
+        TIME TIME
+        TYPE NVARCHAR(100)
+        DURATION_MIN INT
+        TEMPERATURE NVARCHAR(100)
+    }
+
+    EATING_LOG {
+        EAT_LOG_ID INT PK
+        USER_ID INT FK
+        DAY_ID INT FK
+        TIME TIME
+        TYPE NVARCHAR(100)
+        FOOD NVARCHAR(100)
+        AMOUNT NVARCHAR(100)
+        KCAL FLOAT
+        LOCATION NVARCHAR(100)
+        HEALTHINESS NVARCHAR(100)
+    }
+
     USER o{--|| ACTIVITY_LOG : has
     ACTIVITY o{--|| ACTIVITY_LOG : has
     ACTIVITY_LOG ||--|| PERFORMANCE_SCORE : has
@@ -77,4 +106,10 @@ erDiagram
     DAY ||--o{ USER : has
     USER o{--|| SEXUAL_LOG : has
     DAY o{--|| SEXUAL_LOG : has
+    WASH_LOG ||--o{ USER : has
+    WASH_LOG ||--o{ DAY : has
+    EATING_LOG ||--o{ USER : has
+    EATING_LOG ||--o{ DAY : has
 ```
+
+[IQAIR](https://www.iqair.com/vi/)
