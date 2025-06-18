@@ -6,7 +6,7 @@ title: study
 erDiagram
     
     USER {
-        USER_ID VARCHAR(10) PK
+        USER_ID INT PK
         NAME NVARCHAR(100)
         BIRTH DATE
         GENDER NVARCHAR(10)
@@ -14,20 +14,21 @@ erDiagram
     }
 
     ACTIVITY {
-        ACTIVITY_ID VARCHAR(10) PK
+        ACTIVITY_ID INT PK
         CATEGORY NVARCHAR(100)
         SUBCATEGORY NVARCHAR(100)
         SUBSUBCATE NVARCHAR(100)
         TYPE NVARCHAR(100)
         TIME_CONSTRAINT BOOLEAN
         IS_SCORED BOOLEAN
-        AIM_MIN INT
+        AIM_MIN FLOAT
+        MAX_SCORE FLOAT
     }
 
     ACTIVITY_LOG {
-        LOG_ID VARCHAR(10) PK
-        USER_ID VARCHAR(10) FK
-        ACTIVITY_ID VARCHAR(10) FK
+        LOG_ID INT PK
+        USER_ID INT FK
+        ACTIVITY_ID INT FK
         TIMESTAMP DATE
         DEVICE NVARCHAR(100)
         LOCATION NVARCHAR(100)
@@ -45,8 +46,8 @@ erDiagram
     }
 
     PERFORMANCE_SCORE {
-        PERSCORE_ID VARCHAR(10) PK
-        LOG_ID VARCHAR(10) FK
+        PERSCORE_ID INT PK
+        LOG_ID INT FK
         SCORE_TYPE NVARCHAR(100)
         VALUE FLOAT
         UNIT NVARCHAR(100)
