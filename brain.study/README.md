@@ -9,16 +9,16 @@ erDiagram
         USER_ID INT PK
         NAME NVARCHAR(100)
         BIRTH DATE
-        GENDER NVARCHAR(10)
+        GENDER ENUM
         MAJOR NVARCHAR(100)
         LOCATION NVARCHAR(100)
     }
 
     ACTIVITY {
         ACTIVITY_ID INT PK
-        CATEGORY NVARCHAR(100)
-        TAGS NVARCHAR(100)
-        BENCHMARK_TIME FLOAT
+        CATEGORY ENUM
+        TAGS ENUM
+        BENCHMARK_MIN FLOAT
     }
 
     DAY {
@@ -29,7 +29,14 @@ erDiagram
         WAKETIME DATETIME
         FITNESS BOOLEAN
         COOKED BOOLEAN
-        NAPMIN INT
+    }
+
+    NAP {
+        DAY_ID INT PK, FK
+        USER_ID INT PK, FK
+        START TIME PK
+        WAKE TIME
+        QUALITY ENUM
     }
 
     ACTIVITY_LOG {
@@ -37,77 +44,74 @@ erDiagram
         USER_ID INT FK
         ACTIVITY_ID INT FK
         DAY_ID INT FK
-        SOUND INT FK
+        SOUND_ID INT FK
         START TIME
         FINISH TIME
         AC_ON BOOLEAN
         AC_TEMP FLOAT
-        DEVICE NVARCHAR(100)
-        LOCATION NVARCHAR(100)
-        WEATHER NVARCHAR(100)
+        DEVICE ENUM()
+        LOCATION ENUM()
+        WEATHER ENUM()
         TEMPERATURE FLOAT
         AQI INT
         PM25 INT
         HUMIDITY INT
-        MOOD NVARCHAR(100)
-        HEALTH NVARCHAR(100)
-        ENERGY NVARCHAR(100)
-        HUNGER NVARCHAR(100)
-        AROUSAL NVARCHAR(100)
-        LEVELRATED NVARCHAR(100)
+        MOOD ENUM()
+        HEALTH ENUM()
+        ENERGY ENUM()
+        HUNGER ENUM()
+        AROUSAL ENUM()
+        LEVELRATED ENUM()
     }
 
     PERFORMANCE_SCORE {
         PERSCORE_ID INT PK
         ACTI_LOG_ID INT FK
-        SCORE_TYPE NVARCHAR(100)
+        SCORE_TYPE ENUM()
         VALUE FLOAT
-        UNIT NVARCHAR(100)
+        UNIT ENUM()
         MAX_VALUE FLOAT
         TARGET_MET BOOLEAN
     }
 
     SEXUAL_LOG {
-        SEXUAL_LOG_ID INT PK
-        USER_ID INT FK
-        DAY_ID DATE FK
-        START TIME
+        USER_ID INT PK, FK
+        DAY_ID INT PK, FK
+        START TIME PK
         FINISH TIME
         PARTNERED BOOLEAN
         SATISFACTION BOOLEAN
-        LOCATION NVARCHAR(100)
+        LOCATION ENUM()
     }
 
     SHOWER_LOG {
-        SHOWE_LOG_ID INT PK
-        USER_ID INT FK
-        DAY_ID INT FK
-        START TIME
+        USER_ID INT PK, FK
+        DAY_ID INT PK, FK
+        START TIME PK
         FINISH TIME
-        TEMP NVARCHAR(100)
+        TEMP ENUM()
     }
 
     EATING_LOG {
-        EAT_LOG_ID INT PK
-        USER_ID INT FK
-        DAY_ID INT FK
-        TIME TIME
-        TYPE NVARCHAR(100)
-        FOOD NVARCHAR(100)
+        USER_ID INT PK, FK
+        DAY_ID INT PK, FK
+        TIME TIME PK
+        TYPE ENUM()
+        FOOD ENUM()
         AMOUNT FLOAT
-        UNIT NVARCHAR(100)
+        UNIT ENUM()
         KCAL FLOAT
-        SOURCE NVARCHAR(100)
-        HEALTHINESS NVARCHAR(100)
+        SOURCE ENUM()
+        HEALTHINESS ENUM()
     }
 
     SOUND {
         SOUND_ID INT PK
-        CATEGORY NVARCHAR(100)
-        SOURCE NVARCHAR(100)
-        SOUND_INTENSITY NVARCHAR(100)
-        GENRE_MUSIC NVARCHAR(100)
-        ORIGIN NVARCHAR(100)
+        CATEGORY ENUM()
+        SOURCE ENUM()
+        SOUND_INTENSITY ENUM()
+        GENRE_MUSIC ENUM()
+        ORIGIN ENUM()
         NC_ON BOOLEAN
     }
 
@@ -123,6 +127,7 @@ erDiagram
     EATING_LOG o{--|| USER : has
     EATING_LOG o{--|| DAY : has
     ACTIVITY_LOG o{--|| SOUND : has
+    DAY ||--o{ NAP : has
 ```
 
 ## Define
@@ -142,7 +147,7 @@ erDiagram
 - ACTIVITY_ID
 - CATEGORY
 - TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
-- BENCHMARK_TIME
+- BENCHMARK_MIN
 
 ### DAY
 
@@ -191,7 +196,6 @@ erDiagram
 
 ### SEXUAL_LOG
 
-- SEXUAL_LOG_ID
 - USER_ID
 - DAY_ID
 - START
@@ -202,7 +206,6 @@ erDiagram
 
 ### SHOWER_LOG
 
-- SHOWER_LOG_ID
 - USER_ID
 - DAY_ID
 - START
@@ -211,7 +214,6 @@ erDiagram
 
 ### EATING_LOG
 
-- EAT_LOG_ID
 - USER_ID
 - DAY_ID
 - TIME
@@ -232,3 +234,11 @@ erDiagram
 - GENRE_MUSIC `lo-fi/classical/jazz/pop/rock/edm/hip-hop/chill/ambient/instrumental/nature sounds/soundtrack/acoustic/other`
 - ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/other`
 - NC_ON `TRUE/FALSE`
+
+### NAP
+
+- DAY_ID
+- USER_ID
+- START
+- WAKE
+- QUALITY `very tired/tired/neutral/refreshed/very refreshed`
