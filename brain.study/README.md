@@ -99,17 +99,17 @@ erDiagram
         HEALTHINESS NVARCHAR(100)
     }
 
-    USER o{--|| ACTIVITY_LOG : has
-    ACTIVITY o{--|| ACTIVITY_LOG : has
+    USER ||--o{ ACTIVITY_LOG : has
+    ACTIVITY ||--o{ ACTIVITY_LOG : has
     ACTIVITY_LOG ||--|| PERFORMANCE_SCORE : has
     ACTIVITY_LOG ||--o{ DAY : has
     DAY ||--o{ USER : has
-    USER o{--|| SEXUAL_LOG : has
-    DAY o{--|| SEXUAL_LOG : has
-    WASH_LOG ||--o{ USER : has
-    WASH_LOG ||--o{ DAY : has
-    EATING_LOG ||--o{ USER : has
-    EATING_LOG ||--o{ DAY : has
+    USER ||--o{ SEXUAL_LOG : has
+    DAY ||--o{ SEXUAL_LOG : has
+    WASH_LOG o{--|| USER : has
+    WASH_LOG o{--|| DAY : has
+    EATING_LOG o{--|| USER : has
+    EATING_LOG o{--|| DAY : has
 ```
 
 [IQAIR](https://www.iqair.com/vi/)
