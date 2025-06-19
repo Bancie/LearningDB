@@ -1,10 +1,10 @@
--- Active: 1750060901685@@127.0.0.1@0@study
+-- Active: 1750060901685@@127.0.0.1@0
 use study;
 
 INSERT INTO USER (NAME, BIRTH, GENDER, MAJOR)
 VALUES (
-    'Nguyễn Chí Bằng',
+    'Luan',
     '2003-09-03',
     'Nam',
-    'Sinh viên'
+    'Ki su'
   );
