@@ -1,0 +1,11 @@
+-- Active: 1750060901685@@127.0.0.1@0
+CREATE DATABASE bigbrain;
+
+USE bigbrain;
+
+CREATE TABLE activity_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    activity VARCHAR(100),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
