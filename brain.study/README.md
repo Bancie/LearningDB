@@ -7,18 +7,18 @@ erDiagram
     
     USER {
         USER_ID INT PK
-        NAME NVARCHAR(100)
+        FULLNAME NVARCHAR(100)
         BIRTH DATE
         GENDER ENUM
         MAJOR NVARCHAR(100)
-        LOCATION NVARCHAR(100)
+        USER_LOCATION NVARCHAR(100)
     }
 
     ACTIVITY {
         ACTIVITY_ID INT PK
-        CATEGORY ENUM
-        TAGS ENUM
-        BENCHMARK_MIN FLOAT
+        ACTIVITY_CATEGORY ENUM
+        ACTIVITY_TAGS ENUM
+        ACT_BENCHMARK_MIN FLOAT
     }
 
     DAY {
@@ -31,12 +31,30 @@ erDiagram
         COOKED BOOLEAN
     }
 
-    NAP {
-        DAY_ID INT PK, FK
+    SAMSUNG_PHONE_SCREEN {
         USER_ID INT PK, FK
-        START TIME PK
-        WAKE TIME
-        QUALITY ENUM
+        DAY_ID INT PK, FK
+        SCREEN_TIME FLOAT
+        SOCIAL FLOAT
+        PRODUCT_FIN FLOAT
+        AUDIO FLOAT
+        IMAGE FLOAT
+        MAP_TRAVEL FLOAT
+        VIDEO FLOAT
+        ACCESSIBILITY FLOAT
+        GAMES FLOAT
+        HEALTH_FIT FLOAT
+        NEWS_INF FLOAT
+        SHOPPING_FOOD FLOAT
+        OTHER_USAGE FLOAT
+    }
+
+    NAP {
+        USER_ID INT PK, FK
+        DAY_ID INT PK, FK
+        NAP_START TIME PK
+        NAP_WAKE TIME
+        NAP_QUALITY ENUM
     }
 
     ACTIVITY_LOG {
@@ -45,12 +63,12 @@ erDiagram
         ACTIVITY_ID INT FK
         DAY_ID INT FK
         SOUND_ID INT FK
-        START TIME
-        FINISH TIME
+        ACTLOG_START TIME
+        ACTLOG_FINISH TIME
         AC_ON BOOLEAN
         AC_TEMP FLOAT
         DEVICE ENUM
-        LOCATION ENUM
+        ACTLOG_LOCATION ENUM
         WEATHER ENUM
         TEMPERATURE FLOAT
         AQI INT
@@ -68,48 +86,48 @@ erDiagram
         PERSCORE_ID INT PK
         ACTI_LOG_ID INT FK
         SCORE_TYPE ENUM
-        VALUE FLOAT
-        UNIT ENUM
-        MAX FLOAT
+        SCORE_VALUE FLOAT
+        SCORE_UNIT ENUM
+        SCORE_MAX FLOAT
         TARGET_MET BOOLEAN
     }
 
     SEXUAL_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
-        TIME TIME PK
-        DURING ENUM
+        SEXLOG_TIME TIME PK
+        SEXLOG_DURING ENUM
         PARTNERED BOOLEAN
         SATISFACTION BOOLEAN
-        LOCATION ENUM
+        SEXLOG_LOCATION ENUM
     }
 
     SHOWER_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
-        START TIME PK
-        DURING ENUM
-        TEMP ENUM
+        SHOWER_START TIME PK
+        SHOWER_DURING ENUM
+        SHOWER_TEMP ENUM
     }
 
     EATING_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
-        TIME TIME PK
-        TYPE ENUM
+        EAT_TIME TIME PK
+        EAT_TYPE ENUM
         FOOD ENUM
-        AMOUNT ENUM
-        SOURCE ENUM
+        EAT_AMOUNT ENUM
+        FOOD_SOURCE ENUM
         HEALTHINESS ENUM
     }
 
     SOUND {
         SOUND_ID INT PK
-        CATEGORY ENUM
-        SOURCE ENUM
+        SOUND_CATEGORY ENUM
+        SOUND_SOURCE ENUM
         SOUND_INTENSITY ENUM
         GENRE_MUSIC ENUM
-        ORIGIN ENUM
+        MUSIC_ORIGIN ENUM
         NC_ON BOOLEAN
     }
 
@@ -126,6 +144,8 @@ erDiagram
     EATING_LOG o{--|| DAY : has
     ACTIVITY_LOG o{--|| SOUND : has
     DAY ||--o{ NAP : has
+    SAMSUNG_PHONE_SCREEN o{--|| USER : has
+    SAMSUNG_PHONE_SCREEN o{--|| DAY : has
 ```
 
 ## Define
@@ -133,19 +153,19 @@ erDiagram
 ### USER
 
 - USER_ID
-- NAME
+- FULLNAME
 - BIRTH
 - GENDER `male/female/other`
 - MAJOR
-- LOCATION
+- USER_LOCATION
 
 
 ### ACTIVITY
 
 - ACTIVITY_ID
-- CATEGORY
-- TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
-- BENCHMARK_MIN
+- ACTIVITY_CATEGORY
+- ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
+- ACT_BENCHMARK_MIN
 
 ### DAY
 
@@ -164,12 +184,12 @@ erDiagram
 - USER_ID
 - ACTIVITY_ID
 - DAY_ID
-- START
-- FINISH
+- ACTLOG_START
+- ACTLOG_FINISH
 - AC_ON `TRUA/FALSE`
 - AC_TEMP
 - DEVICE `laptop/smartphone/book/tablet/other`
-- LOCATION `home/library/cafe/school/work/traveling/park/gym/other`
+- ACTLOG_LOCATION `home/library/cafe/school/work/traveling/park/gym/other`
 - WEATHER `stormy/rainy/cloudy/clear/sunny`
 - TEMPERATURE `cold/normal/hot`
 - AQI `check on ->` [IQAIR](https://www.iqair.com/vi/)
@@ -187,54 +207,54 @@ erDiagram
 - PERSCORE_ID
 - ACTI_LOG_ID
 - SCORE_TYPE `practice/test/assignment/self-evaluation/peer-evaluation/teacher-feedback/presentation/project/other`
-- VALUE
-- UNIT `points (85/100)/percentage/stars/grade (A,B,C)/level (level 3)/minutes/hours/sec/rank (2nd place)/scale-10 (7.8/10)/scale-5 (4/5)/boolean (pass, fail, yes, no)/count (pages, chapters, pushups)/words/tasks (6 per 10 tasks done)/steps/none`
-- MAX
+- SCORE_VALUE
+- SCORE_UNIT `points (85/100)/percentage/stars/grade (A,B,C)/level (level 3)/minutes/hours/sec/rank (2nd place)/scale-10 (7.8/10)/scale-5 (4/5)/boolean (pass, fail, yes, no)/count (pages, chapters, pushups)/words/tasks (6 per 10 tasks done)/steps/none`
+- SCORE_MAX
 - TARGET_MET `TRUE/FALSE`
 
 ### SEXUAL_LOG
 
 - USER_ID
 - DAY_ID
-- TIME
-- DURING `short/medium/long`
+- SEXLOG_TIME
+- SEXLOG_DURING `short/medium/long`
 - PARTNERED `TRUA/FALSE`
 - SATISFACTION `TRUA/FALSE`
-- LOCATION `room/bedroom/bathroom/hotel/car/public place/living room/partner home/other`
+- SEXLOG_LOCATION `room/bedroom/bathroom/hotel/car/public place/living room/partner home/other`
 
 ### SHOWER_LOG
 
 - USER_ID
 - DAY_ID
-- START
-- DURING `short/medium/long`
-- TEMP `cold/warm/hot`
+- SHOWER_START
+- SHOWER_DURING `short/medium/long`
+- SHOWER_TEMP `cold/warm/hot`
 
 ### EATING_LOG
 
 - USER_ID
 - DAY_ID
-- TIME
-- TYPE `breakfast/lunch/dinner/snack/supper (light meal late in the evening)/midnight snack/drinking`
+- EAT_TIME
+- EAT_TYPE `breakfast/lunch/dinner/snack/supper (light meal late in the evening)/midnight snack/drinking`
 - FOOD `main dish (rice, banh mi)/fast-food/junk-food (Candy, sugary cereal)/soup (Pho, noodle)/snack/side-dish (Fries, salad, kimchi)/dessert (Cake, ice cream, pudding)/beverage (Water, soda, coffee)/fruit/vegetable/other`
-- AMOUNT `small/medium/large`
-- SOURCE `home cooked/ordered/takeaway/prepackaged (Ready-made from store)/friend made/canteen/outside/restaurant/other`
+- EAT_AMOUNT `small/medium/large`
+- FOOD_SOURCE `home cooked/ordered/takeaway/prepackaged (Ready-made from store)/friend made/canteen/outside/restaurant/other`
 - HEALTHINESS `very unhealthy/unhealthy/neutral/healthy/super healthy`
 
 ### SOUND
 
 - SOUND_ID
-- CATEGORY `music/white-noise (Machine-generated or filtered static sounds)/ambient-noise (Environmental sounds like rain, café noise, street)/silence/podcast/construction/nature (Sounds like birds, wind, ocean)/unknown (Any unlisted or unclear sound type)`
-- SOURCE `headphones/earbuds/speakers/public (Sound from public environment e.g., café, library)/private room (Natural sound from your own space, e.g., bedroom)/unknown (You don’t remember or it’s unclear)`
+- SOUND_CATEGORY `music/white-noise (Machine-generated or filtered static sounds)/ambient-noise (Environmental sounds like rain, café noise, street)/silence/podcast/construction/nature (Sounds like birds, wind, ocean)/unknown (Any unlisted or unclear sound type)`
+- SOUND_SOURCE `headphones/earbuds/speakers/public (Sound from public environment e.g., café, library)/private room (Natural sound from your own space, e.g., bedroom)/unknown (You don’t remember or it’s unclear)`
 - SOUND_INTENSITY `very low/low/medium/high/very high`
 - GENRE_MUSIC `lo-fi/classical/jazz/pop/rock/edm/hip-hop/chill/ambient/instrumental/nature sounds/soundtrack/acoustic/random/other`
-- ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/random/other`
+- MUSIC_ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/random/other`
 - NC_ON `TRUE/FALSE`
 
 ### NAP
 
 - DAY_ID
 - USER_ID
-- START
-- WAKE
-- QUALITY `very tired/tired/neutral/refreshed/very refreshed`
+- NAP_START
+- NAP_WAKE
+- NAP_QUALITY `very tired/tired/neutral/refreshed/very refreshed`

@@ -2,33 +2,33 @@ CREATE DATABASE IF NOT EXISTS study;
 USE study;
 
 -- USER Table
-CREATE TABLE `USER` (
+CREATE TABLE USERS (
     USER_ID INT NOT NULL AUTO_INCREMENT,
-    NAME VARCHAR(100) CHARACTER SET utf8mb4 NOT NULL,
+    FULLNAME VARCHAR(100) CHARACTER SET utf8mb4 NOT NULL,
     BIRTH DATE NOT NULL,
     GENDER ENUM('male', 'female', 'other') NOT NULL,
     MAJOR VARCHAR(100) NOT NULL,
-    LOCATION VARCHAR(100) NOT NULL,
+    USER_LOCATION VARCHAR(100) NOT NULL,
     PRIMARY KEY (USER_ID)
 );
 
 -- ACTIVITY Table
 CREATE TABLE ACTIVITY (
     ACTIVITY_ID INT NOT NULL AUTO_INCREMENT,
-    CATEGORY VARCHAR(100) NOT NULL,
-    TAGS ENUM('mental', 'productive', 'physical', 'emotional', 'social', 'entertainment', 'other'),
-    BENCHMARK_MIN FLOAT,
+    ACTIVITY_CATEGORY VARCHAR(100) NOT NULL,
+    ACTIVITY_TAGS ENUM('mental', 'productive', 'physical', 'emotional', 'social', 'entertainment', 'other'),
+    ACT_BENCHMARK_MIN FLOAT,
     PRIMARY KEY (ACTIVITY_ID)
 );
 
 -- SOUND Table
 CREATE TABLE SOUND (
     SOUND_ID INT NOT NULL AUTO_INCREMENT,
-    CATEGORY ENUM('music', 'white-noise', 'ambient-noise', 'silence', 'podcast', 'construction', 'nature', 'unknown'),
-    SOURCE ENUM('headphones', 'earbuds', 'speakers', 'public', 'private room', 'unknown'),
+    SOUND_CATEGORY ENUM('music', 'white_noise', 'ambient_noise', 'silence', 'podcast', 'construction', 'nature', 'unknown'),
+    SOUND_SOURCE ENUM('headphones', 'earbuds', 'speakers', 'public', 'private room', 'unknown'),
     SOUND_INTENSITY ENUM('very low', 'low', 'medium', 'high', 'very high'),
-    GENRE_MUSIC ENUM('lo-fi', 'classical', 'jazz', 'pop', 'rock', 'edm', 'hip-hop', 'chill', 'ambient', 'instrumental', 'nature sounds', 'soundtrack', 'acoustic', 'random', 'other'),
-    ORIGIN ENUM('us-uk', 'vpop', 'kpop', 'jpop', 'cpop', 'euro-pop', 'latin', 'indie', 'mixed', 'random', 'other'),
+    GENRE_MUSIC ENUM('lo_fi', 'classical', 'jazz', 'pop', 'rock', 'edm', 'hip_hop', 'chill', 'ambient', 'instrumental', 'nature sounds', 'soundtrack', 'acoustic', 'random', 'other'),
+    MUSIC_ORIGIN ENUM('us_uk', 'vpop', 'kpop', 'jpop', 'cpop', 'euro_pop', 'latin', 'indie', 'mixed', 'random', 'other'),
     NC_ON BOOLEAN,
     PRIMARY KEY (SOUND_ID)
 );
@@ -43,30 +43,30 @@ CREATE TABLE `DAY` (
     FITNESS BOOLEAN,
     COOKED BOOLEAN,
     PRIMARY KEY (DAY_ID),
-    FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE
 );
 
 -- NAP Table
 CREATE TABLE NAP (
-    DAY_ID INT NOT NULL,
     USER_ID INT NOT NULL,
-    `START` TIME NOT NULL,
-    `WAKE` TIME,
-    QUALITY ENUM('very tired', 'tired', 'neutral', 'refreshed', 'very refreshed'),
-    PRIMARY KEY (DAY_ID, USER_ID, `START`),
-    FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE,
-    FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE
+    DAY_ID INT NOT NULL,
+    NAP_START TIME NOT NULL,
+    NAP_WAKE TIME,
+    NAP_QUALITY ENUM('very tired', 'tired', 'neutral', 'refreshed', 'very refreshed'),
+    PRIMARY KEY (USER_ID, DAY_ID, NAP_START),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE
 );
 
 -- SHOWER_LOG Table
 CREATE TABLE SHOWER_LOG (
     USER_ID INT NOT NULL,
     DAY_ID INT NOT NULL,
-    `START` TIME NOT NULL,
-    DURING ENUM('short', 'medium', 'long'),
-    TEMP ENUM('cold', 'warm', 'hot'),
-    PRIMARY KEY (USER_ID, DAY_ID, `START`),
-    FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE,
+    SHOWER_START TIME NOT NULL,
+    SHOWER_DURING ENUM('short', 'medium', 'long'),
+    SHOWER_TEMP ENUM('cold', 'warm', 'hot'),
+    PRIMARY KEY (USER_ID, DAY_ID, SHOWER_START),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
     FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE
 );
 
@@ -74,14 +74,14 @@ CREATE TABLE SHOWER_LOG (
 CREATE TABLE EATING_LOG (
     USER_ID INT NOT NULL,
     DAY_ID INT NOT NULL,
-    `TIME` TIME NOT NULL,
-    TYPE ENUM('breakfast', 'lunch', 'dinner', 'snack', 'supper', 'midnight snack', 'drinking'),
-    FOOD ENUM('main dish', 'fast-food', 'junk-food', 'soup', 'snack', 'side-dish', 'dessert', 'beverage', 'fruit', 'vegetable', 'other'),
-    AMOUNT ENUM('small', 'medium', 'large'),
-    SOURCE ENUM('home cooked', 'ordered', 'takeaway', 'prepackaged', 'friend made', 'canteen', 'outside', 'restaurant', 'other'),
+    EAT_TIME TIME NOT NULL,
+    EAT_TYPE ENUM('breakfast', 'lunch', 'dinner', 'snack', 'supper', 'midnight snack', 'drinking'),
+    FOOD ENUM('main dish', 'fast_food', 'junk_food', 'soup', 'snack', 'side_dish', 'dessert', 'beverage', 'fruit', 'vegetable', 'other'),
+    EAT_AMOUNT ENUM('small', 'medium', 'large'),
+    FOOD_SOURCE ENUM('home cooked', 'ordered', 'takeaway', 'prepackaged', 'friend made', 'canteen', 'outside', 'restaurant', 'other'),
     HEALTHINESS ENUM('very unhealthy', 'unhealthy', 'neutral', 'healthy', 'super healthy'),
-    PRIMARY KEY (USER_ID, DAY_ID, `TIME`),
-    FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE,
+    PRIMARY KEY (USER_ID, DAY_ID, EAT_TIME),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
     FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE
 );
 
@@ -92,12 +92,12 @@ CREATE TABLE ACTIVITY_LOG (
     ACTIVITY_ID INT NOT NULL,
     DAY_ID INT NOT NULL,
     SOUND_ID INT NOT NULL,
-    `START` TIME,
-    `FINISH` TIME,
+    ACTLOG_START TIME,
+    ACTLOG_FINISH TIME,
     AC_ON BOOLEAN,
     AC_TEMP FLOAT,
     DEVICE ENUM('laptop', 'smartphone', 'book', 'tablet', 'other'),
-    LOCATION ENUM('home', 'library', 'cafe', 'school', 'work', 'traveling', 'park', 'gym', 'other'),
+    ACTLOG_LOCATION ENUM('home', 'library', 'cafe', 'school', 'work', 'traveling', 'park', 'gym', 'other'),
     WEATHER ENUM('stormy', 'rainy', 'cloudy', 'clear', 'sunny'),
     TEMPERATURE ENUM('cold', 'normal', 'hot'),
     AQI INT,
@@ -110,7 +110,7 @@ CREATE TABLE ACTIVITY_LOG (
     AROUSAL ENUM('unresponsive', 'low alert', 'drowsy', 'focused', 'hyper alert'),
     LEVELRATED ENUM('very poor', 'poor', 'fair', 'good', 'excellent'),
     PRIMARY KEY (ACTI_LOG_ID),
-    FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE,
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
     FOREIGN KEY (ACTIVITY_ID) REFERENCES ACTIVITY(ACTIVITY_ID) ON DELETE CASCADE,
     FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE,
     FOREIGN KEY (SOUND_ID) REFERENCES SOUND(SOUND_ID) ON DELETE CASCADE
@@ -120,10 +120,10 @@ CREATE TABLE ACTIVITY_LOG (
 CREATE TABLE PERFORMANCE_SCORE (
     PERSCORE_ID INT NOT NULL AUTO_INCREMENT,
     ACTI_LOG_ID INT NOT NULL,
-    SCORE_TYPE ENUM('practice', 'test', 'assignment', 'self-evaluation', 'peer-evaluation', 'teacher-feedback', 'presentation', 'project', 'other'),
-    VALUE FLOAT,
-    UNIT ENUM('points', 'percentage', 'stars', 'grade', 'level', 'minutes', 'hours', 'sec', 'rank', 'scale-10', 'scale-5', 'boolean', 'count', 'words', 'tasks', 'steps', 'none'),
-    `MAX` FLOAT,
+    SCORE_TYPE ENUM('practice', 'test', 'assignment', 'self_evaluation', 'peer_evaluation', 'teacher_feedback', 'presentation', 'project', 'other'),
+    SCORE_VALUE FLOAT,
+    SCORE_UNIT ENUM('points', 'percentage', 'stars', 'grade', 'level', 'minutes', 'hours', 'sec', 'rank', 'scale_10', 'scale_5', 'boolean', 'count', 'words', 'tasks', 'steps', 'none'),
+    SCORE_MAX FLOAT,
     TARGET_MET BOOLEAN,
     PRIMARY KEY (PERSCORE_ID),
     FOREIGN KEY (ACTI_LOG_ID) REFERENCES ACTIVITY_LOG(ACTI_LOG_ID) ON DELETE CASCADE
@@ -133,12 +133,34 @@ CREATE TABLE PERFORMANCE_SCORE (
 CREATE TABLE SEXUAL_LOG (
     USER_ID INT NOT NULL,
     DAY_ID INT NOT NULL,
-    `TIME` TIME NOT NULL,
-    DURING ENUM('short', 'medium', 'long'),
+    SEXLOG_TIME TIME NOT NULL,
+    SEXLOG_DURING ENUM('short', 'medium', 'long'),
     PARTNERED BOOLEAN,
     SATISFACTION BOOLEAN,
-    LOCATION ENUM('room', 'bedroom', 'bathroom', 'hotel', 'car', 'public place', 'living room', 'partner home', 'other'),
-    PRIMARY KEY (USER_ID, DAY_ID, `TIME`),
-    FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE,
+    SEXLOG_LOCATION ENUM('room', 'bedroom', 'bathroom', 'hotel', 'car', 'public place', 'living room', 'partner home', 'other'),
+    PRIMARY KEY (USER_ID, DAY_ID, SEXLOG_TIME),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE
+);
+
+-- SAMSUNG_PHONE_SCREEN Table
+CREATE TABLE SAMSUNG_PHONE_SCREEN (
+    USER_ID INT NOT NULL,
+    DAY_ID INT NOT NULL,
+    SCREEN_TIME FLOAT,
+    SOCIAL FLOAT,
+    PRODUCT_FIN FLOAT,
+    AUDIO FLOAT,
+    IMAGE FLOAT,
+    MAP_TRAVEL FLOAT,
+    VIDEO FLOAT,
+    ACCESSIBILITY FLOAT,
+    GAMES FLOAT,
+    HEALTH_FIT FLOAT,
+    NEWS_INF FLOAT,
+    SHOPPING_FOOD FLOAT,
+    OTHER_USAGE FLOAT,
+    PRIMARY KEY (USER_ID, DAY_ID),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
     FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE
 );
