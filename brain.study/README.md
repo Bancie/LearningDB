@@ -49,27 +49,27 @@ erDiagram
         FINISH TIME
         AC_ON BOOLEAN
         AC_TEMP FLOAT
-        DEVICE ENUM()
-        LOCATION ENUM()
-        WEATHER ENUM()
+        DEVICE ENUM
+        LOCATION ENUM
+        WEATHER ENUM
         TEMPERATURE FLOAT
         AQI INT
         PM25 INT
         HUMIDITY INT
-        MOOD ENUM()
-        HEALTH ENUM()
-        ENERGY ENUM()
-        HUNGER ENUM()
-        AROUSAL ENUM()
-        LEVELRATED ENUM()
+        MOOD ENUM
+        HEALTH ENUM
+        ENERGY ENUM
+        HUNGER ENUM
+        AROUSAL ENUM
+        LEVELRATED ENUM
     }
 
     PERFORMANCE_SCORE {
         PERSCORE_ID INT PK
         ACTI_LOG_ID INT FK
-        SCORE_TYPE ENUM()
+        SCORE_TYPE ENUM
         VALUE FLOAT
-        UNIT ENUM()
+        UNIT ENUM
         MAX FLOAT
         TARGET_MET BOOLEAN
     }
@@ -81,37 +81,35 @@ erDiagram
         DURING ENUM
         PARTNERED BOOLEAN
         SATISFACTION BOOLEAN
-        LOCATION ENUM()
+        LOCATION ENUM
     }
 
     SHOWER_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
         START TIME PK
-        FINISH TIME
-        TEMP ENUM()
+        DURING ENUM
+        TEMP ENUM
     }
 
     EATING_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
         TIME TIME PK
-        TYPE ENUM()
-        FOOD ENUM()
-        AMOUNT FLOAT
-        UNIT ENUM()
-        KCAL FLOAT
-        SOURCE ENUM()
-        HEALTHINESS ENUM()
+        TYPE ENUM
+        FOOD ENUM
+        AMOUNT ENUM
+        SOURCE ENUM
+        HEALTHINESS ENUM
     }
 
     SOUND {
         SOUND_ID INT PK
-        CATEGORY ENUM()
-        SOURCE ENUM()
-        SOUND_INTENSITY ENUM()
-        GENRE_MUSIC ENUM()
-        ORIGIN ENUM()
+        CATEGORY ENUM
+        SOURCE ENUM
+        SOUND_INTENSITY ENUM
+        GENRE_MUSIC ENUM
+        ORIGIN ENUM
         NC_ON BOOLEAN
     }
 
@@ -209,7 +207,7 @@ erDiagram
 - USER_ID
 - DAY_ID
 - START
-- FINISH
+- DURING `short/medium/long`
 - TEMP `cold/warm/hot`
 
 ### EATING_LOG
@@ -219,9 +217,7 @@ erDiagram
 - TIME
 - TYPE `breakfast/lunch/dinner/snack/supper (light meal late in the evening)/midnight snack/drinking`
 - FOOD `main dish (rice, banh mi)/fast-food/junk-food (Candy, sugary cereal)/soup (Pho, noodle)/snack/side-dish (Fries, salad, kimchi)/dessert (Cake, ice cream, pudding)/beverage (Water, soda, coffee)/fruit/vegetable/other`
-- AMOUNT
-- UNIT `gr/ml/bowls/cups/pieces/slices/plates/servings`
-- KCAL
+- AMOUNT `small/medium/large`
 - SOURCE `home cooked/ordered/takeaway/prepackaged (Ready-made from store)/friend made/canteen/outside/restaurant/other`
 - HEALTHINESS `very unhealthy/unhealthy/neutral/healthy/super healthy`
 
@@ -231,8 +227,8 @@ erDiagram
 - CATEGORY `music/white-noise (Machine-generated or filtered static sounds)/ambient-noise (Environmental sounds like rain, café noise, street)/silence/podcast/construction/nature (Sounds like birds, wind, ocean)/unknown (Any unlisted or unclear sound type)`
 - SOURCE `headphones/earbuds/speakers/public (Sound from public environment e.g., café, library)/private room (Natural sound from your own space, e.g., bedroom)/unknown (You don’t remember or it’s unclear)`
 - SOUND_INTENSITY `very low/low/medium/high/very high`
-- GENRE_MUSIC `lo-fi/classical/jazz/pop/rock/edm/hip-hop/chill/ambient/instrumental/nature sounds/soundtrack/acoustic/other`
-- ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/other`
+- GENRE_MUSIC `lo-fi/classical/jazz/pop/rock/edm/hip-hop/chill/ambient/instrumental/nature sounds/soundtrack/acoustic/random/other`
+- ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/random/other`
 - NC_ON `TRUE/FALSE`
 
 ### NAP
