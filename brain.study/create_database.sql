@@ -125,7 +125,7 @@ CREATE TABLE PERFORMANCE_SCORE (
     SCORE_TYPE ENUM('practice', 'test', 'assignment', 'self-evaluation', 'peer-evaluation', 'teacher-feedback', 'presentation', 'project', 'other'),
     VALUE FLOAT,
     UNIT ENUM('points', 'percentage', 'stars', 'grade', 'level', 'minutes', 'hours', 'sec', 'rank', 'scale-10', 'scale-5', 'boolean', 'count', 'words', 'tasks', 'steps', 'none'),
-    MAX_VALUE FLOAT,
+    `MAX` FLOAT,
     TARGET_MET BOOLEAN,
     PRIMARY KEY (PERSCORE_ID),
     FOREIGN KEY (ACTI_LOG_ID) REFERENCES ACTIVITY_LOG(ACTI_LOG_ID) ON DELETE CASCADE
@@ -135,12 +135,12 @@ CREATE TABLE PERFORMANCE_SCORE (
 CREATE TABLE SEXUAL_LOG (
     USER_ID INT NOT NULL,
     DAY_ID INT NOT NULL,
-    `START` TIME NOT NULL,
-    `FINISH` TIME,
+    `TIME` TIME NOT NULL,
+    DURING ENUM('short', 'medium', 'long'),
     PARTNERED BOOLEAN,
     SATISFACTION BOOLEAN,
     LOCATION ENUM('room', 'bedroom', 'bathroom', 'hotel', 'car', 'public place', 'living room', 'partner home', 'other'),
-    PRIMARY KEY (USER_ID, DAY_ID, `START`),
+    PRIMARY KEY (USER_ID, DAY_ID, `TIME`),
     FOREIGN KEY (USER_ID) REFERENCES `USER`(USER_ID) ON DELETE CASCADE,
     FOREIGN KEY (DAY_ID) REFERENCES `DAY`(DAY_ID) ON DELETE CASCADE
 );

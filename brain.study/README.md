@@ -70,15 +70,15 @@ erDiagram
         SCORE_TYPE ENUM()
         VALUE FLOAT
         UNIT ENUM()
-        MAX_VALUE FLOAT
+        MAX FLOAT
         TARGET_MET BOOLEAN
     }
 
     SEXUAL_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
-        START TIME PK
-        FINISH TIME
+        TIME TIME PK
+        DURING ENUM
         PARTNERED BOOLEAN
         SATISFACTION BOOLEAN
         LOCATION ENUM()
@@ -191,15 +191,15 @@ erDiagram
 - SCORE_TYPE `practice/test/assignment/self-evaluation/peer-evaluation/teacher-feedback/presentation/project/other`
 - VALUE
 - UNIT `points (85/100)/percentage/stars/grade (A,B,C)/level (level 3)/minutes/hours/sec/rank (2nd place)/scale-10 (7.8/10)/scale-5 (4/5)/boolean (pass, fail, yes, no)/count (pages, chapters, pushups)/words/tasks (6 per 10 tasks done)/steps/none`
-- MAX_VALUE
+- MAX
 - TARGET_MET `TRUE/FALSE`
 
 ### SEXUAL_LOG
 
 - USER_ID
 - DAY_ID
-- START
-- FINISH
+- TIME
+- DURING `short/medium/long`
 - PARTNERED `TRUA/FALSE`
 - SATISFACTION `TRUA/FALSE`
 - LOCATION `room/bedroom/bathroom/hotel/car/public place/living room/partner home/other`
