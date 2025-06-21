@@ -64,7 +64,6 @@ erDiagram
         DAY_ID INT FK
         SOUND_ID INT FK
         ACTLOG_START TIME
-        ACTLOG_FINISH TIME
         AC_ON BOOLEAN
         AC_TEMP FLOAT
         DEVICE ENUM
@@ -79,16 +78,16 @@ erDiagram
         ENERGY ENUM
         HUNGER ENUM
         AROUSAL ENUM
-        LEVELRATED ENUM
     }
 
-    PERFORMANCE_SCORE {
-        PERSCORE_ID INT PK
+    ACTIVITY_OUTPUT {
+        AO_ID INT PK
         ACTI_LOG_ID INT FK
-        SCORE_TYPE ENUM
-        SCORE_VALUE FLOAT
-        SCORE_UNIT ENUM
-        SCORE_MAX FLOAT
+        AO_FINISH TIME
+        BREAK_LEVEL ENUM
+        AO_DIFFICULTY ENUM
+        AO_SATISFACTION ENUM
+        FOCUS_LEVEL ENUM
         TARGET_MET BOOLEAN
     }
 
@@ -133,7 +132,7 @@ erDiagram
 
     USER ||--o{ ACTIVITY_LOG : has
     ACTIVITY ||--o{ ACTIVITY_LOG : has
-    ACTIVITY_LOG ||--|| PERFORMANCE_SCORE : has
+    ACTIVITY_LOG ||--|| ACTIVITY_OUTPUT : has
     ACTIVITY_LOG ||--o{ DAY : has
     DAY ||--o{ USER : has
     USER ||--o{ SEXUAL_LOG : has
@@ -200,16 +199,16 @@ erDiagram
 - ENERGY `low/normal/high`
 - HUNGER `starving/very hungry/hungry/satisfied/full`
 - AROUSAL `unresponsive (Not reacting at all)/low alert (Very sluggish, hard to focus)/drowsy (Sleepy, but responsive)/focused (Generally attentive)/hyper alert (Highly focused and energetic)`
-- LEVELRATED `very poor (Didn’t understand or complete the task)/poor (Struggled and made many mistakes)/fair (Did it okay, but there’s room for improvement)/good (Did it well with minor issues)/excellent (Completed it successfully and confidently)`
 
-### PERFORMANCE_SCORE
+### ACTIVITY_OUTPUT
 
-- PERSCORE_ID
+- AO_ID
 - ACTI_LOG_ID
-- SCORE_TYPE `practice/test/assignment/self-evaluation/peer-evaluation/teacher-feedback/presentation/project/other`
-- SCORE_VALUE
-- SCORE_UNIT `points (85/100)/percentage/stars/grade (A,B,C)/level (level 3)/minutes/hours/sec/rank (2nd place)/scale-10 (7.8/10)/scale-5 (4/5)/boolean (pass, fail, yes, no)/count (pages, chapters, pushups)/words/tasks (6 per 10 tasks done)/steps/none`
-- SCORE_MAX
+- AO_FINISH
+- BREAK_LEVEL `none/low/medium/high`
+- AO_DIFFICULTY `effortless/very easy/easy/moderate/hard/very hard/overwhelming`
+- AO_SATISFACTION `unsatisfied/neutral/satisfied`
+- FOCUS_LEVEL `very low/low/medium/high/very high`
 - TARGET_MET `TRUE/FALSE`
 
 ### SEXUAL_LOG
@@ -258,3 +257,21 @@ erDiagram
 - NAP_START
 - NAP_WAKE
 - NAP_QUALITY `very tired/tired/neutral/refreshed/very refreshed`
+
+### SAMSUNG_PHONE_SCREEN
+
+- USER_ID
+- DAY_ID
+- SCREEN_TIME
+- SOCIAL
+- PRODUCT_FIN
+- AUDIO
+- IMAGE
+- MAP_TRAVEL
+- VIDEO
+- ACCESSIBILITY
+- GAMES
+- HEALTH_FIT
+- NEWS_INF
+- SHOPPING_FOOD
+- OTHER_USAGE 

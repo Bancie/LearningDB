@@ -1,0 +1,22 @@
+USE study;
+
+DROP TABLE IF EXISTS PERFORMANCE_SCORE;
+
+ALTER TABLE ACTIVITY_LOG
+DROP COLUMN ACTLOG_FINISH;
+
+ALTER TABLE ACTIVITY_LOG
+DROP COLUMN LEVELRATED;
+
+CREATE TABLE ACTIVITY_OUTPUT (
+    AO_ID INT NOT NULL AUTO_INCREMENT,
+    ACTI_LOG_ID INT NOT NULL,
+    AO_FINISH TIME,
+    BREAK_LEVEL ENUM('none', 'short', 'moderate', 'long'),
+    AO_DIFFICULTY ENUM('effortless', 'very easy', 'easy', 'moderate', 'hard', 'very hard', 'overwhelming'),
+    AO_SATISFACTION ENUM('unsatisfied', 'neutral', 'satisfied'),
+    FOCUS_LEVEL ENUM('very low', 'low', 'medium', 'high', 'very high'),
+    TARGET_MET BOOLEAN,
+    PRIMARY KEY (AO_ID),
+    FOREIGN KEY (ACTI_LOG_ID) REFERENCES ACTIVITY_LOG(ACTI_LOG_ID) ON DELETE CASCADE
+);
