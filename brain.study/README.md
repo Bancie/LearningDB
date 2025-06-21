@@ -25,8 +25,6 @@ erDiagram
         DAY_ID INT PK
         USER_ID INT FK
         DAY DATE
-        BEDTIME DATETIME
-        WAKETIME DATETIME
         FITNESS BOOLEAN
         COOKED BOOLEAN
     }
@@ -49,12 +47,19 @@ erDiagram
         OTHER_USAGE FLOAT
     }
 
-    NAP {
+    SLEEP_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
-        NAP_START TIME PK
-        NAP_WAKE TIME
-        NAP_QUALITY ENUM
+        SLEEP_START DATETIME PK
+        SLEEP_END DATETIME
+        SLEEP_TYPE ENUM
+        SLEEP_QUALITY ENUM
+        DREAM ENUM
+        WAKE_COUNT INT
+        FELL_ASLEEP ENUM
+        WAKE_FEELING ENUM
+        SLEEP_ENVIRONMENT ENUM
+        ALARM_USED BOOLEAN
     }
 
     ACTIVITY_LOG {
@@ -142,9 +147,10 @@ erDiagram
     EATING_LOG o{--|| USER : has
     EATING_LOG o{--|| DAY : has
     ACTIVITY_LOG o{--|| SOUND : has
-    DAY ||--o{ NAP : has
     SAMSUNG_PHONE_SCREEN o{--|| USER : has
     SAMSUNG_PHONE_SCREEN o{--|| DAY : has
+    DAY ||--o{ SLEEP_LOG : has
+    USER ||--o{ SLEEP_LOG : has
 ```
 
 ## Define
@@ -175,7 +181,6 @@ erDiagram
 - WAKETIME
 - FITNESS `TRUA/FALSE`
 - COOKED `TRUA/FALSE`
-- NAPMIN
 
 ### ACTIVITY_LOG
 
@@ -250,13 +255,20 @@ erDiagram
 - MUSIC_ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/random/other`
 - NC_ON `TRUE/FALSE`
 
-### NAP
+### SLEEP_LOG
 
-- DAY_ID
 - USER_ID
-- NAP_START
-- NAP_WAKE
-- NAP_QUALITY `very tired/tired/neutral/refreshed/very refreshed`
+- DAY_ID
+- SLEEP_START
+- SLEEP_END
+- SLEEP_TYPE `night/nap/recovery/fragmented/other`
+- SLEEP_QUALITY `very poor (Constantly waking up, restless, unrefreshing sleep)/poor (Light or disrupted sleep, woke up tired)/fair (Slept okay, not fully rested)/good (Slept well, mostly uninterrupted)/very good (Deep sleep, woke up refreshed)/excellent (Best possible sleep — deep, long, and fully restorative)`
+- DREAM `none (No dream remembered)/vague (Some memory of dreaming, but unclear or fragmented)/vivid (Clear, strong, and memorable dream)`
+- WAKE_COUNT
+- FELL_ASLEEP `easy/normal/difficult`
+- WAKE_FEELING `very_groggy/groggy/neutral/refreshed/energized`
+- SLEEP_ENVIRONMENT `terrible/poor/fair/good/excellent`
+- ALARM_USED `TRUE/FALSE`
 
 ### SAMSUNG_PHONE_SCREEN
 
