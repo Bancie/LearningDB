@@ -110,3 +110,12 @@ USE study;
 
 ALTER TABLE EATING_LOG
 ADD FLAVOUR ENUM('terrible', 'poor', 'average', 'delicious', 'very delicious');
+
+USE study;
+
+ALTER TABLE EATING_LOG
+ADD EAT_FILL ENUM('still hungry', 'not full', 'neutral', 'full', 'stuffed');
+
+USE study;
+ALTER TABLE EATING_LOG
+MODIFY COLUMN EAT_FILL ENUM('still hungry', 'not full', 'neutral', 'full', 'very full');

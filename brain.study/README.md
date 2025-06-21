@@ -154,6 +154,7 @@ erDiagram
         FOOD_SOURCE ENUM
         HEALTHINESS ENUM
         FLAVOUR ENUM
+        EAT_FILL ENUM
     }
 
     SOUND {
@@ -280,6 +281,7 @@ erDiagram
 - FOOD_SOURCE `home cooked/ordered/takeaway/prepackaged (Ready-made from store)/friend made/canteen/outside/restaurant/other`
 - HEALTHINESS `very unhealthy/unhealthy/neutral/healthy/super healthy`
 - FLAVOUR `terrible/poor/average/delicious/very delicious`
+- EAT_FILL `still hungry/not full/neutral/full/stuffed`
 
 ### SOUND
 
