@@ -55,3 +55,58 @@ USE study;
 
 ALTER TABLE SLEEP_LOG
 MODIFY COLUMN WAKE_FEELING ENUM('very groggy', 'groggy', 'neutral', 'refreshed', 'energized');
+
+USE study;
+DROP TABLE IF EXISTS NAP;
+
+USE study;
+ALTER TABLE SLEEP_LOG
+MODIFY COLUMN ALARM_USED ENUM('silent', 'low', 'medium', 'loud');
+
+USE study;
+ALTER TABLE SLEEP_LOG
+MODIFY COLUMN ALARM_USED ENUM('none', 'silent', 'low', 'medium', 'loud');
+
+USE study;
+ALTER TABLE SLEEP_LOG
+ADD PHONE_BF_SLEEP ENUM('none', 'short', 'moderate', 'long');
+
+USE study;
+ALTER TABLE EATING_LOG
+MODIFY COLUMN FOOD_SOURCE ENUM('home cooked', 'ordered', 'takeaway', 'packaged', 'prepackaged', 'friend made', 'canteen', 'outside', 'restaurant', 'other');
+
+USE study;
+
+ALTER TABLE DAY
+DROP COLUMN FITNESS;
+
+ALTER TABLE DAY
+DROP COLUMN COOKED;
+
+CREATE TABLE FITNESS_LOG (
+    USER_ID INT NOT NULL,
+    DAY_ID INT NOT NULL,
+    FITNESS_START TIME NOT NULL,
+    FITNESS_TYPE ENUM('walking', 'running', 'cycling', 'swimming', 'yoga', 'stretching', 'strength_training', 'bodyweight_training', 'sports', 'aerobic_dance', 'hiking', 'other'),
+    FITNESS_DURATION_MINUTES INT,
+    FITNESS_INTENSITY ENUM('low', 'moderate', 'high'),
+    PRIMARY KEY (USER_ID, DAY_ID, FITNESS_START),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    FOREIGN KEY (DAY_ID) REFERENCES DAY(DAY_ID) ON DELETE CASCADE
+);
+
+CREATE TABLE COOKING_LOG (
+    USER_ID INT NOT NULL,
+    DAY_ID INT NOT NULL,
+    COOK_START TIME NOT NULL,
+    COOK_TIME ENUM('short', 'medium', 'long'),
+    DIFFICULTY ENUM('easy', 'medium', 'hard'),
+    PRIMARY KEY (USER_ID, DAY_ID, COOK_START),
+    FOREIGN KEY (USER_ID) REFERENCES USERS(USER_ID) ON DELETE CASCADE,
+    FOREIGN KEY (DAY_ID) REFERENCES DAY(DAY_ID) ON DELETE CASCADE
+);
+
+USE study;
+
+ALTER TABLE EATING_LOG
+ADD FLAVOUR ENUM('terrible', 'poor', 'average', 'delicious', 'very delicious');

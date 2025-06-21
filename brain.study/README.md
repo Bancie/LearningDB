@@ -25,8 +25,6 @@ erDiagram
         DAY_ID INT PK
         USER_ID INT FK
         DAY DATE
-        FITNESS BOOLEAN
-        COOKED BOOLEAN
     }
 
     SAMSUNG_PHONE_SCREEN {
@@ -96,6 +94,21 @@ erDiagram
         TARGET_MET BOOLEAN
     }
 
+    PER_RESEARCH_READING {
+        PER_RSRD_ID INT PK
+        AO_ID INT FK
+        PER_RSRD_PAGES FLOAT
+        PER_RSRD_SECTIONS INT
+        PER_RSRD_CONCEPT_MASTERED INT
+    }
+
+    PER_RESEARCH_WRITING {
+        PER_RSWT_ID INT PK
+        AO_ID INT FK
+        PER_RSWT_PAGES FLOAT
+        PER_RSWT_SECTIONS INT
+    }
+
     SEXUAL_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
@@ -113,6 +126,23 @@ erDiagram
         SHOWER_DURING ENUM
         SHOWER_TEMP ENUM
     }
+    
+    FITNESS {
+        USER_ID INT PK, FK
+        DAY_ID INT PK, FK
+        FITNESS_START TIME PK
+        FITNESS_TYPE ENUM
+        FITNESS_DURATION_MINUTES INT
+        FITNESS_INTENSITY ENUM
+    }
+
+    COOKING {
+        USER_ID INT PK, FK
+        DAY_ID INT PK, FK
+        COOK_START TIME PK
+        COOK_TIME ENUM
+        DIFFICULTY ENUM
+    }
 
     EATING_LOG {
         USER_ID INT PK, FK
@@ -123,6 +153,7 @@ erDiagram
         EAT_AMOUNT ENUM
         FOOD_SOURCE ENUM
         HEALTHINESS ENUM
+        FLAVOUR ENUM
     }
 
     SOUND {
@@ -151,6 +182,10 @@ erDiagram
     SAMSUNG_PHONE_SCREEN o{--|| DAY : has
     DAY ||--o{ SLEEP_LOG : has
     USER ||--o{ SLEEP_LOG : has
+    COOKING o{--|| USER : has
+    COOKING o{--|| DAY : has
+    FITNESS o{--|| USER : has
+    FITNESS o{--|| DAY : has
 ```
 
 ## Define
@@ -244,6 +279,7 @@ erDiagram
 - EAT_AMOUNT `small/medium/large`
 - FOOD_SOURCE `home cooked/ordered/takeaway/prepackaged (Ready-made from store)/friend made/canteen/outside/restaurant/other`
 - HEALTHINESS `very unhealthy/unhealthy/neutral/healthy/super healthy`
+- FLAVOUR `terrible/poor/average/delicious/very delicious`
 
 ### SOUND
 
@@ -287,3 +323,20 @@ erDiagram
 - NEWS_INF
 - SHOPPING_FOOD
 - OTHER_USAGE 
+
+### FITNESS
+
+- USER_ID
+- DAY_ID
+- FITNESS_START
+- FITNESS_TYPE `walking/running/cycling/swimming/yoga/stretching/strength_training/bodyweight_training/sports/aerobic_dance/hiking/other`
+- FITNESS_DURATION_MINUTES
+- FITNESS_INTENSITY `low/moderate/high`
+
+### COOKING
+
+- USER_ID
+- DAY_ID
+- COOK_START
+- COOK_TIME `short/medium/long`
+- COOK_DIFFICULTY `easy/medium/hard`
