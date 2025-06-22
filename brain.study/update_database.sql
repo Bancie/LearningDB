@@ -119,3 +119,7 @@ ADD EAT_FILL ENUM('still hungry', 'not full', 'neutral', 'full', 'stuffed');
 USE study;
 ALTER TABLE EATING_LOG
 MODIFY COLUMN EAT_FILL ENUM('still hungry', 'not full', 'neutral', 'full', 'very full');
+
+USE study;
+ALTER TABLE SEXUAL_LOG
+ADD SEXLOG_SHOOT ENUM('none', 'low', 'moderate', 'strong', 'explosive');

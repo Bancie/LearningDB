@@ -117,6 +117,7 @@ erDiagram
         PARTNERED BOOLEAN
         SATISFACTION BOOLEAN
         SEXLOG_LOCATION ENUM
+        SEXLOG_SHOOT ENUM
     }
 
     SHOWER_LOG {
@@ -261,6 +262,7 @@ erDiagram
 - PARTNERED `TRUA/FALSE`
 - SATISFACTION `TRUA/FALSE`
 - SEXLOG_LOCATION `room/bedroom/bathroom/hotel/car/public place/living room/partner home/other`
+- SEXLOG_SHOOT `none/low/moderate/strong/explosive`
 
 ### SHOWER_LOG
 
