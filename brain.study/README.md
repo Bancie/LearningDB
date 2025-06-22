@@ -13,10 +13,16 @@ erDiagram
         MAJOR NVARCHAR(100)
         USER_LOCATION NVARCHAR(100)
     }
+    
+    KIT_TEST {
+        KIT_ID INT PK
+        KIT_TAB VARCHAR(100)
+    }
 
     ACTIVITY {
         ACTIVITY_ID INT PK
-        ACTIVITY_CATEGORY ENUM
+        KIT_ID INT FK
+        ACTIVITY_CATEGORY NVARCHAR(100)
         ACTIVITY_TAGS ENUM
         ACT_BENCHMARK_MIN FLOAT
     }
@@ -86,6 +92,7 @@ erDiagram
     ACTIVITY_OUTPUT {
         AO_ID INT PK
         ACTI_LOG_ID INT FK
+        KIT_ID INT FK
         AO_FINISH TIME
         BREAK_LEVEL ENUM
         AO_DIFFICULTY ENUM
@@ -188,6 +195,9 @@ erDiagram
     COOKING o{--|| DAY : has
     FITNESS o{--|| USER : has
     FITNESS o{--|| DAY : has
+    ACTIVITY o{--|| KIT_TEST : has
+    ACTIVITY_OUTPUT o{--|| KIT_TEST : has
+    
 ```
 
 ## Define
