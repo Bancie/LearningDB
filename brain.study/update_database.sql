@@ -202,7 +202,7 @@ DROP COLUMN TOTAL_MEANS_UNIT;
 USE study;
 
 ALTER TABLE ACTIVITY
-MODIFY ACTIVITY_CATEGORY ENUM('academic', 'language', 'self-development', 'technical & vocational', 'creative arts', 'well-being & lifestyle') NOT NULL;
+MODIFY ACTIVITY_CATEGORY ENUM('academic', 'language', 'self-development', 'technical & vocational', 'creative arts', 'well-being & lifestyle') NOT NULL AFTER KIT_ID;
 
 ALTER TABLE ACTIVITY
 ADD ACT_DES VARCHAR(100) CHARACTER SET utf8mb4 NOT NULL;
