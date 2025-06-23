@@ -184,3 +184,17 @@ ADD ACT_TOTAL_MEANS FLOAT;
 
 ALTER TABLE ACTIVITY
 ADD TOTAL_MEANS_UNIT ENUM('minutes', 'pages', 'words', 'items', 'sessions', 'modules', 'steps', 'questions', 'slides', 'tasks', 'points', 'percentage', 'stars', 'grade', 'level', 'rank', 'scale-10', 'scale-5', 'scale-9', 'yes-no', 'pass-fail', 'count');
+
+USE study;
+
+ALTER TABLE ACTIVITY
+DROP COLUMN ACT_BENCHMARK;
+
+ALTER TABLE ACTIVITY
+DROP COLUMN ACT_MEANS;
+
+ALTER TABLE ACTIVITY
+DROP COLUMN ACT_TOTAL_MEANS;
+
+ALTER TABLE ACTIVITY
+DROP COLUMN TOTAL_MEANS_UNIT;
