@@ -198,3 +198,11 @@ DROP COLUMN ACT_TOTAL_MEANS;
 
 ALTER TABLE ACTIVITY
 DROP COLUMN TOTAL_MEANS_UNIT;
+
+USE study;
+
+ALTER TABLE ACTIVITY
+MODIFY ACTIVITY_CATEGORY ENUM('academic', 'language', 'self-development', 'technical & vocational', 'creative arts', 'well-being & lifestyle') NOT NULL;
+
+ALTER TABLE ACTIVITY
+ADD ACT_DES VARCHAR(100) CHARACTER SET utf8mb4 NOT NULL;

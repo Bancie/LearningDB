@@ -22,8 +22,9 @@ erDiagram
     ACTIVITY {
         ACTIVITY_ID INT PK
         KIT_ID INT FK
-        ACTIVITY_CATEGORY NVARCHAR(100)
+        ACTIVITY_CATEGORY ENUM
         ACTIVITY_TAGS ENUM
+        ACT_DES NVARCHAR(100)
     }
 
     DAY {
@@ -215,8 +216,9 @@ erDiagram
 
 - ACTIVITY_ID
 - KIT_ID INT FK
-- ACTIVITY_CATEGORY
+- ACTIVITY_CATEGORY `academic/language/self-development/technical-vocational/creative arts/well-being & lifestyle`
 - ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
+- ACT_DES
 
 ### DAY
 
