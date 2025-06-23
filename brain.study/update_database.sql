@@ -206,3 +206,8 @@ MODIFY ACTIVITY_CATEGORY ENUM('academic', 'language', 'self-development', 'techn
 
 ALTER TABLE ACTIVITY
 ADD ACT_DES VARCHAR(100) CHARACTER SET utf8mb4 NOT NULL;
+
+USE study;
+
+ALTER TABLE ACTIVITY
+MODIFY ACTIVITY_TAGS ENUM('mental', 'productive', 'physical', 'emotional', 'social', 'entertainment', 'other') AFTER ACT_DES;
