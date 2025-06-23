@@ -31,6 +31,8 @@ erDiagram
         DAY_ID INT PK
         USER_ID INT FK
         DAY DATE
+        IS_EVENT BOOLEAN
+        IS_FREE BOOLEAN
     }
 
     SAMSUNG_PHONE_SCREEN {
@@ -101,19 +103,70 @@ erDiagram
         TARGET_MET BOOLEAN
     }
 
-    KIT_READING {
-        PER_RSRD_ID INT PK
-        AO_ID INT FK
-        PER_RSRD_PAGES FLOAT
-        PER_RSRD_SECTIONS INT
-        PER_RSRD_CONCEPT_MASTERED INT
+    KIT_ACADEMIC_READING {
+       AO_ID INT PK, FK
+       COMPREHENSION_DEPTH ENUM
+       PROOF_TRACE_ABILITY ENUM
+       LINKING_TO_PREVIOUS_KNOWLEDGE ENUM
+       MENTAL_FATIGUE ENUM
+       READING_SPEED_FOR_PROOF ENUM
+       READING_AMOUNT ENUM
     }
 
-    KIT_WRITING {
-        PER_RSWT_ID INT PK
-        AO_ID INT FK
-        PER_RSWT_PAGES FLOAT
-        PER_RSWT_SECTIONS INT
+    KIT_IELTS_LISTENING {
+       AO_ID INT PK, FK
+       SCORE_BAND FLOAT
+       COMPREHENSION_TYPE ENUM
+       TOPIC_FAMILIARITY ENUM
+       SPEED_HANDLING ENUM
+       SPELLING_ACCURACY ENUM
+       ANSWER_COMPLETION ENUM
+       AUDIO_RECOGNITION ENUM
+    }
+
+    KIT_IELTS_READING {
+        AO_ID INT PK, FK
+        SCORE_BAND FLOAT
+        COMPREHENSION_TYPE ENUM
+        TIME_MANAGEMENT ENUM
+        READING_SPEED ENUM
+        COMPREHENSION_DEPTH ENUM
+        TEXT_COMPLEXITY_HANDLING ENUM
+        VOCABULARY_RECOGNITION ENUM
+        ANSWER_ACCURACY ENUM
+    }
+
+    KIT_IELTS_WRITING_TASK1 {
+       AO_ID INT PK, FK
+       TASK_ACHIEVEMENT ENUM
+       COHERENCE_COHESION ENUM
+       LEXICAL_RESOURCE ENUM
+       GRAMMATICAL_RANGE_ACCURACY ENUM
+       TONE_FORMALITY ENUM
+       VISUAL_DESCRIPTION_SKILL ENUM
+    }
+
+    KIT_IELTS_WRITING_TASK2 {
+       AO_ID INT PK, FK
+       TASK_RESPONSE ENUM
+       COHERENCE_COHESION ENUM 
+       LEXICAL_RESOURCE ENUM
+       GRAMMATICAL_RANGE_ACCURACY ENUM
+       ARGUMENT_QUALITY ENUM
+       IDEAS_ORIGINALITY ENUM
+       COUNTERARGUMENT_HANDLING ENUM
+    }
+
+    KIT_IELTS_SPEAKING {
+       AO_ID INT PK, FK
+       FLUENCY_COHE​​SION ENUM
+       LEXICAL_RESOURCE ENUM
+       GRAMMATICAL_RANGE_ACCURACY ENUM
+       PRONUNCIATION ENUM
+       IDEA_ORGANIZATION ENUM
+       TOPIC_HANDLING ENUM
+       INTERACTIVE_COMMUNICATION ENUM
+       CONFIDENCE_LEVEL ENUM
     }
 
     SEXUAL_LOG {
@@ -197,7 +250,12 @@ erDiagram
     FITNESS o{--|| DAY : has
     ACTIVITY o{--|| KIT_TEST : has
     ACTIVITY_OUTPUT o{--|| KIT_TEST : has
-    
+    ACTIVITY_OUTPUT ||--|| KIT_ACADEMIC_READING : has
+    ACTIVITY_OUTPUT ||--|| KIT_IELTS_LISTENING : has
+    ACTIVITY_OUTPUT ||--|| KIT_IELTS_READING : has
+    ACTIVITY_OUTPUT ||--|| KIT_IELTS_WRITING_TASK1 : has
+    ACTIVITY_OUTPUT ||--|| KIT_IELTS_WRITING_TASK2 : has
+    ACTIVITY_OUTPUT ||--|| KIT_IELTS_SPEAKING : has
 ```
 
 ## Define
@@ -355,3 +413,69 @@ erDiagram
 - COOK_START
 - COOK_TIME `short/medium/long`
 - COOK_DIFFICULTY `easy/medium/hard`
+
+### KIT_ACADEMIC_READING
+
+- KIT_ACADEMIC_READING_ID
+- COMPREHENSION_DEPTH `surface_level/partial_understanding/understood_core_ideas/grasped_all_arguments/deep_and_connected_insight`
+- PROOF_TRACE_ABILITY `non-proof/lost_immediately/followed_some_steps/mostly_followed/fully_followed/followed_and_critiqued`
+- LINKING_TO_PREVIOUS_KNOWLEDGE `no_connection_made/forced_linking/some_connections/natural_linking/integrated_into_framework`
+- MENTAL_FATIGUE `exhausted_quickly/tired_early/moderately_fatigued/sustained_attention/deep_focus_maintained`
+- READING_SPEED_FOR_PROOF `non-proof/extremely_slow/slow/average/fast/very_fast_with_understanding`
+- READING_AMOUNT `none/barely_any/light/moderate/substantial/intensive/extensive`
+
+### KIT_IELTS_LISTENING
+
+- KIT_IELTS_LISTENING_ID
+- SCORE_BAND 
+- COMPREHENSION_TYPE `multiple_choice/form_completion/map_diagram/matching/sentence_completion/summary_completion/short_answer`
+- TOPIC_FAMILIARITY `very_unfamiliar/unfamiliar/neutral/familiar/very_familiar`
+- SPEED_HANDLING `lost/struggled/managed_okay/comfortable/fluent_response`
+- SPELLING_ACCURACY `poor/needs_improvement/adequate/good/perfect`
+- ANSWER_COMPLETION `mostly_blank/partially_filled/mostly_filled/fully_filled_but_incorrect/fully_correct`
+- AUDIO_RECOGNITION `missed_info/some_misheard/understood_main_ideas/understood_details/complete_understanding`
+
+### KIT_IELTS_READING
+
+- KIT_IELTS_READING_ID
+- SCORE_BAND 
+- COMPREHENSION_TYPE `matching_headings/multiple_choice/true_false_not_given/yes_no_not_given/summary_completion/sentence_completion/note_table_flowchart_completion/short_answer`
+- TIME_MANAGEMENT `ran_out_of_time/barely_finished/just_in_time/finished_early/finished_with_review`
+- READING_SPEED `very_slow/slow/average/fast/very_fast`
+- COMPREHENSION_DEPTH `missed_main_ideas/got_main_ideas/understood_details/inferred_meanings/mastered_all_levels`
+- TEXT_COMPLEXITY_HANDLING `too_difficult/challenging/just_right/easy/too_easy`
+- VOCABULARY_RECOGNITION `very_limited/limited/moderate/strong/expert`
+- ANSWER_ACCURACY `mostly_wrong/some_correct/about_half_correct/mostly_correct/all_correct`
+
+### KIT_IELTS_WRITING_TASK1
+
+- KIT_IELTS_WRITING_TASK1_ID
+- TASK_ACHIEVEMENT `off_topic/insufficient_data_coverage/partial_summary/clear_summary/fully_meets_requirements`
+- COHERENCE_COHESION `no_logical_flow/some_linking/adequate_organization/logical_and_effective/seamless_and_engaging`
+- LEXICAL_RESOURCE `basic_words_only/repetitive/moderate_range/varied_and_precise/advanced_and_natural`
+- GRAMMATICAL_RANGE_ACCURACY `many_errors/basic_structures_only/mostly_correct/some_complex_structures/complex_and_accurate`
+- TONE_FORMALITY `too_informal/slightly_informal/appropriate/formal/perfectly_matched`
+- VISUAL_DESCRIPTION_SKILL `missing_comparison/basic_reporting/some_comparison/well_analyzed/insightful_and_concise`
+
+### KIT_IELTS_WRITING_TASK2
+
+- KIT_IELTS_WRITING_TASK2_ID
+- TASK_RESPONSE `off_topic/weak_argument/partially_addressed/clearly_addressed/fully_developed`
+- COHERENCE_COHESION `no_logical_flow/some_linking/adequate_organization/logical_and_effective/seamless_and_engaging`
+- LEXICAL_RESOURCE `basic_words_only/repetitive/moderate_range/varied_and_precise/advanced_and_natural`
+- GRAMMATICAL_RANGE_ACCURACY `many_errors/basic_structures_only/mostly_correct/some_complex_structures/complex_and_accurate`
+- ARGUMENT_QUALITY `no_argument/weak_claims/some_support/well_supported/convincing_and_logical`
+- IDEAS_ORIGINALITY `very_common/somewhat_generic/some_freshness/original_and_thoughtful/highly_creative`
+- COUNTERARGUMENT_HANDLING `none/weak_or_forced/acknowledged/refuted_effectively/masterfully_addressed`
+
+### KIT_IELTS_SPEAKING
+
+- KIT_IELTS_SPEAKING_ID
+- FLUENCY_COHE​​SION `frequent_pauses/hesitant/some_disfluency/mostly_fluent/naturally_fluent`
+- LEXICAL_RESOURCE `very_basic_words/repetitive/some_range/wide_range/rich_and_precise`
+- GRAMMATICAL_RANGE_ACCURACY `frequent_errors/simple_only/moderate_range/accurate_with_complex/wide_and_consistent_accuracy`
+- PRONUNCIATION `unclear/hard_to_understand/mostly_clear/clear_and_natural/native_like`
+- IDEA_ORGANIZATION `no_structure/jumpy/basic_sequence/clear_flow/well_structured`
+- TOPIC_HANDLING `off_topic/barely_on_topic/partially_developed/developed/insightful_response`
+- INTERACTIVE_COMMUNICATION `minimal/reluctant/adequate/responsive/engaging_and_natural`
+- CONFIDENCE_LEVEL `very_nervous/nervous/neutral/confident/very_confident`

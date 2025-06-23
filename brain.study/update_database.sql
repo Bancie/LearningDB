@@ -211,3 +211,12 @@ USE study;
 
 ALTER TABLE ACTIVITY
 MODIFY ACTIVITY_TAGS ENUM('mental', 'productive', 'physical', 'emotional', 'social', 'entertainment', 'other') AFTER ACT_DES;
+
+USE study;
+
+ALTER TABLE `DAY`
+ADD IS_EVENT BOOLEAN;
+
+ALTER TABLE `DAY`
+ADD IS_FREE BOOLEAN;
+
