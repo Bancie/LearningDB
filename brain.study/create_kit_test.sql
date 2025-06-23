@@ -1,0 +1,3 @@
+USE study;
+
+CREATE TABLE KIT

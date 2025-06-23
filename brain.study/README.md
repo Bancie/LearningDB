@@ -24,7 +24,10 @@ erDiagram
         KIT_ID INT FK
         ACTIVITY_CATEGORY NVARCHAR(100)
         ACTIVITY_TAGS ENUM
-        ACT_BENCHMARK_MIN FLOAT
+        ACT_BENCHMARK BOOLEAN
+        ACT_MEANS ENUM
+        ACT_TOTAL_MEANS FLOAT
+        TOTAL_MEANS_UNIT ENUM
     }
 
     DAY {
@@ -101,7 +104,7 @@ erDiagram
         TARGET_MET BOOLEAN
     }
 
-    PER_RESEARCH_READING {
+    KIT_READING {
         PER_RSRD_ID INT PK
         AO_ID INT FK
         PER_RSRD_PAGES FLOAT
@@ -109,7 +112,7 @@ erDiagram
         PER_RSRD_CONCEPT_MASTERED INT
     }
 
-    PER_RESEARCH_WRITING {
+    KIT_WRITING {
         PER_RSWT_ID INT PK
         AO_ID INT FK
         PER_RSWT_PAGES FLOAT
@@ -217,7 +220,10 @@ erDiagram
 - ACTIVITY_ID
 - ACTIVITY_CATEGORY
 - ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
-- ACT_BENCHMARK_MIN
+- ACT_BENCHMARK `TRUE/FALSE`
+- ACT_MEANS `exam_practice/textbook/ebook/article/book/guidebook/video/tutorial/interactive/audio/podcast/course/live_session/slide/handout/journal/manual`
+- ACT_TOTAL_MEANS
+- TOTAL_MEANS_UNIT `minutes/pages/words/items/sessions/modules/steps/questions/slides/tasks/points/percentage/stars/grade/level/rank/scale-10/scale-5/yes-no/pass-fail/count`
 
 ### DAY
 

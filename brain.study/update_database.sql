@@ -167,3 +167,20 @@ USE study;
 
 ALTER TABLE SEXUAL_LOG
 MODIFY SEXLOG_SHOOT ENUM('none', 'very weak', 'weak', 'moderate', 'strong', 'explosive');
+
+USE study;
+
+ALTER TABLE ACTIVITY
+RENAME COLUMN ACT_BENCHMARK_MIN TO ACT_BENCHMARK;
+
+ALTER TABLE ACTIVITY
+MODIFY ACT_BENCHMARK BOOLEAN;
+
+ALTER TABLE ACTIVITY
+ADD ACT_MEANS ENUM('exam_practice', 'textbook', 'ebook', 'article', 'book', 'guidebook', 'video', 'tutorial', 'interactive', 'audio', 'podcast', 'course', 'live_session', 'slide', 'handout', 'journal', 'manual');
+
+ALTER TABLE ACTIVITY
+ADD ACT_TOTAL_MEANS FLOAT;
+
+ALTER TABLE ACTIVITY
+ADD TOTAL_MEANS_UNIT ENUM('minutes', 'pages', 'words', 'items', 'sessions', 'modules', 'steps', 'questions', 'slides', 'tasks', 'points', 'percentage', 'stars', 'grade', 'level', 'rank', 'scale-10', 'scale-5', 'scale-9', 'yes-no', 'pass-fail', 'count');
