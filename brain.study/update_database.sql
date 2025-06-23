@@ -156,3 +156,14 @@ MODIFY KIT_ID INT NOT NULL AFTER ACTI_LOG_ID;
 
 ALTER TABLE ACTIVITY
 MODIFY KIT_ID INT NOT NULL AFTER ACTIVITY_CATEGORY;
+
+USE study;
+
+ALTER TABLE SEXUAL_LOG
+MODIFY SATISFACTION ENUM('very unsatisfied', 'unsatisfied', 'neutral', 'satisfied', 'very satisfied');
+
+USE study;
+
+
+ALTER TABLE SEXUAL_LOG
+MODIFY SEXLOG_SHOOT ENUM('none', 'very weak', 'weak', 'moderate', 'strong', 'explosive');

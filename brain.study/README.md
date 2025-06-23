@@ -122,7 +122,7 @@ erDiagram
         SEXLOG_TIME TIME PK
         SEXLOG_DURING ENUM
         PARTNERED BOOLEAN
-        SATISFACTION BOOLEAN
+        SATISFACTION ENUM
         SEXLOG_LOCATION ENUM
         SEXLOG_SHOOT ENUM
     }
@@ -270,9 +270,9 @@ erDiagram
 - SEXLOG_TIME
 - SEXLOG_DURING `short/medium/long`
 - PARTNERED `TRUA/FALSE`
-- SATISFACTION `TRUA/FALSE`
+- SATISFACTION `very unsatisfied/unsatisfied/neutral/satisfied/very satisfied`
 - SEXLOG_LOCATION `room/bedroom/bathroom/hotel/car/public place/living room/partner home/other`
-- SEXLOG_SHOOT `none/low/moderate/strong/explosive`
+- SEXLOG_SHOOT `none/very weak/weak/moderate/strong/explosive`
 
 ### SHOWER_LOG
 
