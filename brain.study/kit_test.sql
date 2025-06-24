@@ -105,3 +105,15 @@ USE study;
 ALTER TABLE KIT_ACADEMIC_READING
 RENAME COLUMN BOOK_LEVEL TO CONTENT_LEVEL
 
+-- RESEARCH WRITING
+
+USE study;
+
+CREATE TABLE KIT_RESEARCH_WRITING (
+    AO_ID INT NOT NULL,
+    AMOUNT_WRITTEN ENUM('tiny', 'short', 'moderate', 'substantial', 'intensive'),
+    ORIGINALITY ENUM('descriptive', 'emergent', 'creative', 'original_rigorous'),
+    STRUCTURE ENUM('fragmented', 'loose', 'mostly_structured', 'clear', 'excellent'),
+    PRIMARY KEY (AO_ID),
+    FOREIGN KEY (AO_ID) REFERENCES ACTIVITY_OUTPUT(AO_ID) ON DELETE CASCADE
+);

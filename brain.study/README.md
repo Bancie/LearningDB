@@ -170,6 +170,13 @@ erDiagram
        CONFIDENCE_LEVEL ENUM
     }
 
+    KIT_RESEARCH_WRITING {
+       AO_ID INT PK, FK
+       AMOUNT_WRITTEN ENUM
+       ORIGINALITY ENUM
+       STRUCTURE ENUM
+    }
+
     SEXUAL_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
@@ -481,3 +488,10 @@ erDiagram
 - TOPIC_HANDLING `off_topic/barely_on_topic/partially_developed/developed/insightful_response`
 - INTERACTIVE_COMMUNICATION `minimal/reluctant/adequate/responsive/engaging_and_natural`
 - CONFIDENCE_LEVEL `very_nervous/nervous/neutral/confident/very_confident`
+
+### KIT_RESEARCH_WRITING
+
+- AO_ID
+- AMOUNT_WRITTEN `tiny/short/moderate/substantial/intensive`
+- ORIGINALITY `descriptive/emergent/creative/original_rigorous`
+- STRUCTURE `fragmented/loose/mostly_structured/clear/excellent`
