@@ -74,8 +74,9 @@ erDiagram
         USER_ID INT FK
         ACTIVITY_ID INT FK
         DAY_ID INT FK
-        SOUND_ID INT FK
         ACTLOG_START TIME
+        SOUND_BACKGROUND SET
+        SOUND_INTENSITY ENUM
         DEVICE ENUM
         ACTLOG_LOCATION ENUM
         WEATHER ENUM
@@ -85,9 +86,6 @@ erDiagram
         ENERGY ENUM
         HUNGER ENUM
         AROUSAL ENUM
-        AQI INT
-        PM25 INT
-        HUMIDITY INT
         AC_ON BOOLEAN
         AC_TEMP FLOAT
     }
@@ -233,16 +231,6 @@ erDiagram
         EAT_FILL ENUM
     }
 
-    SOUND {
-        SOUND_ID INT PK
-        SOUND_CATEGORY ENUM
-        SOUND_SOURCE ENUM
-        SOUND_INTENSITY ENUM
-        GENRE_MUSIC ENUM
-        MUSIC_ORIGIN ENUM
-        NC_ON BOOLEAN
-    }
-
     USER ||--o{ ACTIVITY_LOG : has
     ACTIVITY ||--o{ ACTIVITY_LOG : has
     ACTIVITY_LOG ||--|| ACTIVITY_OUTPUT : has
@@ -254,7 +242,6 @@ erDiagram
     SHOWER_LOG o{--|| DAY : has
     EATING_LOG o{--|| USER : has
     EATING_LOG o{--|| DAY : has
-    ACTIVITY_LOG o{--|| SOUND : has
     SAMSUNG_PHONE_SCREEN o{--|| USER : has
     SAMSUNG_PHONE_SCREEN o{--|| DAY : has
     DAY ||--o{ SLEEP_LOG : has
@@ -311,21 +298,19 @@ erDiagram
 - ACTIVITY_ID
 - DAY_ID
 - ACTLOG_START
-- ACTLOG_FINISH
-- AC_ON `TRUA/FALSE`
-- AC_TEMP
+- SOUND_BACKGROUND `music/white_noise/ambient_noise/silence/podcast/construction/nature/headphones/earbuds/speakers/public/private_room`
+- SOUND_INTENSITY `silent/very_low/low/medium/high/very_high`
 - DEVICE `laptop/smartphone/book/tablet/other`
 - ACTLOG_LOCATION `home/library/cafe/school/work/traveling/park/gym/other`
 - WEATHER `stormy/rainy/cloudy/clear/sunny`
 - TEMPERATURE `cold/normal/hot`
-- AQI `check on ->` [IQAIR](https://www.iqair.com/vi/)
-- PM25 `check on ->` [IQAIR](https://www.iqair.com/vi/)
-- HUMIDITY `check on ->` [IQAIR](https://www.iqair.com/vi/)
 - MOOD `angry/frustrated/depressed/very_sad/sad/tired/neutral/content/happy/very_happy/excited`
 - HEALTH `poor/normal/good`
 - ENERGY `low/normal/high`
 - HUNGER `starving/very_hungry/hungry/satisfied/full`
 - AROUSAL `unresponsive (Not reacting at all)/low_alert (Very sluggish, hard to focus)/drowsy (Sleepy, but responsive)/focused (Generally attentive)/hyper_alert (Highly focused and energetic)`
+- AC_ON `TRUA/FALSE`
+- AC_TEMP
 
 ### ACTIVITY_OUTPUT
 

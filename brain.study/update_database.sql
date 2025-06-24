@@ -232,3 +232,46 @@ USE study;
 
 ALTER TABLE ACTIVITY_OUTPUT
 DROP COLUMN AO_DIFFICULTY;
+
+USE study;
+
+ALTER TABLE ACTIVITY_LOG
+DROP FOREIGN KEY ACTIVITY_LOG_ibfk_4;
+
+ALTER TABLE ACTIVITY_LOG
+DROP COLUMN SOUND_ID;
+
+DROP TABLE IF EXISTS `SOUND`;
+
+ALTER TABLE ACTIVITY_LOG
+ADD SOUND_BACKGROUND SET('music', 'white_noise', 'ambient_noise', 'silence', 'podcast', 'construction', 'nature', 'headphones', 'earbuds', 'speakers', 'public', 'private_room');
+
+ALTER TABLE ACTIVITY_LOG
+ADD SOUND_INTENSITY ENUM('silent', 'very_low', 'low', 'medium', 'high', 'very_high');
+
+USE study;
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY SOUND_BACKGROUND SET('music', 'white_noise', 'ambient_noise', 'silence', 'podcast', 'construction', 'nature', 'headphones', 'earbuds', 'speakers', 'public', 'private_room') AFTER ACTLOG_START;
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY SOUND_INTENSITY ENUM('silent', 'very_low', 'low', 'medium', 'high', 'very_high') AFTER SOUND_BACKGROUND;
+
+USE study;
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY AC_ON BOOLEAN;
+
+USE study;
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY AC_TEMP INT CHECK (AC_TEMP BETWEEN 16 AND 31);
+
+USE study;
+
+ALTER TABLE ACTIVITY_LOG
+DROP COLUMN AQI;
+ALTER TABLE ACTIVITY_LOG
+DROP COLUMN PM25;
+ALTER TABLE ACTIVITY_LOG
+DROP COLUMN HUMIDITY;
