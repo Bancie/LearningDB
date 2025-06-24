@@ -296,7 +296,7 @@ erDiagram
 - USER_ID
 - ACTIVITY_ID
 - DAY_ID
-- SOUND_BACKGROUND `category:music/category:white_noise/category:ambient_noise/category:silence/category:podcast/category:construction/category:nature/source:headphones/source:earbuds/source:speakers/source:public/source:private_room`
+- SOUND_BACKGROUND `category_music/category_white_noise/category_ambient_noise/category_silence/category_podcast/category_construction/category_nature/source_headphones/source_earbuds/source_speakers/source_public/source_private_room`
 - SOUND_INTENSITY `silent/very_low/low/medium/high/very_high`
 - DEVICE `laptop/smartphone/book/tablet/other`
 - ACTLOG_LOCATION `home/library/cafe/school/work/traveling/park/gym/other`
