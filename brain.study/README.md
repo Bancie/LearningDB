@@ -87,7 +87,6 @@ erDiagram
         HUNGER ENUM
         AROUSAL ENUM
         AC_ON BOOLEAN
-        AC_TEMP FLOAT
     }
 
     ACTIVITY_OUTPUT {
@@ -303,14 +302,13 @@ erDiagram
 - DEVICE `laptop/smartphone/book/tablet/other`
 - ACTLOG_LOCATION `home/library/cafe/school/work/traveling/park/gym/other`
 - WEATHER `stormy/rainy/cloudy/clear/sunny`
-- TEMPERATURE `cold/normal/hot`
+- TEMPERATURE `freezing/cold/cool/mild/warm/hot/very_hot/scorching`
 - MOOD `angry/frustrated/depressed/very_sad/sad/tired/neutral/content/happy/very_happy/excited`
 - HEALTH `poor/normal/good`
 - ENERGY `low/normal/high`
 - HUNGER `starving/very_hungry/hungry/satisfied/full`
 - AROUSAL `unresponsive (Not reacting at all)/low_alert (Very sluggish, hard to focus)/drowsy (Sleepy, but responsive)/focused (Generally attentive)/hyper_alert (Highly focused and energetic)`
 - AC_ON `TRUA/FALSE`
-- AC_TEMP
 
 ### ACTIVITY_OUTPUT
 
