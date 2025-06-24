@@ -177,6 +177,13 @@ erDiagram
        STRUCTURE ENUM
     }
 
+    KIT_EXERCISES {
+        AO_ID INT PK, FK
+        TOTAL_QUESTION INT
+        TRUE_TOTAL INT
+        TIME_FINISH ENUM
+    }
+
     SEXUAL_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
@@ -495,3 +502,10 @@ erDiagram
 - AMOUNT_WRITTEN `tiny/short/moderate/substantial/intensive`
 - ORIGINALITY `descriptive/emergent/creative/original_rigorous`
 - STRUCTURE `fragmented/loose/mostly_structured/clear/excellent`
+
+### KIT_EXERCISES
+
+- AO_ID
+- TOTAL_QUESTION
+- TRUE_TOTAL
+- TIME_FINISH `no_time_recorded/too_slow/a_bit_slow/on_time/fast_and_confident`

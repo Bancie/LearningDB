@@ -123,3 +123,15 @@ USE study;
 INSERT INTO `KIT_TESTS`(`KIT_TAB`)
 VALUES
 ('KIT_RESEARCH_WRITING');
+
+
+USE study;
+
+CREATE TABLE KIT_EXERCISES (
+    AO_ID INT NOT NULL,
+    TOTAL_QUESTION INT,
+    TRUE_TOTAL INT,
+    TIME_FINISH ENUM('no_time_recorded', 'too_slow', 'a_bit_slow', 'on_time', 'fast_and_confident'),
+    PRIMARY KEY (AO_ID),
+    FOREIGN KEY (AO_ID) REFERENCES ACTIVITY_OUTPUT(AO_ID) ON DELETE CASCADE
+);
