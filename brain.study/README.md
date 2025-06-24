@@ -22,10 +22,10 @@ erDiagram
     ACTIVITY {
         ACTIVITY_ID INT PK
         USER_ID INT FK
-        KIT_ID INT FK
-        ACTIVITY_CATEGORY ENUM
+        ACT_NAME NVARCHAR(100)
         ACTIVITY_TAGS ENUM
-        ACT_DES NVARCHAR(100)
+        ACTIVITY_CATEGORY ENUM
+        KIT_ID INT FK
     }
 
     DAY {
@@ -76,20 +76,20 @@ erDiagram
         DAY_ID INT FK
         SOUND_ID INT FK
         ACTLOG_START TIME
-        AC_ON BOOLEAN
-        AC_TEMP FLOAT
         DEVICE ENUM
         ACTLOG_LOCATION ENUM
         WEATHER ENUM
         TEMPERATURE FLOAT
-        AQI INT
-        PM25 INT
-        HUMIDITY INT
         MOOD ENUM
         HEALTH ENUM
         ENERGY ENUM
         HUNGER ENUM
         AROUSAL ENUM
+        AQI INT
+        PM25 INT
+        HUMIDITY INT
+        AC_ON BOOLEAN
+        AC_TEMP FLOAT
     }
 
     ACTIVITY_OUTPUT {
@@ -283,7 +283,7 @@ erDiagram
 - ACTIVITY_ID
 - USER_ID
 - KIT_ID INT FK
-- ACTIVITY_CATEGORY `academic/language/self-development/technical-vocational/creative arts/well-being & lifestyle`
+- ACTIVITY_CATEGORY `academic/language/self-development/technical_&_vocational/creative_arts/well-being_&_lifestyle`
 - ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
 - ACT_DES
 
@@ -314,11 +314,11 @@ erDiagram
 - AQI `check on ->` [IQAIR](https://www.iqair.com/vi/)
 - PM25 `check on ->` [IQAIR](https://www.iqair.com/vi/)
 - HUMIDITY `check on ->` [IQAIR](https://www.iqair.com/vi/)
-- MOOD `angry/frustrated/depressed/very sad/sad/tired/neutral/content/happy/very happy/excited`
+- MOOD `angry/frustrated/depressed/very_sad/sad/tired/neutral/content/happy/very_happy/excited`
 - HEALTH `poor/normal/good`
 - ENERGY `low/normal/high`
-- HUNGER `starving/very hungry/hungry/satisfied/full`
-- AROUSAL `unresponsive (Not reacting at all)/low alert (Very sluggish, hard to focus)/drowsy (Sleepy, but responsive)/focused (Generally attentive)/hyper alert (Highly focused and energetic)`
+- HUNGER `starving/very_hungry/hungry/satisfied/full`
+- AROUSAL `unresponsive (Not reacting at all)/low_alert (Very sluggish, hard to focus)/drowsy (Sleepy, but responsive)/focused (Generally attentive)/hyper_alert (Highly focused and energetic)`
 
 ### ACTIVITY_OUTPUT
 
@@ -327,7 +327,7 @@ erDiagram
 - AO_FINISH
 - BREAK_LEVEL `none/low/medium/high`
 - AO_SATISFACTION `unsatisfied/neutral/satisfied`
-- FOCUS_LEVEL `very low/low/medium/high/very high`
+- FOCUS_LEVEL `very_low/low/medium/high/very_high`
 - TARGET_MET `TRUE/FALSE`
 
 ### SEXUAL_LOG
@@ -366,9 +366,9 @@ erDiagram
 
 - SOUND_ID
 - SOUND_CATEGORY `music/white-noise (Machine-generated or filtered static sounds)/ambient-noise (Environmental sounds like rain, café noise, street)/silence/podcast/construction/nature (Sounds like birds, wind, ocean)/unknown (Any unlisted or unclear sound type)`
-- SOUND_SOURCE `headphones/earbuds/speakers/public (Sound from public environment e.g., café, library)/private room (Natural sound from your own space, e.g., bedroom)/unknown (You don’t remember or it’s unclear)`
-- SOUND_INTENSITY `very low/low/medium/high/very high`
-- GENRE_MUSIC `lo-fi/classical/jazz/pop/rock/edm/hip-hop/chill/ambient/instrumental/nature sounds/soundtrack/acoustic/random/other`
+- SOUND_SOURCE `headphones/earbuds/speakers/public (Sound from public environment e.g., café, library)/private_room (Natural sound from your own space, e.g., bedroom)/unknown (You don’t remember or it’s unclear)`
+- SOUND_INTENSITY `very_low/low/medium/high/very_high`
+- GENRE_MUSIC `lo-fi/classical/jazz/pop/rock/edm/hip-hop/chill/ambient/instrumental/nature_sounds/soundtrack/acoustic/random/other`
 - MUSIC_ORIGIN `us-uk/vpop/kpop/jpop/cpop/euro-pop/latin/indie/mixed/random/other`
 - NC_ON `TRUE/FALSE`
 
