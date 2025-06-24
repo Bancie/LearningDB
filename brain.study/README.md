@@ -21,6 +21,7 @@ erDiagram
 
     ACTIVITY {
         ACTIVITY_ID INT PK
+        USER_ID INT FK
         KIT_ID INT FK
         ACTIVITY_CATEGORY ENUM
         ACTIVITY_TAGS ENUM
@@ -97,7 +98,6 @@ erDiagram
         KIT_ID INT FK
         AO_FINISH TIME
         BREAK_LEVEL ENUM
-        AO_DIFFICULTY ENUM
         AO_SATISFACTION ENUM
         FOCUS_LEVEL ENUM
         TARGET_MET BOOLEAN
@@ -111,6 +111,7 @@ erDiagram
        MENTAL_FATIGUE ENUM
        READING_SPEED_FOR_PROOF ENUM
        READING_AMOUNT ENUM
+       CONTENT_LEVEL ENUM
     }
 
     KIT_IELTS_LISTENING {
@@ -273,6 +274,7 @@ erDiagram
 ### ACTIVITY
 
 - ACTIVITY_ID
+- USER_ID
 - KIT_ID INT FK
 - ACTIVITY_CATEGORY `academic/language/self-development/technical-vocational/creative arts/well-being & lifestyle`
 - ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
@@ -317,7 +319,6 @@ erDiagram
 - ACTI_LOG_ID
 - AO_FINISH
 - BREAK_LEVEL `none/low/medium/high`
-- AO_DIFFICULTY `effortless/very easy/easy/moderate/hard/very hard/overwhelming`
 - AO_SATISFACTION `unsatisfied/neutral/satisfied`
 - FOCUS_LEVEL `very low/low/medium/high/very high`
 - TARGET_MET `TRUE/FALSE`
@@ -423,6 +424,7 @@ erDiagram
 - MENTAL_FATIGUE `exhausted_quickly/tired_early/moderately_fatigued/sustained_attention/deep_focus_maintained`
 - READING_SPEED_FOR_PROOF `non-proof/extremely_slow/slow/average/fast/very_fast_with_understanding`
 - READING_AMOUNT `none/barely_any/light/moderate/substantial/intensive/extensive`
+- CONTENT_LEVEL `introductory/elementary/intermediate/advanced/expert`
 
 ### KIT_IELTS_LISTENING
 
