@@ -291,3 +291,11 @@ USE study;
 
 ALTER TABLE ACTIVITY_LOG
 MODIFY SOUND_BACKGROUND SET('category_music', 'category_white_noise', 'category_ambient_noise', 'category_silence', 'category_podcast', 'category_construction', 'category_nature', 'source_headphones', 'source_earbuds', 'source_speakers', 'source_public', 'source_private_room');
+
+USE study;
+
+ALTER TABLE ACTIVITY_OUTPUT
+RENAME COLUMN BREAK_LEVEL TO BREAK_TIME;
+
+ALTER TABLE ACTIVITY_OUTPUT
+MODIFY BREAK_TIME INT;

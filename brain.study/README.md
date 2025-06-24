@@ -94,7 +94,7 @@ erDiagram
         ACTI_LOG_ID INT FK
         KIT_ID INT FK
         AO_FINISH TIME
-        BREAK_LEVEL ENUM
+        BREAK_TIME INT
         AO_SATISFACTION ENUM
         FOCUS_LEVEL ENUM
         TARGET_MET BOOLEAN
@@ -315,7 +315,7 @@ erDiagram
 - AO_ID
 - ACTI_LOG_ID
 - AO_FINISH
-- BREAK_LEVEL `none/low/medium/high`
+- BREAK_TIME
 - AO_SATISFACTION `unsatisfied/neutral/satisfied`
 - FOCUS_LEVEL `very_low/low/medium/high/very_high`
 - TARGET_MET `TRUE/FALSE`
