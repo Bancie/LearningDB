@@ -275,3 +275,17 @@ ALTER TABLE ACTIVITY_LOG
 DROP COLUMN PM25;
 ALTER TABLE ACTIVITY_LOG
 DROP COLUMN HUMIDITY;
+
+USE study;
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY HUNGER ENUM('starving', 'extreme_hungry', 'very_hungry', 'slightly_hungry', 'satisfied', 'full', 'overstuffed');
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY ACTLOG_START TIME AFTER AC_ON;
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY ENERGY ENUM('exhausted', 'low', 'normal', 'high', 'bursting');
+
+ALTER TABLE ACTIVITY_LOG
+MODIFY SOUND_BACKGROUND ENUM('category:music', 'category:white_noise', 'category:ambient_noise', 'category:silence', 'category:podcast', 'category:construction', 'category:nature', 'source:headphones', 'source:earbuds', 'source:speakers', 'source:public', 'source:private_room');

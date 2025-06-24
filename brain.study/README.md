@@ -296,8 +296,7 @@ erDiagram
 - USER_ID
 - ACTIVITY_ID
 - DAY_ID
-- ACTLOG_START
-- SOUND_BACKGROUND `music/white_noise/ambient_noise/silence/podcast/construction/nature/headphones/earbuds/speakers/public/private_room`
+- SOUND_BACKGROUND `category:music/category:white_noise/category:ambient_noise/category:silence/category:podcast/category:construction/category:nature/source:headphones/source:earbuds/source:speakers/source:public/source:private_room`
 - SOUND_INTENSITY `silent/very_low/low/medium/high/very_high`
 - DEVICE `laptop/smartphone/book/tablet/other`
 - ACTLOG_LOCATION `home/library/cafe/school/work/traveling/park/gym/other`
@@ -305,10 +304,11 @@ erDiagram
 - TEMPERATURE `freezing/cold/cool/mild/warm/hot/very_hot/scorching`
 - MOOD `angry/frustrated/depressed/very_sad/sad/tired/neutral/content/happy/very_happy/excited`
 - HEALTH `poor/normal/good`
-- ENERGY `low/normal/high`
-- HUNGER `starving/very_hungry/hungry/satisfied/full`
+- ENERGY `exhausted/low/normal/high/bursting`
+- HUNGER `starving/extreme_hungry/very_hungry/slightly_hungry/satisfied/full/overstuffed`
 - AROUSAL `unresponsive (Not reacting at all)/low_alert (Very sluggish, hard to focus)/drowsy (Sleepy, but responsive)/focused (Generally attentive)/hyper_alert (Highly focused and energetic)`
 - AC_ON `TRUA/FALSE`
+- ACTLOG_START
 
 ### ACTIVITY_OUTPUT
 
