@@ -209,14 +209,6 @@ erDiagram
         FITNESS_INTENSITY ENUM
     }
 
-    COOKING {
-        USER_ID INT PK, FK
-        DAY_ID INT PK, FK
-        COOK_START TIME PK
-        COOK_TIME ENUM
-        DIFFICULTY ENUM
-    }
-
     EATING_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
@@ -245,8 +237,6 @@ erDiagram
     SAMSUNG_PHONE_SCREEN o{--|| DAY : has
     DAY ||--o{ SLEEP_LOG : has
     USER ||--o{ SLEEP_LOG : has
-    COOKING o{--|| USER : has
-    COOKING o{--|| DAY : has
     FITNESS o{--|| USER : has
     FITNESS o{--|| DAY : has
     ACTIVITY o{--|| KIT_TEST : has
@@ -403,14 +393,6 @@ erDiagram
 - FITNESS_TYPE `walking/running/cycling/swimming/yoga/stretching/strength_training/bodyweight_training/sports/aerobic_dance/hiking/other`
 - FITNESS_DURATION_MINUTES
 - FITNESS_INTENSITY `low/moderate/high`
-
-### COOKING
-
-- USER_ID
-- DAY_ID
-- COOK_START
-- COOK_TIME `short/medium/long`
-- COOK_DIFFICULTY `easy/medium/hard`
 
 ### KIT_ACADEMIC_READING
 
