@@ -299,3 +299,8 @@ RENAME COLUMN BREAK_LEVEL TO BREAK_TIME;
 
 ALTER TABLE ACTIVITY_OUTPUT
 MODIFY BREAK_TIME INT;
+
+USE study;
+
+ALTER TABLE ACTIVITY
+ADD ACT_STATUS ENUM('not_started', 'in_progress', 'paused', 'completed', 'skipped', 'cancelled');

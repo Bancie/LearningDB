@@ -26,6 +26,7 @@ erDiagram
         ACTIVITY_TAGS ENUM
         ACTIVITY_CATEGORY ENUM
         KIT_ID INT FK
+        ACT_STATUS ENUM
     }
 
     DAY {
@@ -269,6 +270,7 @@ erDiagram
 - ACTIVITY_CATEGORY `academic/language/self-development/technical_&_vocational/creative_arts/well-being_&_lifestyle`
 - ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
 - ACT_DES
+- ACT_STATUS `not_started/in_progress/paused/completed/closed/skipped/cancelled/failed`
 
 ### DAY
 
