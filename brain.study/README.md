@@ -110,6 +110,7 @@ erDiagram
        READING_SPEED_FOR_PROOF ENUM
        READING_AMOUNT ENUM
        CONTENT_LEVEL ENUM
+       SPEED_READ ENUM
     }
 
     KIT_IELTS_LISTENING {
@@ -308,7 +309,7 @@ erDiagram
 - ACTI_LOG_ID
 - AO_FINISH
 - BREAK_TIME
-- AO_SATISFACTION `unsatisfied/neutral/satisfied`
+- AO_SATISFACTION `very_unsatisfied/unsatisfied/neutral/satisfied/very_satisfied`
 - FOCUS_LEVEL `very_low/low/medium/high/very_high`
 - TARGET_MET `TRUE/FALSE`
 
@@ -406,6 +407,7 @@ erDiagram
 - READING_SPEED_FOR_PROOF `non-proof/extremely_slow/slow/average/fast/very_fast_with_understanding`
 - READING_AMOUNT `none/barely_any/light/moderate/substantial/intensive/extensive`
 - CONTENT_LEVEL `introductory/elementary/intermediate/advanced/expert`
+- SPEED_READ `extremely_slow/very_slow/slow/average/fast/very_fast/ultra_fast_memorized`
 
 ### KIT_IELTS_LISTENING
 

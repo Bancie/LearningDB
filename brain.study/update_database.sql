@@ -304,3 +304,8 @@ USE study;
 
 ALTER TABLE ACTIVITY
 ADD ACT_STATUS ENUM('not_started', 'in_progress', 'paused', 'completed', 'skipped', 'cancelled');
+
+USE study;
+
+ALTER TABLE KIT_ACADEMIC_READING
+MODIFY SPEED_READ ENUM('extremely_slow', 'very_slow', 'slow', 'average', 'fast', 'very_fast', 'ultra_fast');
