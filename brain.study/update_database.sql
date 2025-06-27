@@ -309,3 +309,8 @@ USE study;
 
 ALTER TABLE KIT_ACADEMIC_READING
 MODIFY SPEED_READ ENUM('extremely_slow', 'very_slow', 'slow', 'average', 'fast', 'very_fast', 'ultra_fast');
+
+USE study;
+
+ALTER TABLE KIT_EXERCISES
+MODIFY TIME_FINISH ENUM('no_time_recorded', 'too_slow', 'a_bit_slow', 'acceptable', 'a_bit_fast', 'fast_and_confident');

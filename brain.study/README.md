@@ -249,6 +249,8 @@ erDiagram
     ACTIVITY_OUTPUT ||--|| KIT_IELTS_WRITING_TASK1 : has
     ACTIVITY_OUTPUT ||--|| KIT_IELTS_WRITING_TASK2 : has
     ACTIVITY_OUTPUT ||--|| KIT_IELTS_SPEAKING : has
+    ACTIVITY_OUTPUT ||--|| KIT_EXERCISES : has
+    ACTIVITY_OUTPUT ||--|| KIT_RESEARCH_WRITING : has
 ```
 
 ## Define
@@ -477,4 +479,4 @@ erDiagram
 - AO_ID
 - TOTAL_QUESTION
 - TRUE_TOTAL
-- TIME_FINISH `no_time_recorded/too_slow/a_bit_slow/on_time/fast_and_confident`
+- TIME_FINISH `no_time_recorded/too_slow/a_bit_slow/acceptable/a_bit_fast/fast_and_confident`
