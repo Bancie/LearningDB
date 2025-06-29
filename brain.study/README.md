@@ -25,6 +25,7 @@ erDiagram
         ACT_NAME NVARCHAR(100)
         ACTIVITY_TAGS ENUM
         ACTIVITY_CATEGORY ENUM
+        IS_RESEARCH BOOLEAN
         KIT_ID INT FK
         ACT_STATUS ENUM
     }
@@ -42,17 +43,6 @@ erDiagram
         DAY_ID INT PK, FK
         SCREEN_TIME FLOAT
         SOCIAL FLOAT
-        PRODUCT_FIN FLOAT
-        AUDIO FLOAT
-        IMAGE FLOAT
-        MAP_TRAVEL FLOAT
-        VIDEO FLOAT
-        ACCESSIBILITY FLOAT
-        GAMES FLOAT
-        HEALTH_FIT FLOAT
-        NEWS_INF FLOAT
-        SHOPPING_FOOD FLOAT
-        OTHER_USAGE FLOAT
     }
 
     SLEEP_LOG {
@@ -269,10 +259,11 @@ erDiagram
 
 - ACTIVITY_ID
 - USER_ID
-- KIT_ID INT FK
-- ACTIVITY_CATEGORY `academic/language/self-development/technical_&_vocational/creative_arts/well-being_&_lifestyle`
+- ACT_NAME
 - ACTIVITY_TAGS `mental (Studying, reading, problem-solving)/productive (Work tasks, planning, organizing)/physical (Any bodily movement: exercise, walking, sex)/emotional (Journaling, meditating)/social (Chatting, meeting friends, calling someone)/entertainment (Watching videos, gaming, browsing social media)/other`
-- ACT_DES
+- ACTIVITY_CATEGORY `academic/language/self-development/technical_&_vocational/creative_arts/well-being_&_lifestyle`
+- IS_RESEARCH `TRUE/FALSE`
+- KIT_ID
 - ACT_STATUS `not_started/in_progress/paused/completed/closed/skipped/cancelled/failed`
 
 ### DAY
@@ -378,17 +369,6 @@ erDiagram
 - DAY_ID
 - SCREEN_TIME
 - SOCIAL
-- PRODUCT_FIN
-- AUDIO
-- IMAGE
-- MAP_TRAVEL
-- VIDEO
-- ACCESSIBILITY
-- GAMES
-- HEALTH_FIT
-- NEWS_INF
-- SHOPPING_FOOD
-- OTHER_USAGE 
 
 ### FITNESS
 
