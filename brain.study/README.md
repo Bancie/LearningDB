@@ -173,6 +173,12 @@ erDiagram
         TIME_FINISH ENUM
     }
 
+    KIT_COUNT {
+        AO_ID INT PK, FK
+        TOTAL_COUNT FLOAT
+        UNIT_COUNT ENUM
+    }
+
     SEXUAL_LOG {
         USER_ID INT PK, FK
         DAY_ID INT PK, FK
@@ -460,3 +466,9 @@ erDiagram
 - TOTAL_QUESTION
 - TRUE_TOTAL
 - TIME_FINISH `no_time_recorded/too_slow/a_bit_slow/acceptable/a_bit_fast/fast_and_confident`
+
+### KIT_COUNT
+
+- AO_ID
+- TOTAL_COUNT
+- UNIT_COUNT `points/percentage/stars/grade/level/second/minutes/hours/rank/scale-10/scale-5/boolean/count/words/tasks/steps/calories/bpm/score_band/xp/coins/none`

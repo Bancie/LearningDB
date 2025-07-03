@@ -135,3 +135,14 @@ CREATE TABLE KIT_EXERCISES (
     PRIMARY KEY (AO_ID),
     FOREIGN KEY (AO_ID) REFERENCES ACTIVITY_OUTPUT(AO_ID) ON DELETE CASCADE
 );
+
+
+USE study;
+
+CREATE TABLE KIT_COUNT (
+    AO_ID INT NOT NULL,
+    TOTAL_COUNT FLOAT,
+    UNIT_COUNT ENUM('points', 'percentage', 'stars', 'grade', 'level', 'second', 'minutes', 'hours', 'rank', 'scale-10', 'scale-5', 'boolean', 'count', 'words', 'tasks', 'steps', 'calories', 'bpm', 'score_band', 'xp', 'coins', 'none'),
+    PRIMARY KEY (AO_ID),
+    FOREIGN KEY (AO_ID) REFERENCES ACTIVITY_OUTPUT(AO_ID) ON DELETE CASCADE
+);
