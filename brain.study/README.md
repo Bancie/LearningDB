@@ -14,11 +14,6 @@ erDiagram
         USER_LOCATION NVARCHAR(100)
     }
     
-    KIT_TEST {
-        KIT_ID INT PK
-        KIT_TAB VARCHAR(100)
-    }
-
     ACTIVITY {
         ACTIVITY_ID INT PK
         USER_ID INT FK
@@ -26,7 +21,6 @@ erDiagram
         ACTIVITY_TAGS ENUM
         ACTIVITY_CATEGORY ENUM
         IS_RESEARCH BOOLEAN
-        KIT_ID INT FK
         ACT_STATUS ENUM
     }
 
@@ -83,7 +77,6 @@ erDiagram
     ACTIVITY_OUTPUT {
         AO_ID INT PK
         ACTI_LOG_ID INT FK
-        KIT_ID INT FK
         AO_FINISH TIME
         BREAK_TIME INT
         AO_SATISFACTION ENUM
@@ -237,8 +230,6 @@ erDiagram
     USER ||--o{ SLEEP_LOG : has
     FITNESS o{--|| USER : has
     FITNESS o{--|| DAY : has
-    ACTIVITY o{--|| KIT_TEST : has
-    ACTIVITY_OUTPUT o{--|| KIT_TEST : has
     ACTIVITY_OUTPUT ||--|| KIT_ACADEMIC_READING : has
     ACTIVITY_OUTPUT ||--|| KIT_IELTS_LISTENING : has
     ACTIVITY_OUTPUT ||--|| KIT_IELTS_READING : has
