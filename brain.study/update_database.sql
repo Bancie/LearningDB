@@ -314,3 +314,13 @@ USE study;
 
 ALTER TABLE KIT_EXERCISES
 MODIFY TIME_FINISH ENUM('no_time_recorded', 'too_slow', 'a_bit_slow', 'acceptable', 'a_bit_fast', 'fast_and_confident');
+
+USE study;
+
+ALTER TABLE ACTIVITY
+DROP FOREIGN KEY ACTIVITY_ibfk_2;
+
+ALTER TABLE ACTIVITY_OUTPUT
+DROP FOREIGN KEY ACTIVITY_OUTPUT_ibfk_2;
+
+DROP TABLE IF EXISTS KIT_TESTS;

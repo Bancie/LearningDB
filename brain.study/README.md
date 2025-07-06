@@ -247,6 +247,8 @@ erDiagram
     ACTIVITY_OUTPUT ||--|| KIT_IELTS_SPEAKING : has
     ACTIVITY_OUTPUT ||--|| KIT_EXERCISES : has
     ACTIVITY_OUTPUT ||--|| KIT_RESEARCH_WRITING : has
+    ACTIVITY_OUTPUT ||--|| KIT_COUNT : has
+    USER ||--o{ ACTIVITY : has
 ```
 
 ## Define
