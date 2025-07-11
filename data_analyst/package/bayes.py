@@ -43,3 +43,16 @@ def update_posterior_prob(activity_id, column_choice, prob):
             """),
             {"prob": prob, "aid": activity_id}
         )
+
+def update_zero():
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                UPDATE `ACTIVITY`
+                SET `PRIOR_PROB` = 0,
+                    `POSTERIOR_PROB_LEARNING` = 0,
+                    `POSTERIOR_PROB_OVERVIEW` = 0,
+                    `POSTERIOR_PROB_PRACTICE` = 0
+                WHERE `ACT_STATUS` NOT LIKE 'in_progress'
+            """)
+        )
