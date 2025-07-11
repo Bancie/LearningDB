@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, select, func, Table, MetaData
+import pandas as pd
 
 load_dotenv()
 
@@ -56,3 +57,18 @@ def update_zero():
                 WHERE `ACT_STATUS` NOT LIKE 'in_progress'
             """)
         )
+
+def check_prior():
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    activity = metadata.tables['ACTIVITY']
+
+    stmt = select(func.sum(activity.c.PRIOR_PROB))
+
+    with engine.connect() as conn:
+        total = conn.execute(stmt).scalar()
+
+    if round(total or 0, 4) == 1.0:
+        print("OK")
+    else:
+        print("Error! Sum =", total)
