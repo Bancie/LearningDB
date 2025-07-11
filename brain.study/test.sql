@@ -1,5 +1,3 @@
 USE study;
 
-SELECT * FROM `DAY`;
-
-SELECT * FROM `SAMSUNG_PHONE_SCREEN`;
+SELECT * FROM bayes_act;
