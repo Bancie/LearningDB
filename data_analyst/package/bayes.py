@@ -72,3 +72,31 @@ def check_prior():
         print("OK")
     else:
         print("Error! Sum =", total)
+        
+def run_bayes(total_minute):
+    query = text(f"""
+        SELECT ACT_NAME, PRIOR_PROB, 
+               POSTERIOR_PROB_LEARNING, 
+               POSTERIOR_PROB_OVERVIEW, 
+               POSTERIOR_PROB_PRACTICE
+        FROM bayes_act
+    """)
+
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn)
+
+    evidence_cols = [
+        'POSTERIOR_PROB_LEARNING',
+        'POSTERIOR_PROB_OVERVIEW',
+        'POSTERIOR_PROB_PRACTICE'
+    ]
+
+    result = pd.DataFrame()
+    result['ACT_NAME'] = df['ACT_NAME']
+
+    for col in evidence_cols:
+        weighted = df[col] * df['PRIOR_PROB']
+        total = weighted.sum()
+        result[f'{col.split("_")[-1].capitalize()}'] = (weighted / total) * total_minute
+
+    return result
