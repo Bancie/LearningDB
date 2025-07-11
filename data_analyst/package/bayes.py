@@ -34,13 +34,12 @@ def update_posterior_prob(activity_id, column_choice, prob):
     if column_name is None:
         raise ValueError("Invalid column choice. Use 1 for LEARNING, 2 for OVERVIEW, 3 for PRACTICE.")
 
-    with engine.connect() as conn:
+    with engine.begin() as conn:
         conn.execute(
             text(f"""
                 UPDATE `ACTIVITY`
-                SET {column_name} = :p
-                WHERE `ACTIVITY_ID`= :aid AND `ACT_STATUS`='in_progress'
+                SET {column_name} = :prob
+                WHERE `ACTIVITY_ID` = :aid AND `ACT_STATUS` = 'in_progress'
             """),
             {"prob": prob, "aid": activity_id}
         )
-        conn.commit()
