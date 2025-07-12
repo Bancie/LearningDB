@@ -13,6 +13,9 @@ dbname = os.getenv("DB_NAME")
 engine = create_engine(f"mysql+mysqlconnector://{user}:{password}@{host}/{dbname}", connect_args={'init_command': 'SET time_zone="+07:00"'})
 
 def update_prior_prob(activity_id, prob):
+    """
+    Update the prior probability for a specific activity.
+    """
     with engine.connect() as conn:
         conn.execute(
             text(f"""
@@ -25,6 +28,9 @@ def update_prior_prob(activity_id, prob):
         conn.commit()
 
 def update_posterior_prob(activity_id, column_choice, prob):
+    """"
+    Update the posterior probability for a specific activity and column choice.
+    """
     column_map = {
         1: "POSTERIOR_PROB_LEARNING",
         2: "POSTERIOR_PROB_OVERVIEW",
@@ -46,6 +52,9 @@ def update_posterior_prob(activity_id, column_choice, prob):
         )
 
 def update_zero():
+    """
+    Set all prior and posterior probabilities to zero for activities not in progress.
+    """
     with engine.begin() as conn:
         conn.execute(
             text("""
@@ -59,6 +68,10 @@ def update_zero():
         )
 
 def check_prior():
+    """
+    Check if the sum of prior probabilities equals 1.0.
+    If not, print an error message with the total.
+    """
     metadata = MetaData()
     metadata.reflect(bind=engine)
     activity = metadata.tables['ACTIVITY']
@@ -74,6 +87,12 @@ def check_prior():
         print("Error! Sum =", total)
 
 def run_bayes(total_minute=None):
+    """
+    Run the Bayesian analysis to calculate the probabilities for each activity.
+    Returns a DataFrame with the results.
+    If total_minute is provided, it scales the probabilities accordingly.
+    If total_minute is None, it defaults to a scale of 1.
+    """
     query = text("""
         SELECT ACT_NAME, PRIOR_PROB, 
                POSTERIOR_PROB_LEARNING, 
