@@ -72,9 +72,9 @@ def check_prior():
         print("OK")
     else:
         print("Error! Sum =", total)
-        
-def run_bayes(total_minute):
-    query = text(f"""
+
+def run_bayes(total_minute=None):
+    query = text("""
         SELECT ACT_NAME, PRIOR_PROB, 
                POSTERIOR_PROB_LEARNING, 
                POSTERIOR_PROB_OVERVIEW, 
@@ -85,18 +85,19 @@ def run_bayes(total_minute):
     with engine.connect() as conn:
         df = pd.read_sql(query, conn)
 
-    evidence_cols = [
-        'POSTERIOR_PROB_LEARNING',
-        'POSTERIOR_PROB_OVERVIEW',
-        'POSTERIOR_PROB_PRACTICE'
-    ]
+    df['PRIOR_PROB'] = df['PRIOR_PROB'] / df['PRIOR_PROB'].sum()
 
+    posterior_cols = ['POSTERIOR_PROB_LEARNING', 'POSTERIOR_PROB_OVERVIEW', 'POSTERIOR_PROB_PRACTICE']
+    row_sum = df[posterior_cols].sum(axis=1).replace(0, 1)
+    df['Learn_ratio'] = df['POSTERIOR_PROB_LEARNING'] / row_sum
+    df['Overview_ratio'] = df['POSTERIOR_PROB_OVERVIEW'] / row_sum
+    df['Practice_ratio'] = df['POSTERIOR_PROB_PRACTICE'] / row_sum
+
+    scale = total_minute if total_minute is not None else 1
     result = pd.DataFrame()
     result['ACT_NAME'] = df['ACT_NAME']
-
-    for col in evidence_cols:
-        weighted = df[col] * df['PRIOR_PROB']
-        total = weighted.sum()
-        result[f'{col.split("_")[-1].capitalize()}'] = (weighted / total) * total_minute
+    result['Learning'] = df['PRIOR_PROB'] * df['Learn_ratio'] * scale
+    result['Overview'] = df['PRIOR_PROB'] * df['Overview_ratio'] * scale
+    result['Practice'] = df['PRIOR_PROB'] * df['Practice_ratio'] * scale
 
     return result
