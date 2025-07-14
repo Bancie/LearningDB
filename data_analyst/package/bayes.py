@@ -123,3 +123,17 @@ def run_bayes(total_minute=None):
 
     return result
 
+def update_status(activity_id, status):
+    ALLOWED_STATUSES = {'not_started','in_progress','paused','completed','skipped','cancelled'}
+    if status not in ALLOWED_STATUSES:
+        raise ValueError(f"Invalid status: '{status}'. Allowed values are: {ALLOWED_STATUSES}")
+
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                UPDATE `ACTIVITY`
+                SET `ACT_STATUS` = :status
+                WHERE `ACTIVITY_ID` = :aid
+            """),
+            {"status": status, "aid": activity_id}
+        )
