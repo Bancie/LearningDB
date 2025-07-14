@@ -94,7 +94,7 @@ def run_bayes(total_minute=None):
     If total_minute is None, it defaults to a scale of 1.
     """
     query = text("""
-        SELECT ACT_NAME, PRIOR_PROB, 
+        SELECT ACTIVITY_ID, ACT_NAME, PRIOR_PROB, 
                POSTERIOR_PROB_LEARNING, 
                POSTERIOR_PROB_OVERVIEW, 
                POSTERIOR_PROB_PRACTICE
@@ -114,9 +114,12 @@ def run_bayes(total_minute=None):
 
     scale = total_minute if total_minute is not None else 1
     result = pd.DataFrame()
+    result['ACTIVITY_ID'] = df['ACTIVITY_ID']
     result['ACT_NAME'] = df['ACT_NAME']
+    result['Total'] = df['PRIOR_PROB'] * scale
     result['Learning'] = df['PRIOR_PROB'] * df['Learn_ratio'] * scale
     result['Overview'] = df['PRIOR_PROB'] * df['Overview_ratio'] * scale
     result['Practice'] = df['PRIOR_PROB'] * df['Practice_ratio'] * scale
 
     return result
+
