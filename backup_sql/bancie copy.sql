@@ -1,5 +1,11 @@
 USE bancie;
 
+DROP DATABASE IF EXISTS bancie;
+
+CREATE DATABASE bancie;
+
+USE bancie;
+
 CREATE TABLE `USERS` (
   `USER_ID` INT NOT NULL AUTO_INCREMENT,
   `FULLNAME` VARCHAR(100) NOT NULL,
@@ -14,6 +20,7 @@ CREATE TABLE `SLEEP_LOG` (
   `USER_ID` INT NOT NULL,
   `SLEEP_START` DATETIME NOT NULL,
   `SLEEP_END` DATETIME,
+  `SLEEP_ALONE` TINYINT(1),
   `SLEEP_TYPE` ENUM(
     'night',
     'nap',
@@ -434,8 +441,17 @@ CREATE TABLE `ACTIVITY_LOG` (
 CREATE TABLE `ACTIVITY_OUTPUT` (
   `AO_ID` INT NOT NULL AUTO_INCREMENT,
   `ACTI_LOG_ID` INT NOT NULL,
-  `AO_FINISH` TIME,
+  `AO_FINISH` DATETIME,
   `BREAK_TIME` INT,
+  `MENTAL_IN_BREAK` ENUM(
+    'very_chaotic',
+    'chaotic',
+    'slightly_chaotic',
+    'neutral',
+    'slightly_calm',
+    'calm',
+    'very_calm'
+  ),
   `AO_SATISFACTION` ENUM(
     'very_unsatisfied',
     'unsatisfied',
@@ -472,7 +488,7 @@ CREATE TABLE `KIT_ACADEMIC_READING` (
     'deep_and_connected_insight'
   ),
   `PROOF_TRACE_ABILITY` ENUM(
-    'non-proof',
+    'non_proof',
     'lost_immediately',
     'followed_some_steps',
     'mostly_followed',
@@ -494,37 +510,19 @@ CREATE TABLE `KIT_ACADEMIC_READING` (
     'deep_focus_maintained'
   ),
   `READING_SPEED_FOR_PROOF` ENUM(
-    'non-proof',
+    'non_proof',
     'extremely_slow',
     'slow',
     'average',
     'fast',
     'very_fast_with_understanding'
   ),
-  `READING_AMOUNT` ENUM(
-    'none',
-    'barely_any',
-    'light',
-    'moderate',
-    'substantial',
-    'intensive',
-    'extensive'
-  ),
   `CONTENT_LEVEL` ENUM(
-    'introductory',
-    'elementary',
-    'intermediate',
-    'advanced',
-    'expert'
-  ),
-  `SPEED_READ` ENUM(
-    'extremely_slow',
-    'very_slow',
-    'slow',
-    'average',
-    'fast',
-    'very_fast',
-    'ultra_fast'
+    'very_easy',
+    'easy',
+    'moderate',
+    'hard',
+    'very_hard'
   ),
   PRIMARY KEY (`KIT_ACADEMIC_READING_ID`),
   KEY `AO_ID` (`AO_ID`),
@@ -561,7 +559,16 @@ CREATE TABLE `KIT_COUNT` (
     'score_band',
     'xp',
     'coins',
-    'none'
+    'none',
+    'pages',
+    'problems',
+    'questions',
+    'exercises',
+    'problems_solved',
+    'questions_answered',
+    'exercises_completed',
+    'tasks_completed',
+    'items_collected'
   ),
   PRIMARY KEY (`KIT_COUNT_ID`),
   KEY `AO_ID` (`AO_ID`),
@@ -930,3 +937,54 @@ CREATE TABLE `KIT_RESEARCH_WRITING` (
     ON DELETE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4;
+
+create view `bayes_act` as
+select `USER_ID`, `ACTIVITY_ID`, `ACT_NAME`, `PRIOR_PROB`, `POSTERIOR_PROB_LEARNING`, `POSTERIOR_PROB_OVERVIEW`, `POSTERIOR_PROB_PRACTICE`
+from `ACTIVITY`
+where `ACT_STATUS`='not_started';
+
+create view `minutes_per_day_second_ver` as
+select DATE(`ACTLOG_START`) as `DAY`, sum(timestampdiff(minute, `ACTLOG_START`, `AO_FINISH`)) as `minutes`
+from `ACTIVITY_LOG`
+natural join `ACTIVITY_OUTPUT`
+group by `DAY`;
+
+create view `current_activity_log` as
+select `USER_ID`, `ACTIVITY_ID`, `ACTI_LOG_ID`, `ACT_NAME`, TIME(`ACTLOG_START`) as `START_TIME`
+from `ACTIVITY_LOG`
+natural join `ACTIVITY`
+where DATE(`ACTLOG_START`)=curdate();
+
+create view `current_activity_output` as
+select `USER_ID`, `AO_ID`, `ACT_NAME`, `START_TIME`, TIME(`AO_FINISH`) as `FINISH_TIME`
+from `ACTIVITY_OUTPUT`
+natural join `current_activity_log`;
+
+insert into `USERS`(`FULLNAME`,`BIRTH`,`GENDER`,`MAJOR`,`USER_LOCATION`)
+values ('Nguyễn Chí Bằng','2003-09-03','male','student','district 5, Ho Chi Minh city');
+
+insert into `ACTIVITY`(`USER_ID`,`ACT_NAME`,`ACTIVITY_TAGS`,`ACTIVITY_CATEGORY`,`IS_RESEARCH`,`ACT_STATUS`,`PRIOR_PROB`,`POSTERIOR_PROB_LEARNING`,`POSTERIOR_PROB_OVERVIEW`,`POSTERIOR_PROB_PRACTICE`)
+values
+(1,'Statistics for Business & Economics','mental','academic',0,'not_started',0,0,0,0),
+(1,'[RESEARCH] Location-Scheduling Problem','productive','academic',1,'not_started',0,0,0,0),
+(1,'Tư tưởng Hồ Chí Minh','social','academic',0,'not_started',0,0,0,0),
+(1,'Lịch sử Đảng','social','academic',0,'not_started',0,0,0,0),
+(1,'THE KEY TO IELTS SUCCESS - Pauline Cullen','productive','language',0,'not_started',0,0,0,0),
+(1,'[CAM] GRAMMAR FOR IELTS WITH ANSWERS','productive','language',0,'not_started',0,0,0,0),
+(1,'[CAM] VOCABULARY FOR IELTS','productive','language',0,'not_started',0,0,0,0),
+(1,'[CAM] ENGLISH COLLOCATIONS IN USE','productive','language',0,'not_started',0,0,0,0),
+(1,'[OXFORD] Phrasal Verbs and Idioms','productive','language',0,'not_started',0,0,0,0),
+(1,'Software Engineering - Ian Sommerville','mental','technical_&_vocational',0,'not_started',0,0,0,0),
+(1,'Android Programming: The Big Nerd Ranch Guide - Bryan Sills, Brian Gardner, Kristin Marsicano and Chris Stewart','mental','technical_&_vocational',0,'not_started',0,0,0,0),
+(1,'Artificial Intelligence: A Modern Approach - Stuart Russell','mental','academic',0,'not_started',0,0,0,0),
+(1,'DATA CLUSTERING - Charu C. Aggarwal','mental','academic',0,'not_started',0,0,0,0),
+(1,'DATABASE MANAGEMENT SYSTEMS - Raghu Ramakrishnan','mental','technical_&_vocational',0,'not_started',0,0,0,0),
+(1,'INTRODUCTION TO MODERN CRYPTOGRAPHY','mental','technical_&_vocational',0,'not_started',0,0,0,0),
+(1,'PROJECT MANAGEMENT - HAROLD KERZNER','mental','technical_&_vocational',0,'not_started',0,0,0,0),
+(1,'INTER IELTS VIDEOS','productive','language',0,'not_started',0,0,0,0),
+(1,'[PROGRAMIZ] Data Structures and Algorithms','mental','technical_&_vocational',0,'not_started',0,0,0,0),
+(1,'[IELTS 18] LISTENING','productive','language',0,'not_started',0,0,0,0),
+(1,'[IELTS 18] READING','productive','language',0,'not_started',0,0,0,0),
+(1,'[IELTS 18] WRITING TASK 1','productive','language',0,'not_started',0,0,0,0),
+(1,'[TiLearn] Personal Project Development','productive','technical_&_vocational',1,'not_started',0,0,0,0),
+(1,'[IELTS 18] WRITING TASK 2','productive','language',0,'not_started',0,0,0,0);
