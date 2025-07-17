@@ -5,13 +5,13 @@
                 "authProtocol": "default",
                 "enableSsl": "Disabled"
             },
-            "previewLimit": 50,
+            "previewLimit": 100,
             "server": "localhost",
             "port": 3306,
             "driver": "MySQL",
-            "name": "brain",
+            "name": "bancie",
             "username": "root",
-            "database": "mysql"
+            "database": "bancie"
         }
     ]
 }
