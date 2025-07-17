@@ -1,0 +1,5 @@
+   ACTIVITY_ID                                   ACT_NAME  Total  Learning  Overview  Practice
+0            1        Statistics for Business & Economics   48.0       0.0      48.0       0.0
+1            2     [RESEARCH] Location-Scheduling Problem   72.0       0.0      72.0       0.0
+2            5  THE KEY TO IELTS SUCCESS - Pauline Cullen   72.0      72.0       0.0       0.0
+3           11     Software Engineering - Ian Sommerville   48.0      48.0       0.0       0.0
