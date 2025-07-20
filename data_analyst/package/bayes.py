@@ -140,10 +140,10 @@ def update_status(activity_id, status):
 
 def get_view(user_id):
     query = text("""
-        SELECT `ACTIVITY_ID`, `ACT_NAME`, `PRIOR_PROB`,
-               `POSTERIOR_PROB_LEARNING`,
-               `POSTERIOR_PROB_OVERVIEW`,
-               `POSTERIOR_PROB_PRACTICE`
+        SELECT `ACTIVITY_ID`, `ACT_NAME`, `PRIOR_PROB` as Total,
+               `POSTERIOR_PROB_LEARNING` as Learning,
+               `POSTERIOR_PROB_OVERVIEW` as Overview,
+               `POSTERIOR_PROB_PRACTICE` as Practice
         FROM `bayes_act`
         WHERE `USER_ID` = :user_id
     """)
@@ -152,3 +152,8 @@ def get_view(user_id):
         df = pd.read_sql(query, conn, params={"user_id": user_id})
 
     return df
+
+def run_file(time_input):
+    file_path = os.path.expanduser("~/Documents/LearningDB/study.txt")
+    with open(file_path, "w") as f:
+        f.write(str(run_bayes(time_input)))
