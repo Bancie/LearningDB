@@ -137,3 +137,18 @@ def update_status(activity_id, status):
             """),
             {"status": status, "aid": activity_id}
         )
+
+def get_view(user_id):
+    query = text("""
+        SELECT `ACTIVITY_ID`, `ACT_NAME`, `PRIOR_PROB`,
+               `POSTERIOR_PROB_LEARNING`,
+               `POSTERIOR_PROB_OVERVIEW`,
+               `POSTERIOR_PROB_PRACTICE`
+        FROM `bayes_act`
+        WHERE `USER_ID` = :user_id
+    """)
+
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn, params={"user_id": user_id})
+
+    return df
