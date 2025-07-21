@@ -113,13 +113,26 @@ def run_bayes(total_minute=None):
     df['Practice_ratio'] = df['POSTERIOR_PROB_PRACTICE'] / row_sum
 
     scale = total_minute if total_minute is not None else 1
-    result = pd.DataFrame()
-    result['ACTIVITY_ID'] = df['ACTIVITY_ID']
-    result['ACT_NAME'] = df['ACT_NAME']
-    result['Total'] = df['PRIOR_PROB'] * scale
-    result['Learning'] = df['PRIOR_PROB'] * df['Learn_ratio'] * scale
-    result['Overview'] = df['PRIOR_PROB'] * df['Overview_ratio'] * scale
-    result['Practice'] = df['PRIOR_PROB'] * df['Practice_ratio'] * scale
+    # result = pd.DataFrame()
+    # result['ACTIVITY_ID'] = df['ACTIVITY_ID']
+    # result['ACT_NAME'] = df['ACT_NAME']
+    # result['Total'] = df['PRIOR_PROB'] * scale
+    # result['Learning'] = df['PRIOR_PROB'] * df['Learn_ratio'] * scale
+    # result['Overview'] = df['PRIOR_PROB'] * df['Overview_ratio'] * scale
+    # result['Practice'] = df['PRIOR_PROB'] * df['Practice_ratio'] * scale
+
+    # return result
+    result = pd.DataFrame({
+        'ACTIVITY_ID': df['ACTIVITY_ID'],
+        'ACT_NAME':    df['ACT_NAME'],
+        'Total':       df['PRIOR_PROB'] * scale,
+        'Learning':    df['PRIOR_PROB'] * df['Learn_ratio'] * scale,
+        'Overview':    df['PRIOR_PROB'] * df['Overview_ratio'] * scale,
+        'Practice':    df['PRIOR_PROB'] * df['Practice_ratio'] * scale,
+    })
+
+    # 6) Round all numeric columns to 2 decimal places
+    result.iloc[:, 2:] = result.iloc[:, 2:].round(2)
 
     return result
 

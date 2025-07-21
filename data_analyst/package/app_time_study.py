@@ -21,6 +21,13 @@ class BayesApp(tk.Tk):
         self.title("Bayesian Activity Scheduler")
         self.geometry("900x620")
 
+        # map human-readable labels → posterior column IDs
+        self.posterior_map = {
+            "Learning":  1,
+            "Overview":  2,
+            "Practice":  3,
+        }
+
         notebook = ttk.Notebook(self)
         notebook.pack(fill="both", expand=True)
 
@@ -105,9 +112,11 @@ class BayesApp(tk.Tk):
 
         # Posterior probability
         ttk.Label(frame, text="Posterior Type:").grid(row=2, column=0, pady=5, sticky="e")
-        self.post_type = ttk.Combobox(frame, values=[
-            "1: Learning", "2: Overview", "3: Practice"
-        ], state="readonly")
+        self.post_type = ttk.Combobox(
+            frame,
+            values=list(self.posterior_map.keys()),
+            state="readonly"
+        )
         self.post_type.grid(row=2, column=1, pady=5, sticky="w")
         ttk.Label(frame, text="New Value:").grid(row=3, column=0, pady=5, sticky="e")
         self.post_entry = ttk.Entry(frame)
@@ -148,12 +157,16 @@ class BayesApp(tk.Tk):
 
     def _update_posterior(self):
         aid = self.act_cb.get()
-        choice = self.post_type.get().split(":",1)[0]
+        choice = self.post_type.get()            # e.g. "Overview"
         try:
-            col_choice = int(choice)
+            col_choice = self.posterior_map[choice]  # → 2
             p = float(self.post_entry.get())
             bayes_db.update_posterior_prob(aid, col_choice, p)
-            messagebox.showinfo("Success", f"Posterior #{col_choice} for '{aid}' set to {p}")
+            messagebox.showinfo("Success",
+                f"Posterior #{col_choice} for '{aid}' set to {p}")
+        except KeyError:
+            messagebox.showwarning("Input error",
+                "Please select a posterior type.")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
