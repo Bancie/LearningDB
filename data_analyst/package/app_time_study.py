@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import tkinter as tk
 from tkinter import ttk, messagebox
 import pandas as pd
+import io
 
 import bayes as bayes_db  # this is your bayes.py
 
@@ -73,6 +74,19 @@ class BayesApp(tk.Tk):
                 row.Overview, row.Practice
             ))
 
+    def _check_prior(self):
+        """Run bayes_db.check_prior() and show its output."""
+        buf = io.StringIO()
+        old_stdout = sys.stdout
+        try:
+            sys.stdout = buf
+            bayes_db.check_prior()
+        finally:
+            sys.stdout = old_stdout
+
+        result = buf.getvalue().strip()
+        messagebox.showinfo("Prior Check", result)
+
     def _build_update_tab(self, frame):
         # fetch activity IDs straight from the ACTIVITY table:
         # (you can pass "in_progress" if you only want those)
@@ -112,6 +126,11 @@ class BayesApp(tk.Tk):
         # Zero-out button
         ttk.Button(frame, text="Zero Out Others", command=self._zero_out).grid(
             row=5, column=1, pady=20, sticky="w"
+        )
+        
+        # Check prior-sum button
+        ttk.Button(frame, text="Check Prior Sum", command=self._check_prior).grid(
+            row=6, column=1, pady=5, sticky="w"
         )
 
         for r in range(6):
