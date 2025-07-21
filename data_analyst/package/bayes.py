@@ -157,3 +157,20 @@ def run_file(time_input):
     file_path = os.path.expanduser("~/Documents/LearningDB/study.txt")
     with open(file_path, "w") as f:
         f.write(str(run_bayes(time_input)))
+
+def get_activity_ids(status: str = None) -> list[int]:
+    """
+    Return a list of all ACTIVITY_IDs in the ACTIVITY table.
+    If `status` is given, only return those rows whose ACT_STATUS == status.
+    """
+    metadata = MetaData()
+    # only reflect the ACTIVITY table
+    metadata.reflect(bind=engine, only=["ACTIVITY"])
+    activity = metadata.tables["ACTIVITY"]
+
+    stmt = select(activity.c.ACTIVITY_ID)
+    # if status:
+    #     stmt = stmt.where(activity.c.ACT_STATUS == status)
+
+    with engine.connect() as conn:
+        return [row[0] for row in conn.execute(stmt).all()]
