@@ -122,7 +122,7 @@ class TableImporter(tk.Tk):
                 self.widgets[col.name] = ent
 
     def insert_record(self):
-        if not self.table:
+        if self.table is None:
             messagebox.showwarning("No table", "Please select a table first.")
             return
 
