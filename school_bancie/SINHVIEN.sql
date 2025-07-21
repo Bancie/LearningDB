@@ -1,0 +1,4 @@
+USE school;
+
+INSERT INTO SINHVIEN (MSSV, HOTEN, KHOA)
+VALUES ('3122480004', N'Nguyễn Chí Bằng', 22);
