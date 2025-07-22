@@ -73,7 +73,7 @@ class TableImporter(tk.Tk):
         self.table = Table(table_name, metadata, autoload_with=engine)
 
         for col in self.table.columns:
-            if col.primary_key and col.autoincrement:
+            if col.primary_key and col.autoincrement is True:
                 continue
 
             row = ttk.Frame(self.form_frame)
