@@ -14,6 +14,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy import Date, DateTime
 
 load_dotenv()
 
@@ -100,6 +101,18 @@ class TableImporter(tk.Tk):
 
                 self.widgets[col.name] = (date_ent, hr, mn)
 
+            elif isinstance(col.type, Date):
+                date_ent = DateEntry(row, date_pattern='yyyy-MM-dd')
+                date_ent.pack(side="left", fill="x", expand=True)
+
+                today_btn = ttk.Button(
+                    row, text="Today",
+                    command=lambda d=date_ent: d.set_date(datetime.date.today())
+                )
+                today_btn.pack(side="left", padx=8)
+
+                self.widgets[col.name] = date_ent
+            
             elif isinstance(col.type, SQLEnum):
                 cb = ttk.Combobox(
                     row, values=col.type.enums,
