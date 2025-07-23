@@ -88,6 +88,11 @@ class BayesApp(tk.Tk):
         notebook.add(current_frame, text="Current Activity Log")
         self.current_activity_log_tab(current_frame)
         
+        # --- TAB: Current Activity Output ---
+        current_out_frame = ttk.Frame(notebook)
+        notebook.add(current_out_frame, text="Current Activity Output")
+        self.current_activity_out_tab(current_out_frame)
+        
         # --- TAB: Activity List ---
         act_frame = ttk.Frame(notebook)
         notebook.add(act_frame, text="Activity List")
@@ -248,6 +253,49 @@ class BayesApp(tk.Tk):
                 time_only
             ))
 
+
+    # View for current_activity_output
+    
+    def current_activity_out_tab(self, frame):
+        ttk.Label(frame, text="User ID:").grid(row=0, column=0, pady=5, padx=5, sticky="e")
+        self.view_user_current_activity_output = ttk.Entry(frame)
+        self.view_user_current_activity_output.grid(row=0, column=1, pady=5)
+        ttk.Button(frame, text="Load", command=self._load_current_activity_out_tab).grid(row=0, column=2, padx=5)
+
+        cols = ["AO_ID","ACT_NAME","START_TIME","FINISH_TIME"]
+        self.view_tree_current_activity_output = ttk.Treeview(frame, columns=cols, show="headings", height=20)
+        for c in cols:
+            self.view_tree_current_activity_output.heading(c, text=c)
+            self.view_tree_current_activity_output.column(c, width=120, anchor="center")
+
+        self.view_tree_current_activity_output.grid(row=1, column=0, columnspan=3, sticky="nsew")
+        frame.grid_rowconfigure(1, weight=1)
+        frame.grid_columnconfigure((0,1,2), weight=1)
+
+    def _load_current_activity_out_tab(self):
+        user_id = self.view_user_current_activity_output.get().strip()
+        if not user_id:
+            messagebox.showwarning("Input error", "Please enter a user ID.")
+            return
+        try:
+            df = bayes_db.get_current_activity_output(user_id)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        for i in self.view_tree_current_activity_output.get_children():
+            self.view_tree_current_activity_output.delete(i)
+
+        for _, row in df.iterrows():
+            # strip off the “0 days ” part from both timedeltas
+            start_only  = str(row.START_TIME).split()[-1]
+            finish_only = str(row.FINISH_TIME).split()[-1]
+
+            self.view_tree_current_activity_output.insert("", "end", values=(
+                row.AO_ID,
+                row.ACT_NAME,
+                start_only,
+                finish_only
+            ))
 
     def _check_prior(self):
         """Run bayes_db.check_prior() and show its output."""
