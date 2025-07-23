@@ -56,7 +56,17 @@ class BayesApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("LearningDB Database GUI")
-        self.geometry("800x900")
+        # self.geometry("800x900")
+
+        # Full-screen mode
+        # self.attributes('-fullscreen', True)
+        # self.bind('<Escape>', lambda e: self.attributes('-fullscreen', False))
+
+        # Maximize window
+        self.update_idletasks()
+        w = self.winfo_screenwidth()
+        h = self.winfo_screenheight()
+        self.geometry(f"{w}x{h}+0+0")
         
         # map human-readable labels → posterior column IDs
         self.posterior_map = {
