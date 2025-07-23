@@ -216,10 +216,10 @@ class BayesApp(tk.Tk):
         self.act_cb.grid(row=0, column=1, pady=5, sticky="w")
 
         # Prior probability
-        ttk.Label(frame, text="New Prior Prob:").grid(row=1, column=0, pady=5, sticky="e")
+        ttk.Label(frame, text="New Prior Prob:").grid(row=4, column=0, pady=5, sticky="e")
         self.prior_entry = ttk.Entry(frame)
-        self.prior_entry.grid(row=1, column=1, pady=5, sticky="w")
-        ttk.Button(frame, text="Update Prior", command=self._update_prior).grid(row=1, column=2, padx=10)
+        self.prior_entry.grid(row=4, column=1, pady=5, sticky="w")
+        ttk.Button(frame, text="Update Prior", command=self._update_prior).grid(row=4, column=2, padx=10)
 
         # Posterior probability
         ttk.Label(frame, text="Posterior Type:").grid(row=2, column=0, pady=5, sticky="e")
@@ -238,10 +238,10 @@ class BayesApp(tk.Tk):
         ALLOWED = sorted(bayes_db.ALLOWED_STATUSES) if hasattr(bayes_db, "ALLOWED_STATUSES") else [
             'not_started','in_progress','paused','completed','skipped','cancelled'
         ]
-        ttk.Label(frame, text="New Status:").grid(row=4, column=0, pady=5, sticky="e")
+        ttk.Label(frame, text="New Status:").grid(row=1, column=0, pady=5, sticky="e")
         self.status_cb = ttk.Combobox(frame, values=ALLOWED, state="readonly")
-        self.status_cb.grid(row=4, column=1, pady=5, sticky="w")
-        ttk.Button(frame, text="Update Status", command=self._update_status).grid(row=4, column=2, padx=10)
+        self.status_cb.grid(row=1, column=1, pady=5, sticky="w")
+        ttk.Button(frame, text="Update Status", command=self._update_status).grid(row=1, column=2, padx=10)
 
         # Zero-out button
         ttk.Button(frame, text="Zero Out Others", command=self._zero_out).grid(
