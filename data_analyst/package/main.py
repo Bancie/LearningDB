@@ -68,21 +68,27 @@ class BayesApp(tk.Tk):
         notebook = ttk.Notebook(self)
         notebook.pack(fill="both", expand=True)
 
+        # --- TAB: Import Data ---
         imp_frame = ttk.Frame(notebook)
         notebook.add(imp_frame, text="Import Data")
         self._build_import_tab(imp_frame)
+        
+        # --- TAB: Activity List ---
+        act_frame = ttk.Frame(notebook)
+        notebook.add(act_frame, text="Activity List")
+        self._ActivityList_tab(act_frame)
 
-        # --- Tab 2: Update Probabilities & Status ---
+        # --- TAB: Update Probabilities & Status ---
         upd_frame = ttk.Frame(notebook)
         notebook.add(upd_frame, text="Update Data")
         self._build_update_tab(upd_frame)
         
-        # --- Tab 3: View Activities ---
+        # --- TAB: View Activities ---
         view_frame = ttk.Frame(notebook)
         notebook.add(view_frame, text="View Activities")
         self._build_view_tab(view_frame)
 
-        # --- Tab 4: Run Bayes ---
+        # --- TAB: Run Bayes ---
         run_frame = ttk.Frame(notebook)
         notebook.add(run_frame, text="Run Bayes")
         self._build_run_tab(run_frame)
@@ -142,6 +148,49 @@ class BayesApp(tk.Tk):
                 row.Total, row.Learning,
                 row.Overview, row.Practice
             ))
+
+    # View for all activities
+    
+    def _ActivityList_tab(self, frame):
+        ttk.Label(frame, text="User ID:").grid(row=0, column=0, pady=5, padx=5, sticky="e")
+        self.view_user_alist = ttk.Entry(frame)
+        self.view_user_alist.grid(row=0, column=1, pady=5)
+        ttk.Button(frame, text="Load", command=self._load_ActivityList_tab).grid(row=0, column=2, padx=5)
+
+        cols = ["ACTIVITY_ID","ACT_NAME","ACT_STATUS"]
+        self.view_tree_alist = ttk.Treeview(frame, columns=cols, show="headings", height=20)
+        # for c in cols:
+        #     a = "center" if c=="ACTIVITY_ID" else "w"
+        #     self.view_tree_alist.heading(c, text=c, anchor=a)
+        #     self.view_tree_alist.column( c, width=120, anchor=a)
+        widths = {"ACTIVITY_ID": 1, "ACT_NAME": 950, "ACT_STATUS": 150}
+        anchors = {"ACTIVITY_ID": "center", "ACT_NAME": "w", "ACT_STATUS": "center"}
+
+        for c in cols:
+            self.view_tree_alist.heading(c, text=c, anchor=anchors[c])
+            self.view_tree_alist.column( c, width=widths[c], minwidth=50, anchor=anchors[c])
+
+        self.view_tree_alist.grid(row=1, column=0, columnspan=3, sticky="nsew")
+        frame.grid_rowconfigure(1, weight=1)
+        frame.grid_columnconfigure((0,1,2), weight=1)
+
+    def _load_ActivityList_tab(self):
+        user_id = self.view_user_alist.get().strip()
+        if not user_id:
+            messagebox.showwarning("Input error", "Please enter a user ID.")
+            return
+        try:
+            df = bayes_db.get_ActivityList(user_id)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        for i in self.view_tree_alist.get_children():
+            self.view_tree_alist.delete(i)
+        for _, row in df.iterrows():
+            self.view_tree_alist.insert("", "end", values=(
+                row.ACTIVITY_ID, row.ACT_NAME, row.ACT_STATUS
+            ))
+
 
     def _check_prior(self):
         """Run bayes_db.check_prior() and show its output."""

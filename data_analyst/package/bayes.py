@@ -166,6 +166,18 @@ def get_view(user_id):
 
     return df
 
+def get_ActivityList(user_id):
+    query = text("""
+        SELECT `ACTIVITY_ID`, `ACT_NAME`, `ACT_STATUS`
+        FROM `ACTIVITY`
+        WHERE `USER_ID` = :user_id
+    """)
+
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn, params={"user_id": user_id})
+
+    return df
+
 def run_file(time_input):
     file_path = os.path.expanduser("~/Documents/LearningDB/study.txt")
     with open(file_path, "w") as f:
