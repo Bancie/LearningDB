@@ -216,23 +216,23 @@ class BayesApp(tk.Tk):
         self.act_cb.grid(row=0, column=1, pady=5, sticky="w")
 
         # Prior probability
-        ttk.Label(frame, text="New Prior Prob:").grid(row=4, column=0, pady=5, sticky="e")
+        ttk.Label(frame, text="New Prior Prob:").grid(row=2, column=0, pady=5, sticky="e")
         self.prior_entry = ttk.Entry(frame)
-        self.prior_entry.grid(row=4, column=1, pady=5, sticky="w")
-        ttk.Button(frame, text="Update Prior", command=self._update_prior).grid(row=4, column=2, padx=10)
+        self.prior_entry.grid(row=2, column=1, pady=5, sticky="w")
+        ttk.Button(frame, text="Update Prior", command=self._update_prior).grid(row=2, column=2, padx=10)
 
         # Posterior probability
-        ttk.Label(frame, text="Posterior Type:").grid(row=2, column=0, pady=5, sticky="e")
+        ttk.Label(frame, text="Posterior Type:").grid(row=3, column=0, pady=5, sticky="e")
         self.post_type = ttk.Combobox(
             frame,
             values=list(self.posterior_map.keys()),
             state="readonly"
         )
-        self.post_type.grid(row=2, column=1, pady=5, sticky="w")
-        ttk.Label(frame, text="New Value:").grid(row=3, column=0, pady=5, sticky="e")
+        self.post_type.grid(row=3, column=1, pady=5, sticky="w")
+        ttk.Label(frame, text="New Value:").grid(row=4, column=0, pady=5, sticky="e")
         self.post_entry = ttk.Entry(frame)
-        self.post_entry.grid(row=3, column=1, pady=5, sticky="w")
-        ttk.Button(frame, text="Update Posterior", command=self._update_posterior).grid(row=3, column=2, padx=10)
+        self.post_entry.grid(row=4, column=1, pady=5, sticky="w")
+        ttk.Button(frame, text="Update Posterior", command=self._update_posterior).grid(row=4, column=2, padx=10)
 
         # Status update
         ALLOWED = sorted(bayes_db.ALLOWED_STATUSES) if hasattr(bayes_db, "ALLOWED_STATUSES") else [
