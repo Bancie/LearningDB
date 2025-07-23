@@ -56,7 +56,7 @@ class BayesApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("LearningDB Database GUI")
-        self.geometry("900x620")
+        self.geometry("800x900")
         
         # map human-readable labels → posterior column IDs
         self.posterior_map = {
