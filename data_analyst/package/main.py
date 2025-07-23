@@ -55,7 +55,7 @@ def fill_now(date_widget, hour_widget, minute_widget):
 class BayesApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("LearningDB Database GUI")
+        self.title("Bancie Database")
         # self.geometry("800x900")
 
         # Full-screen mode
@@ -82,6 +82,11 @@ class BayesApp(tk.Tk):
         imp_frame = ttk.Frame(notebook)
         notebook.add(imp_frame, text="Import Data")
         self._build_import_tab(imp_frame)
+        
+        # --- TAB: Current Activity Log ---
+        current_frame = ttk.Frame(notebook)
+        notebook.add(current_frame, text="Current Activity Log")
+        self.current_activity_log_tab(current_frame)
         
         # --- TAB: Activity List ---
         act_frame = ttk.Frame(notebook)
@@ -169,10 +174,6 @@ class BayesApp(tk.Tk):
 
         cols = ["ACTIVITY_ID","ACT_NAME","ACT_STATUS"]
         self.view_tree_alist = ttk.Treeview(frame, columns=cols, show="headings", height=20)
-        # for c in cols:
-        #     a = "center" if c=="ACTIVITY_ID" else "w"
-        #     self.view_tree_alist.heading(c, text=c, anchor=a)
-        #     self.view_tree_alist.column( c, width=120, anchor=a)
         widths = {"ACTIVITY_ID": 1, "ACT_NAME": 950, "ACT_STATUS": 150}
         anchors = {"ACTIVITY_ID": "center", "ACT_NAME": "w", "ACT_STATUS": "center"}
 
@@ -199,6 +200,52 @@ class BayesApp(tk.Tk):
         for _, row in df.iterrows():
             self.view_tree_alist.insert("", "end", values=(
                 row.ACTIVITY_ID, row.ACT_NAME, row.ACT_STATUS
+            ))
+
+    # View for current_activity_log
+    
+    def current_activity_log_tab(self, frame):
+        ttk.Label(frame, text="User ID:").grid(row=0, column=0, pady=5, padx=5, sticky="e")
+        self.view_user_current_activity_log = ttk.Entry(frame)
+        self.view_user_current_activity_log.grid(row=0, column=1, pady=5)
+        ttk.Button(frame, text="Load", command=self._load_current_activity_log_tab).grid(row=0, column=2, padx=5)
+
+        cols = ["ACTIVITY_ID","ACTI_LOG_ID","ACT_NAME","START_TIME"]
+        self.view_tree_current_activity_log = ttk.Treeview(frame, columns=cols, show="headings", height=20)
+        for c in cols:
+            self.view_tree_current_activity_log.heading(c, text=c)
+            self.view_tree_current_activity_log.column(c, width=120, anchor="center")
+
+        self.view_tree_current_activity_log.grid(row=1, column=0, columnspan=3, sticky="nsew")
+        frame.grid_rowconfigure(1, weight=1)
+        frame.grid_columnconfigure((0,1,2), weight=1)
+
+    def _load_current_activity_log_tab(self):
+        user_id = self.view_user_current_activity_log.get().strip()
+        if not user_id:
+            messagebox.showwarning("Input error", "Please enter a user ID.")
+            return
+        try:
+            df = bayes_db.get_current_activity_log(user_id)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        for i in self.view_tree_current_activity_log.get_children():
+            self.view_tree_current_activity_log.delete(i)
+        # for _, row in df.iterrows():
+        #     self.view_tree_current_activity_log.insert("", "end", values=(
+        #         row.ACTIVITY_ID, row.ACTI_LOG_ID, row.ACT_NAME, row.START_TIME
+        #     ))
+        for _, row in df.iterrows():
+            td = row.START_TIME
+            # td is something like "0 days 19:44:00" → split off the last token
+            time_only = str(td).split()[-1]
+
+            self.view_tree_current_activity_log.insert("", "end", values=(
+                row.ACTIVITY_ID,
+                row.ACTI_LOG_ID,
+                row.ACT_NAME,
+                time_only
             ))
 
 

@@ -178,6 +178,18 @@ def get_ActivityList(user_id):
 
     return df
 
+def get_current_activity_log(user_id):
+    query = text("""
+        SELECT `ACTIVITY_ID`, `ACTI_LOG_ID`, `ACT_NAME`, `START_TIME`
+        FROM `current_activity_log`
+        WHERE `USER_ID` = :user_id
+    """)
+
+    with engine.connect() as conn:
+        df = pd.read_sql(query, conn, params={"user_id": user_id})
+
+    return df
+
 def run_file(time_input):
     file_path = os.path.expanduser("~/Documents/LearningDB/study.txt")
     with open(file_path, "w") as f:
