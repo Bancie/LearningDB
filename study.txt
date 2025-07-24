@@ -1,11 +1,10 @@
-   ACTIVITY_ID                                           ACT_NAME  Total  \
-0            1                Statistics for Business & Economics   24.0   
-1            2             [RESEARCH] Location-Scheduling Problem   72.0   
-2            5          THE KEY TO IELTS SUCCESS - Pauline Cullen   24.0   
-3           28  Computer Organization and Design - DAVID A. PA...  120.0   
-
-   Learning  Overview  Practice  
-0       0.0      24.0       0.0  
-1       0.0      72.0       0.0  
-2      24.0       0.0       0.0  
-3     120.0       0.0       0.0  
+   ACTIVITY_ID                                           ACT_NAME  Total  Learning  Overview  Practice
+0            1                Statistics for Business & Economics   72.0      14.4      57.6       0.0
+1            5          THE KEY TO IELTS SUCCESS - Pauline Cullen   72.0      72.0       0.0       0.0
+2           10             Software Engineering - Ian Sommerville   72.0      72.0       0.0       0.0
+3           28  Computer Organization and Design - DAVID A. PA...   72.0      72.0       0.0       0.0
+4           29             Designing Interfaces - Jenifer Tidwell   72.0      72.0       0.0       0.0
+5           30  Python GUI Programming with Tkinter - Alan D. ...   72.0      72.0       0.0       0.0
+6           34  Integrated Scheduling & Location Models: Singl...   72.0      14.4      57.6       0.0
+7           35                              Single Center problem  144.0       0.0       0.0     144.0
+8           37  The Official Cambridge Guide to IELTS - Paulin...   72.0      72.0       0.0       0.0
