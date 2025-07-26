@@ -1,5 +1,11 @@
-   ACTIVITY_ID                                           ACT_NAME  Total  Learning  Overview  Practice
-0            5          THE KEY TO IELTS SUCCESS - Pauline Cullen  100.0     100.0       0.0       0.0
-1           30  Python GUI Programming with Tkinter - Alan D. ...   50.0      50.0       0.0       0.0
-2           35                              Single Center problem  200.0       0.0       0.0     200.0
-3           37  The Official Cambridge Guide to IELTS - Paulin...  150.0     150.0       0.0       0.0
+   ACTIVITY_ID                                           ACT_NAME  Total  \
+0            5          THE KEY TO IELTS SUCCESS - Pauline Cullen   48.0   
+1           30  Python GUI Programming with Tkinter - Alan D. ...   24.0   
+2           35                              Single Center problem   96.0   
+3           37  The Official Cambridge Guide to IELTS - Paulin...   72.0   
+
+   Learning  Overview  Practice  
+0      48.0       0.0       0.0  
+1      24.0       0.0       0.0  
+2       0.0       0.0      96.0  
+3      72.0       0.0       0.0  

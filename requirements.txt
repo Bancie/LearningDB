@@ -1,0 +1,11 @@
+dotenv
+sqlalchemy
+pandas
+# tkinter
+tkcalendar
+numpy
+matplotlib
+load_dotenv
+mysql-connector-python
+ipython-sql
+scipy
