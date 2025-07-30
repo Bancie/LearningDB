@@ -12,6 +12,7 @@ import pandas as pd
 import io
 
 import bayes as bayes_db  # this is your bayes.py
+import ml as ml_db  # this is your ml.py
 
 import datetime
 
@@ -113,8 +114,15 @@ class BayesApp(tk.Tk):
         notebook.add(run_frame, text="Run Bayes")
         self._build_run_tab(run_frame)
 
+        # --- TAB: ML for Sleep ---
+        ml_frame = ttk.Frame(notebook)
+        notebook.add(ml_frame, text="ML for Sleep")
+        self._build_ml_tab(ml_frame)
+    
+    # def _build_ml_tab(self, parent):
+    # in processing...
+    
     def _build_import_tab(self, parent):
-        # sao chép nguyên phần UI import (selector + form + nút) vào parent
         self.table   = None
         self.widgets = {}
 
