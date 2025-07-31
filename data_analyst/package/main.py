@@ -115,9 +115,9 @@ class BayesApp(tk.Tk):
         self._build_run_tab(run_frame)
 
         # --- TAB: ML for Sleep ---
-        ml_frame = ttk.Frame(notebook)
-        notebook.add(ml_frame, text="ML for Sleep")
-        self._build_ml_tab(ml_frame)
+        # ml_frame = ttk.Frame(notebook)
+        # notebook.add(ml_frame, text="ML for Sleep")
+        # self._build_ml_tab(ml_frame)
     
     # def _build_ml_tab(self, parent):
     # in processing...
