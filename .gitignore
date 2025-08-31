@@ -104,6 +104,7 @@ cython_debug/
 *.mo
 *.sqlite3
 *.db
+*.sql
 
 # ==================================
 # OS Files
