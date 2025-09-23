@@ -1,0 +1,94 @@
+{
+  "activityEntities" : [
+    "dataSourceMetrics",
+    [
+      {
+        "createdDate" : "2025-09-22T09:54:37Z",
+        "event" : "dataSourceMetrics",
+        "id" : "DB634EB7-ED2B-4799-8C09-1FFF9DAEA7AB",
+        "subtitle" : "3 Classes, 61 Items",
+        "title" : "Data Summary"
+      }
+    ],
+    "dataSourceTrainingStarted",
+    [
+      {
+        "createdDate" : "2025-09-22T09:54:37Z",
+        "event" : "dataSourceTrainingStarted",
+        "id" : "9A3600DF-9B12-47BB-A771-41C0F6FD0314",
+        "subtitle" : "LearningDB_ML_model 1",
+        "title" : "Used By"
+      }
+    ]
+  ],
+  "createdDate" : "2025-09-22T09:53:38Z",
+  "dataPathRelativeToProjectURL" : "../../../bancie_ml_for_sleep.csv/",
+  "dataResult" : {
+    "columnTypes" : [
+      "String",
+      "String",
+      "String",
+      "String"
+    ],
+    "columnValues" : [
+      "Late, Late, Late, Late, Late, Late, Late, Early, Late, Late, Late, Early, Early, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late, Late",
+      "Late, Late, Early, Late, Late, Early, Early, Early, Late, Late, Late, Early, Late, Late, Late, Late, Late, Early, Late, Late, Late, Late, Early, Late, Late, Late, Late, Late, Early, Late",
+      "Good, Good, Good, Good, Good, Bad, Good, Good, Good, Good, Good, Good, Good, Good, Good, Good, Good, Good, Good, Good, Bad, Good, Good, Good, Good, Good, Good, Good, Good, Good",
+      "Acceptable, Good, Acceptable, None, Acceptable, None, Good, None, Acceptable, Good, Acceptable, Acceptable, Acceptable, Acceptable, Good, Good, Good, None, None, Acceptable, Acceptable, Acceptable, Good, None, Good, Acceptable, Good, None, Acceptable, Good"
+    ],
+    "columns" : [
+      "SLEEP_START_CATEGORY",
+      "SLEEP_END_CATEGORY",
+      "WAKE_FEELING_CATEGORY",
+      "MINUTES_PER_DAY_CATEGORY"
+    ],
+    "createdDate" : "2025-09-22T09:53:38Z",
+    "dataAnalysis" : {
+      "classifierAnalysis" : {
+
+      },
+      "issues" : [
+        {
+          "description" : "No target selected",
+          "severity" : "notReady"
+        },
+        {
+          "description" : "Data has 61 rows",
+          "severity" : "info"
+        },
+        {
+          "description" : "No features selected",
+          "severity" : "notReady"
+        }
+      ],
+      "objectDetectorAnalysis" : {
+        "details" : {
+
+        }
+      },
+      "summary" : {
+        "canUseValidation" : 1,
+        "sampleCount" : 61
+      }
+    },
+    "dataSourceID" : "DAE352C7-E909-4093-B9BB-A45A0BF53501",
+    "dataURL" : "file:///Users/chibangnguyen/bancie_ml_for_sleep.csv",
+    "error" : {
+      "code" : 1000,
+      "domain" : "composer.error.domain",
+      "errorType" : "notReady",
+      "reason" : "No target selected"
+    },
+    "itemsCount" : 61
+  },
+  "dataURL" : "file:///Users/chibangnguyen/bancie_ml_for_sleep.csv",
+  "experimentIDs" : [
+    "7391C6B4-FCD6-4C20-8DF4-BB15D654FD69"
+  ],
+  "id" : "DAE352C7-E909-4093-B9BB-A45A0BF53501",
+  "modifiedDate" : "2025-09-22T09:55:18Z",
+  "pathType" : 0,
+  "preferredFilename" : "bancie_ml_for_sleep.csv",
+  "title" : "bancie_ml_for_sleep.csv",
+  "version" : "1.0"
+}
