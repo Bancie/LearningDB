@@ -1,12 +1,9 @@
-"use client"
-
 import type { Route } from "react-router";
 import { useState } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, isRouteErrorResponse } from "react-router";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { 
     Button,
-    HStack, 
     Avatar, 
     Card,
     Field,
