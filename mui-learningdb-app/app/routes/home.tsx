@@ -1,6 +1,7 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
-import { DrawerDemo, Nut, TemporaryDrawer } from "~/components/FrontEnd";
+import { Nut, TemporaryDrawer } from "~/components/FrontEnd";
+import { MiniDrawer } from "~/components/Drawer";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -12,7 +13,7 @@ export function meta({}: Route.MetaArgs) {
 export default function Home() {
   return (
     <div>
-    <TemporaryDrawer />
+    <MiniDrawer />
     </div>
   );
 }
