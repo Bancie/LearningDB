@@ -15,14 +15,6 @@ import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
 
 
-export const DrawerDemo = () => {
-  return (
-      <button>
-        hi
-      </button>
-  )
-}
-
 export function Nut() {
   return (
     <Button variant="contained">Hello world</Button>
