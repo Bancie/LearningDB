@@ -1,4 +1,6 @@
+import MiniDrawer from "~/components/MiniDrawer";
 import type { Route } from "./+types/home";
+import Typography from '@mui/material/Typography';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -9,6 +11,6 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   return (
-    <div>hi</div>
+    <MiniDrawer />
   );
 }
