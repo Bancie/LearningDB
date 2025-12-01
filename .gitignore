@@ -104,7 +104,6 @@ cython_debug/
 *.mo
 *.sqlite3
 *.db
-*.sql
 
 # ==================================
 # OS Files
@@ -126,8 +125,6 @@ Desktop.ini
 # Add any personal files/folders you want Git to ignore below:
 # notes/
 # local_config.yaml
-
-sql/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
