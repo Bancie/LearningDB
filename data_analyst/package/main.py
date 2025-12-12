@@ -43,8 +43,27 @@ engine = create_engine(
 Session = sessionmaker(bind=engine)
 metadata = MetaData()
 
-inspector   = inspect(engine)
-TABLE_NAMES = inspector.get_table_names()   # chỉ trả về các BASE TABLE
+# Lazy initialization - only connect when needed
+inspector = None
+TABLE_NAMES = []
+
+def get_table_names():
+    """Get table names from database, with error handling."""
+    global inspector, TABLE_NAMES
+    if not TABLE_NAMES:
+        try:
+            if inspector is None:
+                inspector = inspect(engine)
+            TABLE_NAMES = inspector.get_table_names()   # chỉ trả về các BASE TABLE
+        except Exception as e:
+            messagebox.showerror(
+                "Database Connection Error",
+                f"Cannot connect to MySQL server.\n\n"
+                f"Error: {str(e)}\n\n"
+                f"Please ensure MySQL is running on {host}:3306"
+            )
+            TABLE_NAMES = []
+    return TABLE_NAMES
 
 def fill_now(date_widget, hour_widget, minute_widget):
     now = datetime.datetime.now()
@@ -129,9 +148,11 @@ class BayesApp(tk.Tk):
         selector_frame = ttk.Frame(parent, padding=10)
         selector_frame.pack(fill="x")
         ttk.Label(selector_frame, text="Choose table:", width=15).pack(side="left")
+        # Get table names lazily - will show error if DB connection fails
+        table_names = get_table_names()
         self.table_cb = ttk.Combobox(
             selector_frame,
-            values=TABLE_NAMES,
+            values=table_names,
             state="readonly"
         )
         self.table_cb.pack(side="left", fill="x", expand=True)
@@ -321,7 +342,16 @@ class BayesApp(tk.Tk):
     def _build_update_tab(self, frame):
         # fetch activity IDs straight from the ACTIVITY table:
         # (you can pass "in_progress" if you only want those)
-        self.activities = [str(i) for i in bayes_db.get_activity_ids(status="in_progress")]
+        try:
+            self.activities = [str(i) for i in bayes_db.get_activity_ids(status="in_progress")]
+        except Exception as e:
+            messagebox.showerror(
+                "Database Connection Error",
+                f"Cannot connect to MySQL server.\n\n"
+                f"Error: {str(e)}\n\n"
+                f"Please ensure MySQL is running on {host}:3306"
+            )
+            self.activities = []
 
         # Activity selector
         ttk.Label(frame, text="Activity ID:").grid(row=0, column=0, pady=5, sticky="e")
