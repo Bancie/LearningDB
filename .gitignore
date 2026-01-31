@@ -6627,3 +6627,6 @@ mui-learningdb-app/node_modules/wrap-ansi-cjs/node_modules/strip-ansi/package.js
 mui-learningdb-app/node_modules/wrap-ansi-cjs/node_modules/strip-ansi/readme.md
 .DS_Store
 
+
+# PyTorch model files
+*.pth
