@@ -80,3 +80,4 @@ wcwidth==0.2.13
 pydantic
 fastapi[standard]
 uvicorn
+marimo[recommended]
