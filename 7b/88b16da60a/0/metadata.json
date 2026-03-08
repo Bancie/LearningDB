@@ -1,0 +1,38 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "7b88b16da60a",
+  "session_id": "unknown",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-08T16:38:00.150282Z",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 33,
+  "files_touched": [
+    "docs/learning/home.py",
+    "docs/learning/main.py",
+    "docs/learning/requirements.txt",
+    "docs/learningdbsystem.md",
+    "docs/uml/feature1.puml",
+    "docs/uml/phase1.puml",
+    "docs/uml/use_case.puml",
+    "marimo/layouts/sleep_quality.slides.json",
+    "marimo/sleep_quality.py"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "623b0d870e93",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-08T16:37:59.588826Z",
+    "agent_lines": 527,
+    "human_added": 9,
+    "human_modified": 7,
+    "human_removed": 0,
+    "total_committed": 543,
+    "agent_percentage": 97.05340699815838
+  }
+}

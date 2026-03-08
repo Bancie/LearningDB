@@ -1,0 +1,34 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "7b88b16da60a",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 33,
+  "files_touched": [
+    "docs/learning/home.py",
+    "docs/learning/main.py",
+    "docs/learning/requirements.txt",
+    "docs/learningdbsystem.md",
+    "docs/uml/feature1.puml",
+    "docs/uml/phase1.puml",
+    "docs/uml/use_case.puml",
+    "marimo/layouts/sleep_quality.slides.json",
+    "marimo/sleep_quality.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/7b/88b16da60a/0/metadata.json",
+      "transcript": "/7b/88b16da60a/0/full.jsonl",
+      "context": "",
+      "content_hash": "/7b/88b16da60a/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
