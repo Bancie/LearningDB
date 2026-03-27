@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "b68ac2d0ece1",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "learningdb",
+    "learningdb/.dockerignore",
+    "learningdb/.gitignore",
+    "learningdb/Dockerfile",
+    "learningdb/README.md",
+    "learningdb/app/app.css",
+    "learningdb/app/components/Layout.tsx",
+    "learningdb/app/root.tsx",
+    "learningdb/app/routes.ts",
+    "learningdb/app/routes/activity-list.tsx",
+    "learningdb/app/routes/activity-log.tsx",
+    "learningdb/app/routes/activity-output.tsx",
+    "learningdb/app/routes/bayes.tsx",
+    "learningdb/app/routes/home.tsx",
+    "learningdb/app/routes/import.tsx",
+    "learningdb/app/routes/update.tsx",
+    "learningdb/app/routes/view.tsx",
+    "learningdb/app/services/api.ts",
+    "learningdb/app/welcome/logo-dark.svg",
+    "learningdb/app/welcome/logo-light.svg",
+    "learningdb/app/welcome/welcome.tsx",
+    "learningdb/backend/.gitignore",
+    "learningdb/backend/__init__.py",
+    "learningdb/backend/crud.py",
+    "learningdb/backend/database.py",
+    "learningdb/backend/main.py",
+    "learningdb/backend/requirements.txt",
+    "learningdb/package-lock.json",
+    "learningdb/package.json",
+    "learningdb/public/favicon.ico",
+    "learningdb/react-router.config.ts",
+    "learningdb/start-app.sh",
+    "learningdb/tsconfig.json",
+    "learningdb/vite.config.ts"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b6/8ac2d0ece1/0/metadata.json",
+      "transcript": "/b6/8ac2d0ece1/0/full.jsonl",
+      "context": "",
+      "content_hash": "/b6/8ac2d0ece1/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
