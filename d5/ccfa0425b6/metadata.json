@@ -1,0 +1,59 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "d5ccfa0425b6",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 3,
+  "files_touched": [
+    "data_analyst/baitap_toan.ipynb",
+    "data_analyst/collections/aca_read.png",
+    "data_analyst/collections/tech_read.png",
+    "data_analyst/distribution_analysis.ipynb",
+    "data_analyst/machine_learning.ipynb",
+    "data_analyst/ml_baitap_toan.ipynb",
+    "data_analyst/ml_reading.ipynb",
+    "data_analyst/package/__init__.py",
+    "data_analyst/package/__pycache__/__init__.cpython-312.pyc",
+    "data_analyst/package/__pycache__/__init__.cpython-313.pyc",
+    "data_analyst/package/__pycache__/bayes.cpython-312.pyc",
+    "data_analyst/package/__pycache__/bayes.cpython-313.pyc",
+    "data_analyst/package/bayes.py",
+    "data_analyst/package/main.py",
+    "data_analyst/package/ml.py",
+    "data_analyst/package/school.py",
+    "data_analyst/school.ipynb",
+    "data_analyst/screen_time.ipynb",
+    "data_analyst/study.ipynb",
+    "data_analyst/test.ipynb",
+    "data_analyst/tests/ai-book.ipynb",
+    "data_analyst/tests/ai-book.sql",
+    "data_analyst/tests/test.sql",
+    "data_analyst/tests/test_ml.sql",
+    "llm/.webui_secret_key",
+    "llm/ollama/test.py",
+    "marimo/layouts/ml_reading_nb.slides.json",
+    "marimo/layouts/quanly.slides.json",
+    "marimo/layouts/sleep_quality.slides.json",
+    "marimo/ml/machine_learning_nb.py",
+    "marimo/ml_reading_nb.py",
+    "marimo/quanly.py",
+    "marimo/requirements.txt",
+    "marimo/sleep_quality.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/d5/ccfa0425b6/0/metadata.json",
+      "transcript": "/d5/ccfa0425b6/0/full.jsonl",
+      "context": "",
+      "content_hash": "/d5/ccfa0425b6/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
