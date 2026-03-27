@@ -6630,3 +6630,8 @@ mui-learningdb-app/node_modules/wrap-ansi-cjs/node_modules/strip-ansi/readme.md
 
 # PyTorch model files
 *.pth
+
+# Local project directories
+llm/
+marimo/
+data_analyst/
