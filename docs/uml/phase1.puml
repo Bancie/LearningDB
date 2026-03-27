@@ -1,5 +1,0 @@
-@startuml
-title LearningDB New features
-left to right direction
-actor "Bang Nguyen" as me
-@enduml
