@@ -1,0 +1,307 @@
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+  Button,
+  Alert,
+  Snackbar,
+  Grid,
+  Divider,
+} from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
+import Layout from '~/components/Layout';
+import {
+  getActivityIds,
+  updatePrior,
+  updatePosterior,
+  updateStatus,
+  updateZero,
+  checkPrior,
+} from '~/services/api';
+
+export function meta() {
+  return [{ title: 'Update Data - LearningDB' }];
+}
+
+const ALLOWED_STATUSES = [
+  'not_started',
+  'in_progress',
+  'paused',
+  'completed',
+  'skipped',
+  'cancelled',
+];
+
+const POSTERIOR_TYPES = [
+  { label: 'Learning', value: 1 },
+  { label: 'Overview', value: 2 },
+  { label: 'Practice', value: 3 },
+];
+
+export default function UpdateData() {
+  const [activityIds, setActivityIds] = useState<number[]>([]);
+  const [selectedActivity, setSelectedActivity] = useState('');
+  const [newStatus, setNewStatus] = useState('');
+  const [priorProb, setPriorProb] = useState('');
+  const [posteriorType, setPosteriorType] = useState('');
+  const [posteriorProb, setPosteriorProb] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  useEffect(() => {
+    loadActivityIds();
+  }, []);
+
+  const loadActivityIds = async () => {
+    try {
+      const response = await getActivityIds('in_progress');
+      setActivityIds(response.data.activity_ids);
+    } catch (error) {
+      console.error('Error loading activity IDs:', error);
+      setSnackbar({ open: true, message: 'Error loading activity IDs', severity: 'error' });
+    }
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedActivity || !newStatus) {
+      setSnackbar({ open: true, message: 'Please select activity and status', severity: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await updateStatus(parseInt(selectedActivity), newStatus);
+      setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+      setNewStatus('');
+    } catch (error) {
+      console.error('Error updating status:', error);
+      setSnackbar({ open: true, message: 'Error updating status', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePrior = async () => {
+    if (!selectedActivity || !priorProb) {
+      setSnackbar({ open: true, message: 'Please select activity and enter probability', severity: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await updatePrior(parseInt(selectedActivity), parseFloat(priorProb));
+      setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+      setPriorProb('');
+    } catch (error) {
+      console.error('Error updating prior:', error);
+      setSnackbar({ open: true, message: 'Error updating prior probability', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePosterior = async () => {
+    if (!selectedActivity || !posteriorType || !posteriorProb) {
+      setSnackbar({ open: true, message: 'Please fill all posterior fields', severity: 'error' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await updatePosterior(
+        parseInt(selectedActivity),
+        parseInt(posteriorType),
+        parseFloat(posteriorProb)
+      );
+      setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+      setPosteriorProb('');
+    } catch (error) {
+      console.error('Error updating posterior:', error);
+      setSnackbar({ open: true, message: 'Error updating posterior probability', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleZeroOut = async () => {
+    if (!window.confirm('Zero out all probs for non-in_progress activities?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await updateZero();
+      setSnackbar({ open: true, message: response.data.message, severity: 'success' });
+    } catch (error) {
+      console.error('Error zeroing out:', error);
+      setSnackbar({ open: true, message: 'Error zeroing out probabilities', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckPrior = async () => {
+    setLoading(true);
+    try {
+      const response = await checkPrior();
+      const { valid, message } = response.data;
+      setSnackbar({
+        open: true,
+        message,
+        severity: valid ? 'success' : 'error',
+      });
+    } catch (error) {
+      console.error('Error checking prior:', error);
+      setSnackbar({ open: true, message: 'Error checking prior sum', severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Layout>
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          Update Data
+        </Typography>
+
+        <Grid container spacing={3}>
+          {/* Activity Selector */}
+          <Grid size={12}>
+            <FormControl fullWidth>
+              <InputLabel>Activity ID</InputLabel>
+              <Select
+                value={selectedActivity}
+                label="Activity ID"
+                onChange={(e: SelectChangeEvent) => setSelectedActivity(e.target.value)}
+              >
+                {activityIds.map((id) => (
+                  <MenuItem key={id} value={id.toString()}>
+                    {id}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Update Status */}
+          <Grid size={12}>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Update Status
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <FormControl sx={{ minWidth: 200 }}>
+                <InputLabel>New Status</InputLabel>
+                <Select
+                  value={newStatus}
+                  label="New Status"
+                  onChange={(e: SelectChangeEvent) => setNewStatus(e.target.value)}
+                >
+                  {ALLOWED_STATUSES.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button variant="contained" onClick={handleUpdateStatus} disabled={loading}>
+                Update Status
+              </Button>
+            </Box>
+          </Grid>
+
+          {/* Update Prior */}
+          <Grid size={12}>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Update Prior Probability
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <TextField
+                label="New Prior Prob"
+                type="number"
+                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                value={priorProb}
+                onChange={(e) => setPriorProb(e.target.value)}
+                sx={{ width: 200 }}
+              />
+              <Button variant="contained" onClick={handleUpdatePrior} disabled={loading}>
+                Update Prior
+              </Button>
+            </Box>
+          </Grid>
+
+          {/* Update Posterior */}
+          <Grid size={12}>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Update Posterior Probability
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl sx={{ minWidth: 200 }}>
+                <InputLabel>Posterior Type</InputLabel>
+                <Select
+                  value={posteriorType}
+                  label="Posterior Type"
+                  onChange={(e: SelectChangeEvent) => setPosteriorType(e.target.value)}
+                >
+                  {POSTERIOR_TYPES.map((type) => (
+                    <MenuItem key={type.value} value={type.value.toString()}>
+                      {type.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <TextField
+                label="New Value"
+                type="number"
+                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                value={posteriorProb}
+                onChange={(e) => setPosteriorProb(e.target.value)}
+                sx={{ width: 200 }}
+              />
+              <Button variant="contained" onClick={handleUpdatePosterior} disabled={loading}>
+                Update Posterior
+              </Button>
+            </Box>
+          </Grid>
+
+          {/* Utility Buttons */}
+          <Grid size={12}>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Utilities
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button variant="outlined" color="warning" onClick={handleZeroOut} disabled={loading}>
+                Zero Out Others
+              </Button>
+              <Button variant="outlined" onClick={handleCheckPrior} disabled={loading}>
+                Check Prior Sum
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+      >
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
+      </Snackbar>
+    </Layout>
+  );
+}

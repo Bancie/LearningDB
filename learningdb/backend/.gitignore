@@ -1,0 +1,5 @@
+# Virtual environments (use .venv per FastAPI convention; do not commit)
+.venv/
+venv/
+env/
+ENV/
