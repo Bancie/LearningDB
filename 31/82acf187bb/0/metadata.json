@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "3182acf187bb",
+  "session_id": "unknown",
+  "strategy": "manual-commit",
+  "created_at": "2026-03-30T19:01:01.087673Z",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 9,
+  "files_touched": [
+    "learningdb/backend/cli.py",
+    "learningdb/backend/pyproject.toml"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "b0192b2044e7",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-03-30T19:01:01.050349Z",
+    "agent_lines": 294,
+    "human_added": 42,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 336,
+    "agent_percentage": 87.5
+  }
+}

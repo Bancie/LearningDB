@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "3182acf187bb",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 9,
+  "files_touched": [
+    "learningdb/backend/cli.py",
+    "learningdb/backend/pyproject.toml"
+  ],
+  "sessions": [
+    {
+      "metadata": "/31/82acf187bb/0/metadata.json",
+      "transcript": "/31/82acf187bb/0/full.jsonl",
+      "context": "",
+      "content_hash": "/31/82acf187bb/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
