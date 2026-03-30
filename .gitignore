@@ -102,6 +102,12 @@ cython_debug/
 *.pem
 
 # ==================================
+# Docker
+# ==================================
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# ==================================
 # Logs / Databases / Others
 # ==================================
 *.log
