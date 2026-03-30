@@ -4,6 +4,7 @@
 # Project-specific ignores
 # ==================================
 Notebook_Learning/
+bancie-backup.sql
 
 # ==================================
 # Python
