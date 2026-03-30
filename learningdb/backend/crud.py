@@ -220,16 +220,24 @@ def get_current_activity_output(user_id: int) -> list:
 
 def get_activity_ids(status: str = None) -> list:
     """Return a list of all ACTIVITY_IDs in the ACTIVITY table."""
-    metadata = MetaData()
-    metadata.reflect(bind=engine, only=["ACTIVITY"])
-    activity = metadata.tables["ACTIVITY"]
-    
-    stmt = select(activity.c.ACTIVITY_ID)
-    if status:
-        stmt = stmt.where(activity.c.ACT_STATUS == status)
-    
-    with engine.connect() as conn:
-        return [row[0] for row in conn.execute(stmt).all()]
+    try:
+        metadata = MetaData()
+        metadata.reflect(bind=engine)
+        table_map = {name.lower(): name for name in metadata.tables.keys()}
+        resolved_name = table_map.get("activity")
+        if not resolved_name:
+            raise ValueError("ACTIVITY table not found (case-insensitive lookup).")
+
+        activity = metadata.tables[resolved_name]
+        stmt = select(activity.c.ACTIVITY_ID)
+        if status:
+            stmt = stmt.where(activity.c.ACT_STATUS == status)
+
+        with engine.connect() as conn:
+            rows = conn.execute(stmt).all()
+            return [row[0] for row in rows]
+    except Exception:
+        raise
 
 
 def insert_record(table_name: str, data: dict):

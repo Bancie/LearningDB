@@ -5,12 +5,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
+from sqlalchemy import inspect, text
 try:
     from . import crud
-    from .database import get_table_names, get_table_columns
+    from .database import get_table_names, get_table_columns, engine
 except ImportError:
     import crud
-    from database import get_table_names, get_table_columns
+    from database import get_table_names, get_table_columns, engine
 
 app = FastAPI(
     title="LearningDB API",
@@ -105,7 +106,23 @@ def insert_record(request: InsertRecordRequest):
 def get_activity_ids(status: Optional[str] = None):
     """Get all activity IDs, optionally filtered by status"""
     try:
-        ids = crud.get_activity_ids(status)
+        inspector = inspect(engine)
+        table_names = inspector.get_table_names()
+        activity_table = next((name for name in table_names if name.lower() == "activity"), None)
+        if not activity_table:
+            raise ValueError("ACTIVITY table not found in database.")
+
+        columns = inspector.get_columns(activity_table)
+        column_map = {col["name"].lower(): col["name"] for col in columns}
+        id_col = column_map.get("activity_id")
+        status_col = column_map.get("act_status")
+        if not id_col:
+            raise ValueError("ACTIVITY_ID column not found in activity table.")
+
+        stmt = text(f"SELECT `{id_col}` FROM `{activity_table}`" + (f" WHERE `{status_col}` = :status" if status and status_col else ""))
+        with engine.connect() as conn:
+            rows = conn.execute(stmt, {"status": status} if status and status_col else {}).all()
+            ids = [row[0] for row in rows]
         return {"activity_ids": ids}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

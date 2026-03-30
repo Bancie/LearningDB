@@ -20,6 +20,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import Layout from '~/components/Layout';
 import {
   getActivityIds,
+  getActivityList,
   updatePrior,
   updatePosterior,
   updateStatus,
@@ -71,8 +72,19 @@ export default function UpdateData() {
       const response = await getActivityIds('in_progress');
       setActivityIds(response.data.activity_ids);
     } catch (error) {
-      console.error('Error loading activity IDs:', error);
-      setSnackbar({ open: true, message: 'Error loading activity IDs', severity: 'error' });
+      try {
+        const fallback = await getActivityList(1);
+        const fallbackIds = (fallback.data.data ?? [])
+          .filter((item) => item.ACT_STATUS === 'in_progress')
+          .map((item) => item.ACTIVITY_ID);
+        setActivityIds(fallbackIds);
+        if (!fallbackIds.length) {
+          setSnackbar({ open: true, message: 'No in-progress activities found', severity: 'info' });
+        }
+      } catch (fallbackError) {
+        console.error('Error loading activity IDs:', error);
+        setSnackbar({ open: true, message: 'Error loading activity IDs', severity: 'error' });
+      }
     }
   };
 
