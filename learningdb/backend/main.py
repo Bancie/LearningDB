@@ -5,8 +5,12 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-import crud
-from database import get_table_names, get_table_columns
+try:
+    from . import crud
+    from .database import get_table_names, get_table_columns
+except ImportError:
+    import crud
+    from database import get_table_names, get_table_columns
 
 app = FastAPI(
     title="LearningDB API",

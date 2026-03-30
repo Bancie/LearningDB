@@ -9,9 +9,14 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
 DB_USER = os.getenv("DB_USER")
 DB_PASS = os.getenv("DB_PASS")
 DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
 DB_NAME = os.getenv("DB_NAME")
 
-DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+DATABASE_HOST = DB_HOST or "localhost"
+if DB_PORT and DB_PORT.isdigit():
+    DATABASE_HOST = f"{DATABASE_HOST}:{DB_PORT}"
+
+DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DATABASE_HOST}/{DB_NAME}"
 
 engine = create_engine(
     DATABASE_URL,

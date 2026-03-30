@@ -168,24 +168,36 @@ cd learningdb
 npm install
 ```
 
-### 4. Chạy ứng dụng
-
-**Terminal 1 - Backend:**
+### 4. Cài CLI `learningdb`
 
 ```bash
+# Từ thư mục gốc project
 cd learningdb/backend
 source .venv/bin/activate
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+pip install -e .
 ```
 
-**Terminal 2 - Frontend:**
+### 5. Chạy ứng dụng (1 lệnh local)
 
 ```bash
-cd learningdb
-npm run dev
+# Từ thư mục gốc project
+source learningdb/backend/.venv/bin/activate
+learningdb serve
 ```
 
-### 5. Truy cập
+Mặc định lệnh trên sẽ:
+
+- Kiểm tra `.env` và kết nối MySQL local
+- Chạy backend FastAPI ở `http://localhost:8000`
+- Chạy frontend dev server (HMR) ở `http://localhost:5173`
+
+Chế độ gần production:
+
+```bash
+learningdb serve --prod
+```
+
+### 6. Truy cập
 
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8000
@@ -471,13 +483,17 @@ export const newApiCall = () => api.get<{ data: NewType[] }>("/new-endpoint");
 ### Development Commands
 
 ```bash
+# Full-stack local (recommended)
+learningdb serve       # Backend + frontend dev
+learningdb serve --prod  # Backend + frontend prod-like
+
 # Frontend
 npm run dev          # Start development server
 npm run build        # Build for production
 npm run typecheck    # Run TypeScript check
 
 # Backend
-uvicorn main:app --reload  # Start with auto-reload
+uvicorn main:app --reload  # Start backend only
 ```
 
 ### Environment Variables

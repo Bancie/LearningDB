@@ -3,7 +3,10 @@ CRUD operations - ported from bayes.py
 """
 import pandas as pd
 from sqlalchemy import text, select, func, Table, MetaData
-from database import engine
+try:
+    from .database import engine
+except ImportError:
+    from database import engine
 
 ALLOWED_STATUSES = {'not_started', 'in_progress', 'paused', 'completed', 'skipped', 'cancelled'}
 
