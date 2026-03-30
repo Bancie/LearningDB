@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -86,6 +87,27 @@ def _connect_mysql(connect_args: dict[str, object]) -> None:
     conn.close()
 
 
+def _detect_lan_ip() -> str | None:
+    """Best-effort detect LAN IP for cross-device access."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        sock.connect(("8.8.8.8", 80))
+        return str(sock.getsockname()[0])
+    except OSError:
+        return None
+    finally:
+        sock.close()
+
+
+def _resolve_api_public_host(bind_host: str) -> str:
+    normalized = bind_host.strip()
+    if normalized in {"0.0.0.0", "::"}:
+        return _detect_lan_ip() or "localhost"
+    if normalized in {"127.0.0.1", "::1", "localhost"}:
+        return "localhost"
+    return normalized
+
+
 def _check_mysql(env_values: dict[str, str], repo_root: Path) -> tuple[str, int]:
     required = ("DB_HOST", "DB_USER", "DB_PASS", "DB_NAME")
     missing = [key for key in required if not env_values.get(key)]
@@ -160,6 +182,8 @@ def serve(
     ),
     host: str = typer.Option("0.0.0.0", help="Backend host."),
     port: int = typer.Option(8000, help="Backend port."),
+    web_host: str = typer.Option("0.0.0.0", help="Frontend host."),
+    web_port: int = typer.Option(5173, help="Frontend port."),
 ) -> None:
     """Run MySQL-backed API and web app together."""
     repo_root = Path(__file__).resolve().parents[2]
@@ -180,6 +204,7 @@ def serve(
     shell_env.update(env_values)
     shell_env["DB_HOST"] = db_host
     shell_env["DB_PORT"] = str(db_port)
+    shell_env.setdefault("VITE_API_BASE_URL", f"http://{_resolve_api_public_host(host)}:{port}/api")
 
     if prod:
         typer.echo("[web] building frontend...")
@@ -211,7 +236,10 @@ def serve(
         bufsize=1,
     )
 
-    web_cmd = ["npm", "run", "start"] if prod else ["npm", "run", "dev"]
+    if prod:
+        web_cmd = ["npm", "run", "start", "--", "--host", web_host, "--port", str(web_port)]
+    else:
+        web_cmd = ["npm", "run", "dev", "--", "--host", web_host, "--port", str(web_port)]
     web_proc = subprocess.Popen(
         web_cmd,
         cwd=app_root,
