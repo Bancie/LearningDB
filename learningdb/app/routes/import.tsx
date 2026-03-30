@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Button,
   Alert,
-  Snackbar,
-  Grid,
+  Button,
+  Chip,
   CircularProgress,
+  Paper,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  Snackbar,
+  Stack,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import Layout from '~/components/Layout';
@@ -24,6 +27,8 @@ export function meta() {
 }
 
 export default function ImportData() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [tables, setTables] = useState<string[]>([]);
   const [selectedTable, setSelectedTable] = useState('');
   const [columns, setColumns] = useState<Column[]>([]);
@@ -159,7 +164,7 @@ export default function ImportData() {
 
     return (
       <Grid size={{ xs: 12, md: 6 }} key={column.name}>
-        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+        <Stack direction={isMobile ? 'column' : 'row'} spacing={1} alignItems={isMobile ? 'stretch' : 'flex-start'}>
           {hasEnums ? (
             <FormControl fullWidth>
               <InputLabel>{column.name}</InputLabel>
@@ -179,7 +184,7 @@ export default function ImportData() {
             <TextField
               fullWidth
               label={column.name}
-              type={isDateTime || isDate ? 'datetime-local' : 'text'}
+              type={isDateTime ? 'datetime-local' : isDate ? 'date' : 'text'}
               value={formData[column.name] || ''}
               onChange={(e) => handleInputChange(column.name, e.target.value)}
               InputLabelProps={isDateTime || isDate ? { shrink: true } : undefined}
@@ -187,56 +192,80 @@ export default function ImportData() {
             />
           )}
           {isDateTime && (
-            <Button variant="outlined" onClick={() => fillNow(column.name)} sx={{ minWidth: 80, height: 56 }}>
+            <Button
+              variant="outlined"
+              onClick={() => fillNow(column.name)}
+              sx={{ minWidth: 80, height: 40, width: isMobile ? '100%' : 'auto' }}
+            >
               Now
             </Button>
           )}
           {isDate && !isDateTime && (
-            <Button variant="outlined" onClick={() => fillToday(column.name)} sx={{ minWidth: 80, height: 56 }}>
+            <Button
+              variant="outlined"
+              onClick={() => fillToday(column.name)}
+              sx={{ minWidth: 80, height: 40, width: isMobile ? '100%' : 'auto' }}
+            >
               Today
             </Button>
           )}
-        </Box>
+        </Stack>
       </Grid>
     );
   };
 
   return (
     <Layout>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Import Data
-        </Typography>
-
-        <FormControl fullWidth sx={{ mb: 3 }}>
-          <InputLabel>Choose Table</InputLabel>
-          <Select value={selectedTable} label="Choose Table" onChange={handleTableChange}>
-            {tables.map((table) => (
-              <MenuItem key={table} value={table}>
-                {table}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      <Stack spacing={2}>
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h5" gutterBottom>
+            Import Data
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select table, fill fields, then insert one record.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>Choose Table</InputLabel>
+            <Select value={selectedTable} label="Choose Table" onChange={handleTableChange}>
+              {tables.map((table) => (
+                <MenuItem key={table} value={table}>
+                  {table}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {selectedTable && (
+            <Chip
+              label={`Selected: ${selectedTable}`}
+              color="primary"
+              variant="outlined"
+              sx={{ mt: 1.5, fontWeight: 600 }}
+            />
+          )}
+        </Paper>
 
         {columns.length > 0 && (
-          <>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.2 }}>
+              Record Details
+            </Typography>
+            <Grid container spacing={1.5} sx={{ mb: 2 }}>
               {columns.map(renderField)}
             </Grid>
 
             <Button
+              fullWidth={isMobile}
               variant="contained"
               color="primary"
               onClick={handleSubmit}
               disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} /> : null}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
             >
-              Insert Record
+              {loading ? 'Inserting...' : 'Insert Record'}
             </Button>
-          </>
+          </Paper>
         )}
-      </Paper>
+      </Stack>
 
       <Snackbar
         open={snackbar.open}

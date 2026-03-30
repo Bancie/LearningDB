@@ -1,126 +1,48 @@
-import * as React from 'react';
-import { styled, useTheme } from '@mui/material/styles';
-import type { Theme, CSSObject } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import MuiDrawer from '@mui/material/Drawer';
-import MuiAppBar from '@mui/material/AppBar';
-import type { AppBarProps as MuiAppBarProps } from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import List from '@mui/material/List';
-import CssBaseline from '@mui/material/CssBaseline';
-import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import HomeIcon from '@mui/icons-material/Home';
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import OutputIcon from '@mui/icons-material/Output';
-import ListIcon from '@mui/icons-material/List';
-import EditIcon from '@mui/icons-material/Edit';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CalculateIcon from '@mui/icons-material/Calculate';
-import { useNavigate, useLocation } from 'react-router';
+import * as React from "react";
+import {
+  AppBar,
+  BottomNavigation,
+  BottomNavigationAction,
+  Box,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
+import HomeIcon from "@mui/icons-material/Home";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import OutputIcon from "@mui/icons-material/Output";
+import ListIcon from "@mui/icons-material/List";
+import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import CalculateIcon from "@mui/icons-material/Calculate";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import { useLocation, useNavigate } from "react-router";
 
-const drawerWidth = 280;
-
-const openedMixin = (theme: Theme): CSSObject => ({
-  width: drawerWidth,
-  transition: theme.transitions.create('width', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
-  }),
-  overflowX: 'hidden',
-});
-
-const closedMixin = (theme: Theme): CSSObject => ({
-  transition: theme.transitions.create('width', {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  overflowX: 'hidden',
-  width: `calc(${theme.spacing(7)} + 1px)`,
-  [theme.breakpoints.up('sm')]: {
-    width: `calc(${theme.spacing(8)} + 1px)`,
-  },
-});
-
-const DrawerHeader = styled('div')(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-end',
-  padding: theme.spacing(0, 1),
-  ...theme.mixins.toolbar,
-}));
-
-interface AppBarProps extends MuiAppBarProps {
-  open?: boolean;
-}
-
-const AppBar = styled(MuiAppBar, {
-  shouldForwardProp: (prop) => prop !== 'open',
-})<AppBarProps>(({ theme }) => ({
-  zIndex: theme.zIndex.drawer + 1,
-  transition: theme.transitions.create(['width', 'margin'], {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.leavingScreen,
-  }),
-  variants: [
-    {
-      props: ({ open }) => open,
-      style: {
-        marginLeft: drawerWidth,
-        width: `calc(100% - ${drawerWidth}px)`,
-        transition: theme.transitions.create(['width', 'margin'], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-      },
-    },
-  ],
-}));
-
-const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
-  ({ theme }) => ({
-    width: drawerWidth,
-    flexShrink: 0,
-    whiteSpace: 'nowrap',
-    boxSizing: 'border-box',
-    variants: [
-      {
-        props: ({ open }) => open,
-        style: {
-          ...openedMixin(theme),
-          '& .MuiDrawer-paper': openedMixin(theme),
-        },
-      },
-      {
-        props: ({ open }) => !open,
-        style: {
-          ...closedMixin(theme),
-          '& .MuiDrawer-paper': closedMixin(theme),
-        },
-      },
-    ],
-  }),
-);
+const desktopDrawerWidth = 280;
+const mobileBottomNavHeight = 68;
 
 const menuItems = [
-  { text: 'Home', icon: <HomeIcon />, path: '/' },
-  { text: 'Import Data', icon: <AddCircleIcon />, path: '/import' },
-  { text: 'Current Activity Log', icon: <AssignmentIcon />, path: '/activity-log' },
-  { text: 'Current Activity Output', icon: <OutputIcon />, path: '/activity-output' },
-  { text: 'Activity List', icon: <ListIcon />, path: '/activity-list' },
-  { text: 'Update Data', icon: <EditIcon />, path: '/update' },
-  { text: 'View Activities', icon: <VisibilityIcon />, path: '/view' },
-  { text: 'Run Bayes', icon: <CalculateIcon />, path: '/bayes' },
+  { text: "Home", icon: <HomeIcon />, path: "/" },
+  { text: "Import Data", icon: <AddCircleIcon />, path: "/import" },
+  { text: "Current Activity Log", icon: <AssignmentIcon />, path: "/activity-log" },
+  { text: "Current Activity Output", icon: <OutputIcon />, path: "/activity-output" },
+  { text: "Activity List", icon: <ListIcon />, path: "/activity-list" },
+  { text: "Update Data", icon: <EditIcon />, path: "/update" },
+  { text: "View Activities", icon: <VisibilityIcon />, path: "/view" },
+  { text: "Run Bayes", icon: <CalculateIcon />, path: "/bayes" },
 ];
+
+const mobilePrimaryItems = ["/", "/import", "/activity-list", "/update"];
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -128,113 +50,193 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const location = useLocation();
-  const [open, setOpen] = React.useState(true);
+  const [desktopOpen, setDesktopOpen] = React.useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  const handleDrawerOpen = () => {
-    setOpen(true);
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setMobileMenuOpen(false);
   };
 
-  const handleDrawerClose = () => {
-    setOpen(false);
-  };
+  const mobileNavValue = mobilePrimaryItems.includes(location.pathname)
+    ? location.pathname
+    : "more";
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline />
-      <AppBar position="fixed" open={open}>
-        <Toolbar>
+    <Box sx={{ minHeight: "100vh", display: "flex", backgroundColor: "background.default" }}>
+      <AppBar
+        position="fixed"
+        color="primary"
+        sx={{
+          zIndex: (z) => z.zIndex.drawer + 1,
+          borderBottomLeftRadius: 14,
+          borderBottomRightRadius: 14,
+        }}
+      >
+        <Toolbar sx={{ minHeight: { xs: 64, md: 72 } }}>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
-            onClick={handleDrawerOpen}
             edge="start"
-            sx={[
-              {
-                marginRight: 5,
-              },
-              open && { display: 'none' },
-            ]}
+            onClick={() => (isMobile ? setMobileMenuOpen(true) : setDesktopOpen((prev) => !prev))}
+            sx={{ mr: 1.5 }}
+            aria-label="open navigation"
           >
             <MenuIcon />
           </IconButton>
-          <Typography 
-            variant="h6" 
-            noWrap 
-            component="div"
-            onClick={() => navigate('/')}
-            sx={{ cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+          <Typography
+            variant="h6"
+            onClick={() => handleNavigate("/")}
+            sx={{
+              cursor: "pointer",
+              fontWeight: 700,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
           >
             LearningDB - Bancie Database
           </Typography>
         </Toolbar>
       </AppBar>
-      <Drawer variant="permanent" open={open}>
-        <DrawerHeader>
-          <IconButton onClick={handleDrawerClose}>
-            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-          </IconButton>
-        </DrawerHeader>
-        <Divider />
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
+
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          open={desktopOpen}
+          sx={{
+            width: desktopOpen ? desktopDrawerWidth : 84,
+            flexShrink: 0,
+            "& .MuiDrawer-paper": {
+              width: desktopOpen ? desktopDrawerWidth : 84,
+              transition: theme.transitions.create("width", {
+                duration: theme.transitions.duration.standard,
+              }),
+              mt: "72px",
+              height: "calc(100% - 72px)",
+              borderRight: "1px solid rgba(15, 23, 42, 0.08)",
+              overflowX: "hidden",
+              px: 1,
+              py: 1.5,
+              background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
+            },
+          }}
+        >
+          <List>
+            {menuItems.map((item) => (
               <ListItemButton
-                onClick={() => navigate(item.path)}
+                key={item.path}
                 selected={location.pathname === item.path}
-                sx={[
-                  {
-                    minHeight: 48,
-                    px: 2.5,
-                  },
-                  open
-                    ? {
-                        justifyContent: 'initial',
-                      }
-                    : {
-                        justifyContent: 'center',
-                      },
-                ]}
+                onClick={() => handleNavigate(item.path)}
+                sx={{
+                  minHeight: 50,
+                  justifyContent: desktopOpen ? "initial" : "center",
+                  borderRadius: 2,
+                  mb: 0.4,
+                }}
               >
                 <ListItemIcon
-                  sx={[
-                    {
-                      minWidth: 0,
-                      justifyContent: 'center',
-                    },
-                    open
-                      ? {
-                          mr: 3,
-                        }
-                      : {
-                          mr: 'auto',
-                        },
-                  ]}
+                  sx={{
+                    minWidth: 0,
+                    mr: desktopOpen ? 2 : "auto",
+                    justifyContent: "center",
+                    color: "inherit",
+                  }}
                 >
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText
                   primary={item.text}
-                  sx={[
-                    open
-                      ? {
-                          opacity: 1,
-                        }
-                      : {
-                          opacity: 0,
-                        },
-                  ]}
+                  sx={{
+                    opacity: desktopOpen ? 1 : 0,
+                    transition: "opacity 150ms ease",
+                  }}
                 />
               </ListItemButton>
-            </ListItem>
+            ))}
+          </List>
+        </Drawer>
+      )}
+
+      <Drawer
+        anchor="bottom"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            pb: 1.5,
+          },
+        }}
+      >
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography variant="subtitle1">All features</Typography>
+        </Box>
+        <Divider />
+        <List sx={{ pt: 0.5 }}>
+          {menuItems.map((item) => (
+            <ListItemButton
+              key={item.path}
+              selected={location.pathname === item.path}
+              onClick={() => handleNavigate(item.path)}
+              sx={{ borderRadius: 2, mx: 1, my: 0.4 }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
           ))}
         </List>
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <DrawerHeader />
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: "100%",
+          pt: { xs: "76px", md: "92px" },
+          pb: { xs: `${mobileBottomNavHeight + 20}px`, md: 4 },
+          px: { xs: 1.25, sm: 2, md: 3 },
+        }}
+      >
         {children}
       </Box>
+
+      {isMobile && (
+        <BottomNavigation
+          value={mobileNavValue}
+          showLabels
+          onChange={(_, value: string) => {
+            if (value === "more") {
+              setMobileMenuOpen(true);
+              return;
+            }
+            handleNavigate(value);
+          }}
+          sx={{
+            position: "fixed",
+            left: 10,
+            right: 10,
+            bottom: 10,
+            height: mobileBottomNavHeight,
+            borderRadius: 4,
+            boxShadow: "0 10px 28px rgba(15, 23, 42, 0.18)",
+            border: "1px solid rgba(11, 110, 230, 0.12)",
+            zIndex: theme.zIndex.appBar + 1,
+            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <BottomNavigationAction label="Home" value="/" icon={<HomeIcon />} />
+          <BottomNavigationAction label="Import" value="/import" icon={<AddCircleIcon />} />
+          <BottomNavigationAction label="Activities" value="/activity-list" icon={<ListIcon />} />
+          <BottomNavigationAction label="Update" value="/update" icon={<EditIcon />} />
+          <BottomNavigationAction label="More" value="more" icon={<MoreHorizIcon />} />
+        </BottomNavigation>
+      )}
     </Box>
   );
 }

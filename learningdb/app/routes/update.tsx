@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import {
-  Box,
-  Paper,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Button,
   Alert,
-  Snackbar,
+  Button,
+  Chip,
+  FormControl,
   Grid,
-  Divider,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Snackbar,
+  Stack,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import Layout from '~/components/Layout';
@@ -45,6 +47,8 @@ const POSTERIOR_TYPES = [
 ];
 
 export default function UpdateData() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [activityIds, setActivityIds] = useState<number[]>([]);
   const [selectedActivity, setSelectedActivity] = useState('');
   const [newStatus, setNewStatus] = useState('');
@@ -170,130 +174,150 @@ export default function UpdateData() {
 
   return (
     <Layout>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Update Data
-        </Typography>
+      <Stack spacing={2}>
+        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Typography variant="h5" gutterBottom>
+            Update Data
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Select one active activity, then update status and probability values.
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel>Activity ID</InputLabel>
+            <Select
+              value={selectedActivity}
+              label="Activity ID"
+              onChange={(e: SelectChangeEvent) => setSelectedActivity(e.target.value)}
+            >
+              {activityIds.map((id) => (
+                <MenuItem key={id} value={id.toString()}>
+                  {id}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {selectedActivity && (
+            <Chip
+              color="primary"
+              variant="outlined"
+              sx={{ mt: 1.5, fontWeight: 600 }}
+              label={`Editing Activity #${selectedActivity}`}
+            />
+          )}
+        </Paper>
 
-        <Grid container spacing={3}>
-          {/* Activity Selector */}
-          <Grid size={12}>
-            <FormControl fullWidth>
-              <InputLabel>Activity ID</InputLabel>
-              <Select
-                value={selectedActivity}
-                label="Activity ID"
-                onChange={(e: SelectChangeEvent) => setSelectedActivity(e.target.value)}
-              >
-                {activityIds.map((id) => (
-                  <MenuItem key={id} value={id.toString()}>
-                    {id}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {/* Update Status */}
-          <Grid size={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Update Status
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel>New Status</InputLabel>
-                <Select
-                  value={newStatus}
-                  label="New Status"
-                  onChange={(e: SelectChangeEvent) => setNewStatus(e.target.value)}
-                >
-                  {ALLOWED_STATUSES.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button variant="contained" onClick={handleUpdateStatus} disabled={loading}>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper sx={{ p: 2.5, height: '100%' }}>
+              <Typography variant="h6" gutterBottom>
                 Update Status
-              </Button>
-            </Box>
+              </Typography>
+              <Stack spacing={1.2}>
+                <FormControl fullWidth>
+                  <InputLabel>New Status</InputLabel>
+                  <Select
+                    value={newStatus}
+                    label="New Status"
+                    onChange={(e: SelectChangeEvent) => setNewStatus(e.target.value)}
+                  >
+                    {ALLOWED_STATUSES.map((status) => (
+                      <MenuItem key={status} value={status}>
+                        {status}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Button fullWidth={isMobile} variant="contained" onClick={handleUpdateStatus} disabled={loading}>
+                  Update Status
+                </Button>
+              </Stack>
+            </Paper>
           </Grid>
 
-          {/* Update Prior */}
-          <Grid size={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Update Prior Probability
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-              <TextField
-                label="New Prior Prob"
-                type="number"
-                inputProps={{ step: 0.01, min: 0, max: 1 }}
-                value={priorProb}
-                onChange={(e) => setPriorProb(e.target.value)}
-                sx={{ width: 200 }}
-              />
-              <Button variant="contained" onClick={handleUpdatePrior} disabled={loading}>
-                Update Prior
-              </Button>
-            </Box>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper sx={{ p: 2.5, height: '100%' }}>
+              <Typography variant="h6" gutterBottom>
+                Update Prior Probability
+              </Typography>
+              <Stack spacing={1.2}>
+                <TextField
+                  fullWidth
+                  label="New Prior Prob"
+                  type="number"
+                  inputProps={{ step: 0.01, min: 0, max: 1 }}
+                  value={priorProb}
+                  onChange={(e) => setPriorProb(e.target.value)}
+                />
+                <Button fullWidth={isMobile} variant="contained" onClick={handleUpdatePrior} disabled={loading}>
+                  Update Prior
+                </Button>
+              </Stack>
+            </Paper>
           </Grid>
 
-          {/* Update Posterior */}
-          <Grid size={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Update Posterior Probability
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-              <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel>Posterior Type</InputLabel>
-                <Select
-                  value={posteriorType}
-                  label="Posterior Type"
-                  onChange={(e: SelectChangeEvent) => setPosteriorType(e.target.value)}
-                >
-                  {POSTERIOR_TYPES.map((type) => (
-                    <MenuItem key={type.value} value={type.value.toString()}>
-                      {type.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <TextField
-                label="New Value"
-                type="number"
-                inputProps={{ step: 0.01, min: 0, max: 1 }}
-                value={posteriorProb}
-                onChange={(e) => setPosteriorProb(e.target.value)}
-                sx={{ width: 200 }}
-              />
-              <Button variant="contained" onClick={handleUpdatePosterior} disabled={loading}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper sx={{ p: 2.5, height: '100%' }}>
+              <Typography variant="h6" gutterBottom>
                 Update Posterior
-              </Button>
-            </Box>
+              </Typography>
+              <Stack spacing={1.2}>
+                <FormControl fullWidth>
+                  <InputLabel>Posterior Type</InputLabel>
+                  <Select
+                    value={posteriorType}
+                    label="Posterior Type"
+                    onChange={(e: SelectChangeEvent) => setPosteriorType(e.target.value)}
+                  >
+                    {POSTERIOR_TYPES.map((type) => (
+                      <MenuItem key={type.value} value={type.value.toString()}>
+                        {type.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <TextField
+                  fullWidth
+                  label="New Value"
+                  type="number"
+                  inputProps={{ step: 0.01, min: 0, max: 1 }}
+                  value={posteriorProb}
+                  onChange={(e) => setPosteriorProb(e.target.value)}
+                />
+                <Button
+                  fullWidth={isMobile}
+                  variant="contained"
+                  onClick={handleUpdatePosterior}
+                  disabled={loading}
+                >
+                  Update Posterior
+                </Button>
+              </Stack>
+            </Paper>
           </Grid>
 
-          {/* Utility Buttons */}
-          <Grid size={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              Utilities
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button variant="outlined" color="warning" onClick={handleZeroOut} disabled={loading}>
-                Zero Out Others
-              </Button>
-              <Button variant="outlined" onClick={handleCheckPrior} disabled={loading}>
-                Check Prior Sum
-              </Button>
-            </Box>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Paper sx={{ p: 2.5, height: '100%' }}>
+              <Typography variant="h6" gutterBottom>
+                Utilities
+              </Typography>
+              <Stack spacing={1.2}>
+                <Button
+                  fullWidth={isMobile}
+                  variant="outlined"
+                  color="warning"
+                  onClick={handleZeroOut}
+                  disabled={loading}
+                >
+                  Zero Out Others
+                </Button>
+                <Button fullWidth={isMobile} variant="outlined" onClick={handleCheckPrior} disabled={loading}>
+                  Check Prior Sum
+                </Button>
+              </Stack>
+            </Paper>
           </Grid>
         </Grid>
-      </Paper>
+      </Stack>
 
       <Snackbar
         open={snackbar.open}

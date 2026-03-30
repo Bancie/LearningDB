@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import {
+  Alert,
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
+  Paper,
+  Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Alert,
-  Snackbar,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import Layout from '~/components/Layout';
 import { getCurrentActivityOutput } from '~/services/api';
@@ -23,6 +26,8 @@ export function meta() {
 }
 
 export default function CurrentActivityOutput() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [userId, setUserId] = useState('');
   const [data, setData] = useState<ActivityOutput[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,53 +57,80 @@ export default function CurrentActivityOutput() {
 
   return (
     <Layout>
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
         <Typography variant="h5" gutterBottom>
           Current Activity Output
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
+            fullWidth={isMobile}
             label="User ID"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             size="small"
             type="number"
           />
-          <Button variant="contained" onClick={handleLoad} disabled={loading}>
+          <Button fullWidth={isMobile} variant="contained" onClick={handleLoad} disabled={loading}>
             {loading ? 'Loading...' : 'Load'}
           </Button>
         </Box>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>AO_ID</TableCell>
-                <TableCell>ACT_NAME</TableCell>
-                <TableCell>START_TIME</TableCell>
-                <TableCell>FINISH_TIME</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.map((row) => (
-                <TableRow key={row.AO_ID}>
-                  <TableCell>{row.AO_ID}</TableCell>
-                  <TableCell>{row.ACT_NAME}</TableCell>
-                  <TableCell>{row.START_TIME}</TableCell>
-                  <TableCell>{row.FINISH_TIME}</TableCell>
-                </TableRow>
-              ))}
-              {data.length === 0 && (
+        {isMobile ? (
+          <Stack spacing={1}>
+            {data.map((row) => (
+              <Paper key={row.AO_ID} variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {row.ACT_NAME}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  AO ID: {row.AO_ID}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.4 }}>
+                  Start: {row.START_TIME}
+                </Typography>
+                <Typography variant="body2">
+                  Finish: {row.FINISH_TIME}
+                </Typography>
+              </Paper>
+            ))}
+            {data.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+                No data to display
+              </Typography>
+            )}
+          </Stack>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={4} align="center">
-                    No data to display
-                  </TableCell>
+                  <TableCell>AO_ID</TableCell>
+                  <TableCell>ACT_NAME</TableCell>
+                  <TableCell>START_TIME</TableCell>
+                  <TableCell>FINISH_TIME</TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {data.map((row) => (
+                  <TableRow key={row.AO_ID}>
+                    <TableCell>{row.AO_ID}</TableCell>
+                    <TableCell>{row.ACT_NAME}</TableCell>
+                    <TableCell>{row.START_TIME}</TableCell>
+                    <TableCell>{row.FINISH_TIME}</TableCell>
+                  </TableRow>
+                ))}
+                {data.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center">
+                      No data to display
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
 
       <Snackbar

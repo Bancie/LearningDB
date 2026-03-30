@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import {
+  Alert,
   Box,
-  Paper,
-  Typography,
-  TextField,
   Button,
+  Paper,
+  Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Alert,
-  Snackbar,
+  TextField,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import Layout from '~/components/Layout';
 import { getActivityView } from '~/services/api';
@@ -23,6 +26,8 @@ export function meta() {
 }
 
 export default function ViewActivities() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [userId, setUserId] = useState('');
   const [data, setData] = useState<ActivityData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,57 +57,82 @@ export default function ViewActivities() {
 
   return (
     <Layout>
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
         <Typography variant="h5" gutterBottom>
           View Activities
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
+            fullWidth={isMobile}
             label="User ID"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             size="small"
             type="number"
           />
-          <Button variant="contained" onClick={handleLoad} disabled={loading}>
+          <Button fullWidth={isMobile} variant="contained" onClick={handleLoad} disabled={loading}>
             {loading ? 'Loading...' : 'Load'}
           </Button>
         </Box>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ACTIVITY_ID</TableCell>
-                <TableCell>ACT_NAME</TableCell>
-                <TableCell align="right">Total</TableCell>
-                <TableCell align="right">Learning</TableCell>
-                <TableCell align="right">Overview</TableCell>
-                <TableCell align="right">Practice</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {data.map((row) => (
-                <TableRow key={row.ACTIVITY_ID}>
-                  <TableCell>{row.ACTIVITY_ID}</TableCell>
-                  <TableCell>{row.ACT_NAME}</TableCell>
-                  <TableCell align="right">{row.Total}</TableCell>
-                  <TableCell align="right">{row.Learning}</TableCell>
-                  <TableCell align="right">{row.Overview}</TableCell>
-                  <TableCell align="right">{row.Practice}</TableCell>
-                </TableRow>
-              ))}
-              {data.length === 0 && (
+        {isMobile ? (
+          <Stack spacing={1}>
+            {data.map((row) => (
+              <Paper key={row.ACTIVITY_ID} variant="outlined" sx={{ p: 1.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  {row.ACT_NAME}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ID: {row.ACTIVITY_ID}
+                </Typography>
+                <Typography variant="body2">Total: {row.Total}</Typography>
+                <Typography variant="body2">Learning: {row.Learning}</Typography>
+                <Typography variant="body2">Overview: {row.Overview}</Typography>
+                <Typography variant="body2">Practice: {row.Practice}</Typography>
+              </Paper>
+            ))}
+            {data.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+                No data to display
+              </Typography>
+            )}
+          </Stack>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No data to display
-                  </TableCell>
+                  <TableCell>ACTIVITY_ID</TableCell>
+                  <TableCell>ACT_NAME</TableCell>
+                  <TableCell align="right">Total</TableCell>
+                  <TableCell align="right">Learning</TableCell>
+                  <TableCell align="right">Overview</TableCell>
+                  <TableCell align="right">Practice</TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {data.map((row) => (
+                  <TableRow key={row.ACTIVITY_ID}>
+                    <TableCell>{row.ACTIVITY_ID}</TableCell>
+                    <TableCell>{row.ACT_NAME}</TableCell>
+                    <TableCell align="right">{row.Total}</TableCell>
+                    <TableCell align="right">{row.Learning}</TableCell>
+                    <TableCell align="right">{row.Overview}</TableCell>
+                    <TableCell align="right">{row.Practice}</TableCell>
+                  </TableRow>
+                ))}
+                {data.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      No data to display
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
 
       <Snackbar
