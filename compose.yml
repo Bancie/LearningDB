@@ -1,0 +1,63 @@
+services:
+  db:
+    image: mysql:9.3
+    command: ["mysqld", "--lower_case_table_names=1"]
+    container_name: bancie-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3308:3306"
+    volumes:
+      - bancie_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-uroot",
+          "-p${DB_PASS}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    build:
+      context: ./learningdb/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./learningdb
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  bancie_mysql_data:
+    external: true
+    name: bancie-mysql-data

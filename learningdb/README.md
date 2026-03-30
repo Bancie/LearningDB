@@ -193,6 +193,55 @@ npm run dev
 
 ---
 
+## Chạy bằng Docker Compose (1 lệnh)
+
+`LearningDB` đã được cấu hình để chạy full stack bằng file `compose.yml` ở thư mục gốc project.
+
+### Yêu cầu trước khi chạy
+
+- Đảm bảo volume dữ liệu hiện có là `bancie-mysql-data`.
+- Không để MySQL cũ chạy đồng thời cùng volume đó (tránh lock/corrupt data).
+- Cổng DB host dùng mặc định `3308` để tránh đụng `3306/3307` đang dùng.
+- Không dùng `docker compose down -v` nếu muốn giữ dữ liệu.
+
+### Chạy stack
+
+```bash
+cd ..
+docker compose up --build
+```
+
+### Endpoint sau khi chạy
+
+- **Web**: `http://localhost:3000`
+- **API**: `http://localhost:8000`
+- **API Docs**: `http://localhost:8000/docs`
+- **MySQL (host)**: `localhost:3308`
+
+### Kiểm tra an toàn trước khi start
+
+```bash
+# 1) Xác nhận volume tồn tại
+docker volume ls | grep bancie-mysql-data
+
+# 2) Dừng container MySQL cũ nếu đang dùng cùng volume
+docker ps --format '{{.Names}}' | grep bancie-mysql && docker stop bancie-mysql
+
+# 3) Start compose
+docker compose up --build
+```
+
+### Kiểm tra dữ liệu sau restart
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+Sau khi lên lại, kiểm tra dữ liệu trong DB hoặc qua màn hình ứng dụng để xác nhận dữ liệu vẫn còn.
+
+---
+
 ## Backend API
 
 ### Base URL
