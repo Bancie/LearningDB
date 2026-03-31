@@ -5,9 +5,10 @@
         "authProtocol": "default",
         "enableSsl": "Disabled"
       },
+      "ssh": "Disabled",
       "previewLimit": 100,
-      "server": "localhost",
-      "port": 3306,
+      "server": "127.0.0.1",
+      "port": 3308,
       "driver": "MySQL",
       "name": "bancie",
       "username": "root",
