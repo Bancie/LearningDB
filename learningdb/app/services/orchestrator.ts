@@ -84,4 +84,57 @@ export const putChatPreference = (
 export const sendChatMessage = (payload: ChatRequest) =>
   orchestratorApi.post<ChatResponse>("/chat", payload);
 
+export interface ConversationSummary {
+  id: string;
+  user_id: number;
+  title: string;
+  provider: string;
+  model: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at: string;
+}
+
+export interface ConversationMessage {
+  id: string;
+  conversation_id: string;
+  user_id: number;
+  role: "user" | "assistant";
+  content: string;
+  request_id: string | null;
+  created_at: string;
+}
+
+export const listConversations = (userId: number) =>
+  orchestratorApi.get<ConversationSummary[]>(`/chat/conversations/${userId}`);
+
+export const createConversation = (
+  userId: number,
+  payload?: {
+    title?: string;
+    provider?: string;
+    model?: string;
+    first_user_message?: string;
+  }
+) => orchestratorApi.post<ConversationSummary>(`/chat/conversations/${userId}`, payload ?? {});
+
+export const getConversationMessages = (userId: number, conversationId: string) =>
+  orchestratorApi.get<ConversationMessage[]>(
+    `/chat/conversations/${userId}/${conversationId}/messages`
+  );
+
+export const appendConversationMessage = (
+  userId: number,
+  conversationId: string,
+  payload: {
+    role: "user" | "assistant";
+    content: string;
+    request_id?: string;
+  }
+) =>
+  orchestratorApi.post<ConversationMessage>(
+    `/chat/conversations/${userId}/${conversationId}/messages`,
+    payload
+  );
+
 export default orchestratorApi;

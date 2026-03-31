@@ -81,6 +81,12 @@ class ChatOrchestrator:
             await self._set_user_preference(
                 chat.user_id, resolved_provider, resolved_model
             )
+        conversation_id = await self._ensure_conversation_id(
+            chat=chat,
+            provider=resolved_provider,
+            model=resolved_model,
+            fallback_id=request_id,
+        )
 
         messages: list[Any] = [SystemMessage(content=SYSTEM_PROMPT)]
         for item in chat.history:
@@ -105,9 +111,16 @@ class ChatOrchestrator:
                     answer = json.dumps(ai_response.content, ensure_ascii=True)
                 if not answer.strip():
                     answer = "I could not produce a final answer. Please try again."
+                await self._persist_chat_turn(
+                    user_id=chat.user_id,
+                    conversation_id=conversation_id,
+                    user_message=chat.message,
+                    assistant_message=answer,
+                    request_id=request_id,
+                )
                 return ChatResponse(
                     request_id=request_id,
-                    conversation_id=chat.conversation_id or request_id,
+                    conversation_id=conversation_id,
                     answer=answer,
                     resolved_provider=resolved_provider,
                     resolved_model=resolved_model,
@@ -175,13 +188,21 @@ class ChatOrchestrator:
                     )
                 )
 
+        final_answer = (
+            "I reached the tool execution limit for this request. "
+            "Please narrow the question or try again."
+        )
+        await self._persist_chat_turn(
+            user_id=chat.user_id,
+            conversation_id=conversation_id,
+            user_message=chat.message,
+            assistant_message=final_answer,
+            request_id=request_id,
+        )
         return ChatResponse(
             request_id=request_id,
-            conversation_id=chat.conversation_id or request_id,
-            answer=(
-                "I reached the tool execution limit for this request. "
-                "Please narrow the question or try again."
-            ),
+            conversation_id=conversation_id,
+            answer=final_answer,
             resolved_provider=resolved_provider,
             resolved_model=resolved_model,
             tool_invocations=tool_invocations,
@@ -211,6 +232,61 @@ class ChatOrchestrator:
             f"/users/{user_id}/chat-preferences",
             {"provider": provider, "model": model},
         )
+
+    async def _ensure_conversation_id(
+        self, chat: ChatRequest, provider: str, model: str, fallback_id: str
+    ) -> str:
+        if chat.conversation_id:
+            return chat.conversation_id
+        payload = await self._backend_client.post_json(
+            f"/users/{chat.user_id}/conversations",
+            {
+                "provider": provider,
+                "model": model,
+                "first_user_message": chat.message,
+            },
+        )
+        data = payload.get("data")
+        if isinstance(data, dict):
+            conversation_id = str(data.get("id", "")).strip()
+            if conversation_id:
+                return conversation_id
+        return chat.conversation_id or fallback_id
+
+    async def _persist_chat_turn(
+        self,
+        user_id: int,
+        conversation_id: str,
+        user_message: str,
+        assistant_message: str,
+        request_id: str,
+    ) -> None:
+        if not conversation_id:
+            return
+        try:
+            await self._backend_client.post_json(
+                f"/users/{user_id}/conversations/{conversation_id}/messages",
+                {
+                    "role": "user",
+                    "content": user_message,
+                    "request_id": request_id,
+                },
+            )
+            await self._backend_client.post_json(
+                f"/users/{user_id}/conversations/{conversation_id}/messages",
+                {
+                    "role": "assistant",
+                    "content": assistant_message,
+                    "request_id": request_id,
+                },
+            )
+        except Exception as exc:  # pragma: no cover - persistence fallback
+            logger.warning(
+                "conversation_persist_failed user_id=%s conversation_id=%s reason=%s",
+                user_id,
+                conversation_id,
+                exc,
+            )
 
     def _resolve_provider_and_model(
         self, chat: ChatRequest, preference: dict[str, str]

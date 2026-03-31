@@ -61,6 +61,19 @@ class UpsertChatPreferenceRequest(BaseModel):
     model: str
 
 
+class CreateConversationRequest(BaseModel):
+    title: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    first_user_message: Optional[str] = None
+
+
+class AppendConversationMessageRequest(BaseModel):
+    role: str
+    content: str
+    request_id: Optional[str] = None
+
+
 # API Endpoints
 
 @app.get("/")
@@ -91,6 +104,62 @@ def upsert_chat_preference(user_id: int, request: UpsertChatPreferenceRequest):
             user_id=user_id, provider=request.provider, model=request.model
         )
         return {"data": preference}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/users/{user_id}/conversations")
+def list_conversations(user_id: int):
+    try:
+        data = crud.list_conversations(user_id)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/users/{user_id}/conversations")
+def create_conversation(user_id: int, request: CreateConversationRequest):
+    try:
+        data = crud.create_conversation(
+            user_id=user_id,
+            title=request.title,
+            provider=request.provider,
+            model=request.model,
+            first_user_message=request.first_user_message,
+        )
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/users/{user_id}/conversations/{conversation_id}/messages")
+def list_conversation_messages(user_id: int, conversation_id: str):
+    try:
+        data = crud.list_conversation_messages(
+            user_id=user_id, conversation_id=conversation_id
+        )
+        return {"data": data}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/users/{user_id}/conversations/{conversation_id}/messages")
+def append_conversation_message(
+    user_id: int, conversation_id: str, request: AppendConversationMessageRequest
+):
+    try:
+        data = crud.append_conversation_message(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            role=request.role,
+            content=request.content,
+            request_id=request.request_id,
+        )
+        return {"data": data}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

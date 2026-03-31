@@ -16,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import type { DrawerProps } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import HomeIcon from "@mui/icons-material/Home";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -31,7 +32,13 @@ import { useLocation, useNavigate } from "react-router";
 const desktopDrawerWidth = 280;
 const mobileBottomNavHeight = 68;
 
-const menuItems = [
+export type NavItem = {
+  text: string;
+  icon: React.ReactNode;
+  path: string;
+};
+
+export const menuItems: NavItem[] = [
   { text: "Home", icon: <HomeIcon />, path: "/" },
   { text: "Import Data", icon: <AddCircleIcon />, path: "/import" },
   { text: "Current Activity Log", icon: <AssignmentIcon />, path: "/activity-log" },
@@ -46,15 +53,28 @@ const mobilePrimaryItems = ["/", "/import", "/activity-list", "/update"];
 
 interface LayoutProps {
   children: React.ReactNode;
+  mode?: "default" | "chatFirst";
+  sidebarHistoryContent?:
+    | React.ReactNode
+    | ((context: { collapsed: boolean; isMobile: boolean }) => React.ReactNode);
+  sidebarToolsContent?:
+    | React.ReactNode
+    | ((context: { collapsed: boolean; isMobile: boolean }) => React.ReactNode);
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({
+  children,
+  mode = "default",
+  sidebarHistoryContent,
+  sidebarToolsContent,
+}: LayoutProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const location = useLocation();
   const [desktopOpen, setDesktopOpen] = React.useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const isChatFirst = mode === "chatFirst";
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -64,6 +84,25 @@ export default function Layout({ children }: LayoutProps) {
   const mobileNavValue = mobilePrimaryItems.includes(location.pathname)
     ? location.pathname
     : "more";
+
+  const sidebarWidth = desktopOpen ? desktopDrawerWidth : 88;
+  const drawerVariant: DrawerProps["variant"] = isMobile ? "temporary" : "permanent";
+  const isSidebarCollapsed = !desktopOpen && !isMobile;
+
+  const renderSidebarSection = (
+    content:
+      | React.ReactNode
+      | ((context: { collapsed: boolean; isMobile: boolean }) => React.ReactNode)
+      | undefined
+  ) => {
+    if (!content) {
+      return null;
+    }
+    if (typeof content === "function") {
+      return content({ collapsed: isSidebarCollapsed, isMobile });
+    }
+    return content;
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", backgroundColor: "background.default" }}>
@@ -80,7 +119,9 @@ export default function Layout({ children }: LayoutProps) {
           <IconButton
             color="inherit"
             edge="start"
-            onClick={() => (isMobile ? setMobileMenuOpen(true) : setDesktopOpen((prev) => !prev))}
+            onClick={() =>
+              isMobile ? setMobileMenuOpen(true) : setDesktopOpen((prev) => !prev)
+            }
             sx={{ mr: 1.5 }}
             aria-label="open navigation"
           >
@@ -121,110 +162,124 @@ export default function Layout({ children }: LayoutProps) {
         </Toolbar>
       </AppBar>
 
-      {!isMobile && (
-        <Drawer
-          variant="permanent"
-          open={desktopOpen}
-          sx={{
-            width: desktopOpen ? desktopDrawerWidth : 84,
-            flexShrink: 0,
-            "& .MuiDrawer-paper": {
-              width: desktopOpen ? desktopDrawerWidth : 84,
-              transition: theme.transitions.create("width", {
-                duration: theme.transitions.duration.standard,
-              }),
-              mt: "72px",
-              height: "calc(100% - 72px)",
-              borderRight: "1px solid rgba(15, 23, 42, 0.08)",
-              overflowX: "hidden",
-              px: 1,
-              py: 1.5,
-              background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
-            },
-          }}
-        >
-          <List>
-            {menuItems.map((item) => (
-              <ListItemButton
-                key={item.path}
-                selected={location.pathname === item.path}
-                onClick={() => handleNavigate(item.path)}
-                sx={{
-                  minHeight: 50,
-                  justifyContent: desktopOpen ? "initial" : "center",
-                  borderRadius: 2,
-                  mb: 0.4,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: desktopOpen ? 2 : "auto",
-                    justifyContent: "center",
-                    color: "inherit",
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  sx={{
-                    opacity: desktopOpen ? 1 : 0,
-                    transition: "opacity 150ms ease",
-                  }}
-                />
-              </ListItemButton>
-            ))}
-          </List>
-        </Drawer>
-      )}
-
       <Drawer
-        anchor="bottom"
-        open={mobileMenuOpen}
+        anchor={isChatFirst ? "left" : "bottom"}
+        variant={drawerVariant}
+        open={isMobile ? mobileMenuOpen : true}
         onClose={() => setMobileMenuOpen(false)}
         sx={{
-          display: { xs: "block", md: "none" },
+          display:
+            isChatFirst || !isMobile
+              ? "block"
+              : {
+                  xs: "block",
+                  md: "none",
+                },
+          width: !isMobile ? sidebarWidth : undefined,
+          flexShrink: 0,
           "& .MuiDrawer-paper": {
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            pb: 1.5,
+            width: isMobile ? (isChatFirst ? "88vw" : "100vw") : sidebarWidth,
+            mt: isMobile && !isChatFirst ? 0 : "72px",
+            height: isMobile && !isChatFirst ? "auto" : "calc(100% - 72px)",
+            transition: !isMobile
+              ? theme.transitions.create("width", {
+                  duration: theme.transitions.duration.standard,
+                })
+              : undefined,
+            borderRight: !isMobile ? "1px solid rgba(15, 23, 42, 0.08)" : "none",
+            borderTopLeftRadius: isMobile ? 20 : 0,
+            borderTopRightRadius: isMobile ? 20 : 0,
+            overflowX: "hidden",
+            px: isChatFirst ? 1.2 : 1,
+            py: isChatFirst ? 1 : 1.5,
+            background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
           },
         }}
       >
-        <Box sx={{ px: 2, py: 1 }}>
-          <Typography variant="subtitle1">All features</Typography>
-        </Box>
-        <Divider />
-        <List sx={{ pt: 0.5 }}>
-          {menuItems.map((item) => (
-            <ListItemButton
-              key={item.path}
-              selected={location.pathname === item.path}
-              onClick={() => handleNavigate(item.path)}
-              sx={{ borderRadius: 2, mx: 1, my: 0.4 }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          ))}
-        </List>
+        {isChatFirst ? (
+          <Box sx={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100%" }}>
+            <Box sx={{ px: 0.75, py: 0.5 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 700,
+                  opacity: desktopOpen || isMobile ? 1 : 0,
+                  minHeight: 30,
+                }}
+              >
+                AI Workspace
+              </Typography>
+            </Box>
+            <Box sx={{ minHeight: 0, overflowY: "auto", px: 0.2 }}>
+              {renderSidebarSection(sidebarHistoryContent)}
+            </Box>
+            <Box sx={{ pt: 1 }}>
+              <Divider sx={{ mb: 1 }} />
+              {renderSidebarSection(sidebarToolsContent)}
+            </Box>
+          </Box>
+        ) : (
+          <>
+            {isMobile && (
+              <>
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography variant="subtitle1">All features</Typography>
+                </Box>
+                <Divider />
+              </>
+            )}
+            <List sx={{ pt: 0.5 }}>
+              {menuItems.map((item) => (
+                <ListItemButton
+                  key={item.path}
+                  selected={location.pathname === item.path}
+                  onClick={() => handleNavigate(item.path)}
+                  sx={{
+                    minHeight: 50,
+                    justifyContent: !isMobile && desktopOpen ? "initial" : "center",
+                    borderRadius: 2,
+                    mb: 0.4,
+                    mx: isMobile ? 1 : 0,
+                  }}
+                >
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 0,
+                      mr: !isMobile && desktopOpen ? 2 : "auto",
+                      justifyContent: "center",
+                      color: "inherit",
+                    }}
+                  >
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={item.text}
+                    sx={{
+                      opacity: isMobile || desktopOpen ? 1 : 0,
+                      transition: "opacity 150ms ease",
+                    }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+          </>
+        )}
       </Drawer>
 
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          width: "100%",
+          width: isChatFirst ? { md: `calc(100% - ${sidebarWidth}px)` } : "100%",
           pt: { xs: "76px", md: "92px" },
-          pb: { xs: `${mobileBottomNavHeight + 20}px`, md: 4 },
+          pb: isChatFirst ? { xs: 1, md: 2 } : { xs: `${mobileBottomNavHeight + 20}px`, md: 4 },
           px: { xs: 1.25, sm: 2, md: 3 },
         }}
       >
         {children}
       </Box>
 
-      {isMobile && (
+      {isMobile && !isChatFirst && (
         <BottomNavigation
           value={mobileNavValue}
           showLabels

@@ -107,3 +107,37 @@ class ProviderCatalogItem(BaseModel):
     label: str
     available: bool
     models: list[ProviderModel]
+
+
+class ConversationSummary(BaseModel):
+    id: str
+    user_id: int = Field(gt=0)
+    title: str
+    provider: str
+    model: str
+    created_at: str | None = None
+    updated_at: str | None = None
+    last_message_at: str | None = None
+
+
+class CreateConversationRequest(BaseModel):
+    title: str | None = Field(default=None, max_length=120)
+    provider: str | None = Field(default=None, max_length=64)
+    model: str | None = Field(default=None, max_length=128)
+    first_user_message: str | None = Field(default=None, max_length=4000)
+
+
+class ConversationMessage(BaseModel):
+    id: str
+    conversation_id: str
+    user_id: int = Field(gt=0)
+    role: Literal["user", "assistant"]
+    content: str
+    request_id: str | None = None
+    created_at: str | None = None
+
+
+class AppendConversationMessageRequest(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+    request_id: str | None = Field(default=None, max_length=128)

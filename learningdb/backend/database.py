@@ -21,6 +21,8 @@ DATABASE_URL = f"mysql+mysqlconnector://{DB_USER}:{DB_PASS}@{DATABASE_HOST}/{DB_
 engine = create_engine(
     DATABASE_URL,
     connect_args={'init_command': 'SET time_zone="+07:00"'},
+    pool_pre_ping=True,
+    pool_recycle=300,
     echo=False
 )
 

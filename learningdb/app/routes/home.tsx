@@ -1,46 +1,27 @@
 import type { Route } from "./+types/home";
 import Layout from "~/components/Layout";
+import { Alert, Box, Chip, Paper, Stack, Typography, type SelectChangeEvent } from "@mui/material";
 import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardActionArea,
-  CardContent,
-  Chip,
-  CircularProgress,
-  Divider,
-  Grid,
-  MenuItem,
-  Paper,
-  Select,
-  Stack,
-  TextField,
-  Typography,
-  type SelectChangeEvent,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
-import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import OutputIcon from "@mui/icons-material/Output";
-import ListIcon from "@mui/icons-material/List";
-import EditIcon from "@mui/icons-material/Edit";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import CalculateIcon from "@mui/icons-material/Calculate";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import {
+  createConversation,
+  getConversationMessages,
   getChatPreference,
   getProviders,
+  listConversations,
+  type ConversationSummary,
   putChatPreference,
   sendChatMessage,
   type ChatHistoryMessage,
   type ProviderCatalogItem,
 } from "~/services/orchestrator";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import ChatComposer from "~/components/chat/ChatComposer";
+import ChatHeader from "~/components/chat/ChatHeader";
+import ChatMessageList from "~/components/chat/ChatMessageList";
+import ConversationHistoryList from "~/components/chat/ConversationHistoryList";
+import ToolsSection from "~/components/chat/ToolsSection";
+import { menuItems } from "~/components/Layout";
+import type { UiMessage } from "~/components/chat/types";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -49,74 +30,14 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-type UiMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
-const quickActions = [
-  {
-    title: "Import Data",
-    description: "Insert records into any table",
-    icon: <AddCircleIcon sx={{ fontSize: 34 }} />,
-    path: "/import",
-    color: "#0b6ee6",
-    tag: "Data Input",
-  },
-  {
-    title: "Current Activity Log",
-    description: "View current activity logs",
-    icon: <AssignmentIcon sx={{ fontSize: 34 }} />,
-    path: "/activity-log",
-    color: "#1b8a4b",
-    tag: "Monitoring",
-  },
-  {
-    title: "Current Activity Output",
-    description: "View latest activity outputs",
-    icon: <OutputIcon sx={{ fontSize: 34 }} />,
-    path: "/activity-output",
-    color: "#d17a00",
-    tag: "Monitoring",
-  },
-  {
-    title: "Activity List",
-    description: "Search and filter all activities",
-    icon: <ListIcon sx={{ fontSize: 34 }} />,
-    path: "/activity-list",
-    color: "#6f42c1",
-    tag: "Explore",
-  },
-  {
-    title: "Update Data",
-    description: "Update probabilities and status",
-    icon: <EditIcon sx={{ fontSize: 34 }} />,
-    path: "/update",
-    color: "#c62828",
-    tag: "Actions",
-  },
-  {
-    title: "View Activities",
-    description: "Inspect Bayes probabilities",
-    icon: <VisibilityIcon sx={{ fontSize: 34 }} />,
-    path: "/view",
-    color: "#006e90",
-    tag: "Insights",
-  },
-  {
-    title: "Run Bayes",
-    description: "Run Bayesian analysis engine",
-    icon: <CalculateIcon sx={{ fontSize: 34 }} />,
-    path: "/bayes",
-    color: "#7a2cbf",
-    tag: "Insights",
-  },
-];
+const toMessageId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random()}`;
 
 export default function Home() {
   const navigate = useNavigate();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const location = useLocation();
 
   const [userId, setUserId] = useState("1");
   const [providers, setProviders] = useState<ProviderCatalogItem[]>([]);
@@ -126,13 +47,9 @@ export default function Home() {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [isSavingPreference, setIsSavingPreference] = useState(false);
 
-  const [messages, setMessages] = useState<UiMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Xin chao! Toi la tro ly AI cua LearningDB. Ban co the yeu cau xem activity list, view Bayes, current logs, hoac run Bayes.",
-    },
-  ]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState("");
@@ -143,21 +60,45 @@ export default function Home() {
   );
   const models = selectedProvider?.models ?? [];
 
+  const parsedUserId = Number(userId);
+  const isValidUserId = Number.isFinite(parsedUserId) && parsedUserId > 0;
+  const toolsForSidebar = menuItems.filter((item) => item.path !== "/");
+
+  const refreshConversations = async (nextUserId: number) => {
+    const conversationRes = await listConversations(nextUserId);
+    setConversations(conversationRes.data);
+    return conversationRes.data;
+  };
+
+  const loadConversation = async (nextUserId: number, conversationId: string) => {
+    const messageRes = await getConversationMessages(nextUserId, conversationId);
+    setActiveConversationId(conversationId);
+    setMessages(
+      messageRes.data.map((item) => ({
+        id: item.id,
+        role: item.role,
+        content: item.content,
+        createdAt: item.created_at,
+      }))
+    );
+  };
+
   const bootstrap = async () => {
-    const parsedUserId = Number(userId);
-    if (!Number.isFinite(parsedUserId) || parsedUserId <= 0) {
+    if (!isValidUserId) {
       setError("User ID khong hop le.");
       return;
     }
     setError("");
     setIsBootstrapping(true);
     try {
-      const [providerRes, preferenceRes] = await Promise.all([
+      const [providerRes, preferenceRes, conversationRes] = await Promise.all([
         getProviders(),
         getChatPreference(parsedUserId),
+        listConversations(parsedUserId),
       ]);
       const providerData = providerRes.data;
       setProviders(providerData);
+      setConversations(conversationRes.data);
 
       const preferred = preferenceRes.data;
       if (preferred) {
@@ -173,10 +114,17 @@ export default function Home() {
           setModel(firstModel.id);
         }
       }
+
+      if (conversationRes.data.length > 0) {
+        await loadConversation(parsedUserId, conversationRes.data[0].id);
+      } else {
+        setActiveConversationId(null);
+        setMessages([]);
+      }
       setBootstrapped(true);
     } catch (err) {
       console.error(err);
-      setError("Khong tai duoc provider/model hoac preference.");
+      setError("Khong tai duoc provider/model, history hoac preference.");
     } finally {
       setIsBootstrapping(false);
     }
@@ -219,13 +167,46 @@ export default function Home() {
     await savePreference(provider, nextModel);
   };
 
+  const createNewConversation = async () => {
+    if (!isValidUserId) {
+      setError("User ID khong hop le.");
+      return;
+    }
+    setError("");
+    try {
+      const response = await createConversation(parsedUserId, {
+        provider,
+        model,
+      });
+      const created = response.data;
+      setConversations((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
+      setActiveConversationId(created.id);
+      setMessages([]);
+    } catch (err) {
+      console.error(err);
+      setError("Khong tao duoc cuoc tro chuyen moi.");
+    }
+  };
+
+  const handleSelectConversation = async (conversationId: string) => {
+    if (!isValidUserId || isSending) {
+      return;
+    }
+    setError("");
+    try {
+      await loadConversation(parsedUserId, conversationId);
+    } catch (err) {
+      console.error(err);
+      setError("Khong tai duoc lich su hoi thoai.");
+    }
+  };
+
   const sendMessage = async () => {
-    const parsedUserId = Number(userId);
     if (!bootstrapped) {
       setError("Hay ket noi AI workspace truoc khi chat.");
       return;
     }
-    if (!Number.isFinite(parsedUserId) || parsedUserId <= 0) {
+    if (!isValidUserId) {
       setError("User ID khong hop le.");
       return;
     }
@@ -233,19 +214,36 @@ export default function Home() {
       return;
     }
 
-    const userMessage: UiMessage = { role: "user", content: input.trim() };
+    const userMessage: UiMessage = {
+      id: toMessageId(),
+      role: "user",
+      content: input.trim(),
+    };
+    const previousMessages = messages;
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsSending(true);
     setError("");
 
     try {
-      const history: ChatHistoryMessage[] = messages.map((item) => ({
+      let conversationId = activeConversationId;
+      if (!conversationId) {
+        const createdConversation = await createConversation(parsedUserId, {
+          provider,
+          model,
+          first_user_message: userMessage.content,
+        });
+        conversationId = createdConversation.data.id;
+        setActiveConversationId(conversationId);
+      }
+
+      const history: ChatHistoryMessage[] = previousMessages.map((item) => ({
         role: item.role,
         content: item.content,
       }));
       const response = await sendChatMessage({
         user_id: parsedUserId,
+        conversation_id: conversationId,
         message: userMessage.content,
         history,
         provider,
@@ -254,18 +252,21 @@ export default function Home() {
       setMessages((prev) => [
         ...prev,
         {
+          id: toMessageId(),
           role: "assistant",
           content: response.data.answer,
         },
       ]);
       setProvider(response.data.resolved_provider);
       setModel(response.data.resolved_model);
+      await refreshConversations(parsedUserId);
     } catch (err) {
       console.error(err);
       setError("Chatbot tam thoi khong phan hoi duoc. Vui long thu lai.");
       setMessages((prev) => [
         ...prev,
         {
+          id: toMessageId(),
           role: "assistant",
           content:
             "He thong dang gap su co khi goi provider/model hoac backend. Ban thu lai sau.",
@@ -283,233 +284,86 @@ export default function Home() {
   }, []);
 
   return (
-    <Layout>
-      <Stack spacing={2}>
+    <Layout
+      mode="chatFirst"
+      sidebarHistoryContent={({ collapsed }) => (
+        <ConversationHistoryList
+          conversations={conversations}
+          activeConversationId={activeConversationId}
+          onCreateConversation={createNewConversation}
+          onSelectConversation={handleSelectConversation}
+          collapsed={collapsed}
+        />
+      )}
+      sidebarToolsContent={({ collapsed }) => (
+        <ToolsSection
+          items={toolsForSidebar}
+          activePath={location.pathname}
+          onNavigate={(path) => navigate(path)}
+          collapsed={collapsed}
+        />
+      )}
+    >
+      <Stack spacing={1.5} sx={{ height: "calc(100vh - 108px)" }}>
+        <Box sx={{ px: { xs: 0.4, sm: 0.8 } }}>
+          <Chip
+            label="LearningDB AI Workspace"
+            sx={{
+              bgcolor: "rgba(11,110,230,0.12)",
+              color: "primary.main",
+              fontWeight: 700,
+            }}
+          />
+        </Box>
+
         <Paper
           sx={{
-            borderRadius: 4,
-            px: { xs: 2, sm: 3.5 },
-            py: { xs: 2.5, sm: 3.5 },
-            color: "white",
+            p: { xs: 1.2, sm: 1.8 },
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            height: "100%",
+            borderRadius: 3,
             background:
-              "linear-gradient(135deg, rgba(6,70,173,1) 0%, rgba(11,110,230,1) 52%, rgba(82,139,255,1) 100%)",
-            boxShadow: "0 16px 34px rgba(11,110,230,0.35)",
+              "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(245,249,255,0.96) 100%)",
           }}
         >
-          <Stack spacing={1}>
-            <Chip
-              label="AI-first workspace"
-              sx={{
-                width: "fit-content",
-                bgcolor: "rgba(255,255,255,0.18)",
-                color: "white",
-                fontWeight: 600,
-              }}
+          <Stack spacing={1.25} sx={{ minHeight: 0, height: "100%" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Ask LearningDB AI
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
+            </Typography>
+
+            <ChatHeader
+              userId={userId}
+              onUserIdChange={setUserId}
+              provider={provider}
+              model={model}
+              providers={providers}
+              models={models}
+              bootstrapped={bootstrapped}
+              isBootstrapping={isBootstrapping}
+              isSavingPreference={isSavingPreference}
+              onBootstrap={bootstrap}
+              onProviderChange={handleProviderChange}
+              onModelChange={handleModelChange}
             />
-            <Typography variant={isMobile ? "h5" : "h4"}>
-              LearningDB AI Copilot
-            </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.92 }}>
-              Chon provider/model, luu preference theo user, va chat de thao tac du lieu khong can nhap tay tung man hinh.
-            </Typography>
+
+            {error && <Alert severity="error">{error}</Alert>}
+
+            <ChatMessageList messages={messages} isSending={isSending} />
+
+            <ChatComposer
+              value={input}
+              onChange={setInput}
+              onSend={sendMessage}
+              disabled={!bootstrapped || isSending}
+              placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
+            />
           </Stack>
         </Paper>
-
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, lg: 8 }}>
-            <Paper sx={{ p: 2, borderRadius: 3 }}>
-              <Stack spacing={2}>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
-                  alignItems={{ xs: "stretch", sm: "center" }}
-                >
-                  <TextField
-                    label="User ID"
-                    type="number"
-                    value={userId}
-                    onChange={(event) => setUserId(event.target.value)}
-                    sx={{ minWidth: { sm: 120 } }}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={bootstrap}
-                    disabled={isBootstrapping}
-                  >
-                    {isBootstrapping ? "Connecting..." : "Connect AI Workspace"}
-                  </Button>
-                  {isSavingPreference && (
-                    <Chip label="Saving preference..." size="small" />
-                  )}
-                </Stack>
-
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  <Select
-                    fullWidth
-                    value={provider}
-                    onChange={handleProviderChange}
-                    disabled={!bootstrapped}
-                  >
-                    {providers.map((item) => (
-                      <MenuItem key={item.id} value={item.id} disabled={!item.available}>
-                        {item.label} {item.available ? "" : "(missing API key)"}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  <Select
-                    fullWidth
-                    value={model}
-                    onChange={handleModelChange}
-                    disabled={!bootstrapped}
-                  >
-                    {models.map((item) => (
-                      <MenuItem key={item.id} value={item.id} disabled={!item.available}>
-                        {item.label} {item.available ? "" : "(unavailable)"}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Stack>
-
-                {error && <Alert severity="error">{error}</Alert>}
-
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1.5,
-                    height: { xs: 360, md: 420 },
-                    overflowY: "auto",
-                    bgcolor: "#f8faff",
-                  }}
-                >
-                  <Stack spacing={1.2}>
-                    {messages.map((message, index) => (
-                      <Box
-                        key={`${message.role}-${index}`}
-                        sx={{
-                          alignSelf:
-                            message.role === "user" ? "flex-end" : "flex-start",
-                          maxWidth: "85%",
-                          borderRadius: 2,
-                          px: 1.25,
-                          py: 1,
-                          bgcolor:
-                            message.role === "user"
-                              ? "primary.main"
-                              : "background.paper",
-                          color:
-                            message.role === "user" ? "primary.contrastText" : "text.primary",
-                          border:
-                            message.role === "assistant"
-                              ? "1px solid rgba(15, 23, 42, 0.08)"
-                              : "none",
-                        }}
-                      >
-                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                          {message.content}
-                        </Typography>
-                      </Box>
-                    ))}
-                    {isSending && (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <CircularProgress size={16} />
-                        <Typography variant="body2" color="text.secondary">
-                          AI dang suy nghi...
-                        </Typography>
-                      </Box>
-                    )}
-                  </Stack>
-                </Paper>
-
-                <Stack direction="row" spacing={1}>
-                  <TextField
-                    fullWidth
-                    placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey) {
-                        event.preventDefault();
-                        void sendMessage();
-                      }
-                    }}
-                  />
-                  <Button
-                    variant="contained"
-                    onClick={() => void sendMessage()}
-                    disabled={!bootstrapped || isSending}
-                    startIcon={<SendRoundedIcon />}
-                  >
-                    Send
-                  </Button>
-                </Stack>
-              </Stack>
-            </Paper>
-          </Grid>
-
-          <Grid size={{ xs: 12, lg: 4 }}>
-            <Paper sx={{ p: 2, borderRadius: 3, height: "100%" }}>
-              <Stack spacing={1.2}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <SmartToyRoundedIcon color="primary" />
-                  <Typography variant="h6">Quick Actions</Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Truy cap nhanh cac tinh nang dashboard khi can thao tac chi tiet.
-                </Typography>
-                <Divider />
-                <Grid container spacing={1}>
-                  {quickActions.map((feature) => (
-                    <Grid size={{ xs: 12, sm: 6, lg: 12 }} key={feature.title}>
-                      <Card variant="outlined">
-                        <CardActionArea onClick={() => navigate(feature.path)}>
-                          <CardContent
-                            sx={{ p: { xs: 1.5, sm: 2 }, display: "grid", gap: 0.8 }}
-                          >
-                            <Box
-                              sx={{
-                                color: feature.color,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.75,
-                              }}
-                            >
-                              {feature.icon}
-                              <Chip
-                                label={feature.tag}
-                                size="small"
-                                sx={{
-                                  bgcolor: `${feature.color}1a`,
-                                  color: feature.color,
-                                  fontWeight: 600,
-                                }}
-                              />
-                            </Box>
-                            <Typography variant="subtitle1">{feature.title}</Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {feature.description}
-                            </Typography>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                color: "primary.main",
-                              }}
-                            >
-                              <Typography variant="body2" sx={{ fontWeight: 700, mr: 0.4 }}>
-                                Open
-                              </Typography>
-                              <ArrowForwardRoundedIcon fontSize="small" />
-                            </Box>
-                          </CardContent>
-                        </CardActionArea>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Stack>
-            </Paper>
-          </Grid>
-        </Grid>
       </Stack>
     </Layout>
   );

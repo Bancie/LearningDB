@@ -74,3 +74,9 @@ class BackendApiClient:
         return await self._request_json(
             method="PUT", path=path, json_payload=payload
         )
+
+    async def post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Issue POST request with retry."""
+        return await self._request_json(
+            method="POST", path=path, json_payload=payload
+        )

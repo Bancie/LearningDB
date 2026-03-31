@@ -14,9 +14,13 @@ from .config import Settings
 from .exceptions import BackendServiceError, GuardrailViolation, OrchestratorError
 from .providers import provider_catalog_for_ui
 from .schemas import (
+    AppendConversationMessageRequest,
     ChatPreference,
     ChatRequest,
     ChatResponse,
+    ConversationMessage,
+    ConversationSummary,
+    CreateConversationRequest,
     ErrorResponse,
     ProviderCatalogItem,
     UpsertChatPreferenceRequest,
@@ -173,4 +177,57 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
                 message=str(exc),
             ).model_dump(),
         ) from exc
+
+
+@app.get("/chat/conversations/{user_id}", response_model=list[ConversationSummary])
+async def list_conversations_endpoint(user_id: int) -> list[ConversationSummary]:
+    backend_client: BackendApiClient = app.state.backend_client
+    payload = await backend_client.get_json(f"/users/{user_id}/conversations")
+    data = payload.get("data") or []
+    if not isinstance(data, list):
+        return []
+    return [ConversationSummary.model_validate(item) for item in data]
+
+
+@app.post("/chat/conversations/{user_id}", response_model=ConversationSummary)
+async def create_conversation_endpoint(user_id: int, request: CreateConversationRequest):
+    backend_client: BackendApiClient = app.state.backend_client
+    payload = await backend_client.post_json(
+        f"/users/{user_id}/conversations", request.model_dump()
+    )
+    return ConversationSummary.model_validate(payload["data"])
+
+
+@app.get(
+    "/chat/conversations/{user_id}/{conversation_id}/messages",
+    response_model=list[ConversationMessage],
+)
+async def list_conversation_messages_endpoint(
+    user_id: int, conversation_id: str
+) -> list[ConversationMessage]:
+    backend_client: BackendApiClient = app.state.backend_client
+    payload = await backend_client.get_json(
+        f"/users/{user_id}/conversations/{conversation_id}/messages"
+    )
+    data = payload.get("data") or []
+    if not isinstance(data, list):
+        return []
+    return [ConversationMessage.model_validate(item) for item in data]
+
+
+@app.post(
+    "/chat/conversations/{user_id}/{conversation_id}/messages",
+    response_model=ConversationMessage,
+)
+async def append_conversation_message_endpoint(
+    user_id: int,
+    conversation_id: str,
+    request: AppendConversationMessageRequest,
+) -> ConversationMessage:
+    backend_client: BackendApiClient = app.state.backend_client
+    payload = await backend_client.post_json(
+        f"/users/{user_id}/conversations/{conversation_id}/messages",
+        request.model_dump(),
+    )
+    return ConversationMessage.model_validate(payload["data"])
 

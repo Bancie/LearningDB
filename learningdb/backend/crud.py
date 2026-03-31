@@ -2,6 +2,7 @@
 CRUD operations - ported from bayes.py
 """
 import pandas as pd
+import uuid
 from sqlalchemy import text, select, func, Table, MetaData
 try:
     from .database import engine
@@ -315,3 +316,272 @@ def upsert_chat_preference(user_id: int, provider: str, model: str) -> dict:
     if not preference:
         raise ValueError("Failed to persist chat preference.")
     return preference
+
+
+def _derive_conversation_title(title: str | None, first_user_message: str | None) -> str:
+    if title and title.strip():
+        return title.strip()[:120]
+    if first_user_message and first_user_message.strip():
+        return first_user_message.strip()[:120]
+    return "New chat"
+
+
+def ensure_chat_conversation_tables() -> None:
+    """Create chat conversation and message tables if they do not exist."""
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS `CHAT_CONVERSATION` (
+                    `ID` CHAR(36) NOT NULL PRIMARY KEY,
+                    `USER_ID` INT NOT NULL,
+                    `TITLE` VARCHAR(120) NOT NULL,
+                    `PROVIDER` VARCHAR(64) NOT NULL,
+                    `MODEL` VARCHAR(128) NOT NULL,
+                    `CREATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `UPDATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        ON UPDATE CURRENT_TIMESTAMP,
+                    `LAST_MESSAGE_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_chat_conversation_user` (`USER_ID`),
+                    INDEX `idx_chat_conversation_last_message_at` (`LAST_MESSAGE_AT`)
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS `CHAT_MESSAGE` (
+                    `ID` CHAR(36) NOT NULL PRIMARY KEY,
+                    `CONVERSATION_ID` CHAR(36) NOT NULL,
+                    `USER_ID` INT NOT NULL,
+                    `ROLE` ENUM('user', 'assistant') NOT NULL,
+                    `CONTENT` TEXT NOT NULL,
+                    `REQUEST_ID` VARCHAR(128) NULL,
+                    `CREATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_chat_message_conversation` (`CONVERSATION_ID`, `CREATED_AT`),
+                    INDEX `idx_chat_message_user` (`USER_ID`)
+                )
+                """
+            )
+        )
+
+
+def list_conversations(user_id: int) -> list[dict]:
+    ensure_chat_conversation_tables()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    `ID`,
+                    `USER_ID`,
+                    `TITLE`,
+                    `PROVIDER`,
+                    `MODEL`,
+                    `CREATED_AT`,
+                    `UPDATED_AT`,
+                    `LAST_MESSAGE_AT`
+                FROM `CHAT_CONVERSATION`
+                WHERE `USER_ID` = :user_id
+                ORDER BY `LAST_MESSAGE_AT` DESC, `UPDATED_AT` DESC
+                """
+            ),
+            {"user_id": user_id},
+        ).mappings().all()
+    result: list[dict] = []
+    for row in rows:
+        result.append(
+            {
+                "id": str(row["ID"]),
+                "user_id": int(row["USER_ID"]),
+                "title": str(row["TITLE"]),
+                "provider": str(row["PROVIDER"]),
+                "model": str(row["MODEL"]),
+                "created_at": row["CREATED_AT"].isoformat() if row["CREATED_AT"] else None,
+                "updated_at": row["UPDATED_AT"].isoformat() if row["UPDATED_AT"] else None,
+                "last_message_at": row["LAST_MESSAGE_AT"].isoformat()
+                if row["LAST_MESSAGE_AT"]
+                else None,
+            }
+        )
+    return result
+
+
+def create_conversation(
+    user_id: int,
+    title: str | None,
+    provider: str | None,
+    model: str | None,
+    first_user_message: str | None = None,
+) -> dict:
+    ensure_chat_conversation_tables()
+    conversation_id = str(uuid.uuid4())
+    resolved_title = _derive_conversation_title(title, first_user_message)
+    resolved_provider = (provider or "openai").strip().lower() or "openai"
+    resolved_model = (model or "gpt-4.1-mini").strip() or "gpt-4.1-mini"
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `CHAT_CONVERSATION`
+                    (`ID`, `USER_ID`, `TITLE`, `PROVIDER`, `MODEL`)
+                VALUES
+                    (:id, :user_id, :title, :provider, :model)
+                """
+            ),
+            {
+                "id": conversation_id,
+                "user_id": user_id,
+                "title": resolved_title,
+                "provider": resolved_provider,
+                "model": resolved_model,
+            },
+        )
+    conversations = list_conversations(user_id)
+    created = next((item for item in conversations if item["id"] == conversation_id), None)
+    if not created:
+        raise ValueError("Failed to create conversation.")
+    return created
+
+
+def get_conversation(conversation_id: str, user_id: int) -> dict | None:
+    ensure_chat_conversation_tables()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT
+                    `ID`,
+                    `USER_ID`,
+                    `TITLE`,
+                    `PROVIDER`,
+                    `MODEL`,
+                    `CREATED_AT`,
+                    `UPDATED_AT`,
+                    `LAST_MESSAGE_AT`
+                FROM `CHAT_CONVERSATION`
+                WHERE `ID` = :conversation_id AND `USER_ID` = :user_id
+                """
+            ),
+            {"conversation_id": conversation_id, "user_id": user_id},
+        ).mappings().first()
+    if not row:
+        return None
+    return {
+        "id": str(row["ID"]),
+        "user_id": int(row["USER_ID"]),
+        "title": str(row["TITLE"]),
+        "provider": str(row["PROVIDER"]),
+        "model": str(row["MODEL"]),
+        "created_at": row["CREATED_AT"].isoformat() if row["CREATED_AT"] else None,
+        "updated_at": row["UPDATED_AT"].isoformat() if row["UPDATED_AT"] else None,
+        "last_message_at": row["LAST_MESSAGE_AT"].isoformat()
+        if row["LAST_MESSAGE_AT"]
+        else None,
+    }
+
+
+def list_conversation_messages(user_id: int, conversation_id: str) -> list[dict]:
+    ensure_chat_conversation_tables()
+    conversation = get_conversation(conversation_id, user_id)
+    if not conversation:
+        raise ValueError("Conversation not found.")
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT
+                    `ID`,
+                    `CONVERSATION_ID`,
+                    `USER_ID`,
+                    `ROLE`,
+                    `CONTENT`,
+                    `REQUEST_ID`,
+                    `CREATED_AT`
+                FROM `CHAT_MESSAGE`
+                WHERE `CONVERSATION_ID` = :conversation_id
+                    AND `USER_ID` = :user_id
+                ORDER BY `CREATED_AT` ASC
+                """
+            ),
+            {"conversation_id": conversation_id, "user_id": user_id},
+        ).mappings().all()
+    return [
+        {
+            "id": str(row["ID"]),
+            "conversation_id": str(row["CONVERSATION_ID"]),
+            "user_id": int(row["USER_ID"]),
+            "role": str(row["ROLE"]),
+            "content": str(row["CONTENT"]),
+            "request_id": row["REQUEST_ID"],
+            "created_at": row["CREATED_AT"].isoformat() if row["CREATED_AT"] else None,
+        }
+        for row in rows
+    ]
+
+
+def append_conversation_message(
+    user_id: int,
+    conversation_id: str,
+    role: str,
+    content: str,
+    request_id: str | None = None,
+) -> dict:
+    ensure_chat_conversation_tables()
+    if role not in {"user", "assistant"}:
+        raise ValueError("Invalid role. Expected 'user' or 'assistant'.")
+    conversation = get_conversation(conversation_id, user_id)
+    if not conversation:
+        raise ValueError("Conversation not found.")
+
+    message_id = str(uuid.uuid4())
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `CHAT_MESSAGE`
+                    (`ID`, `CONVERSATION_ID`, `USER_ID`, `ROLE`, `CONTENT`, `REQUEST_ID`)
+                VALUES
+                    (:id, :conversation_id, :user_id, :role, :content, :request_id)
+                """
+            ),
+            {
+                "id": message_id,
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "role": role,
+                "content": content,
+                "request_id": request_id,
+            },
+        )
+
+        title = conversation["title"]
+        if title == "New chat" and role == "user":
+            title = _derive_conversation_title(None, content)
+        conn.execute(
+            text(
+                """
+                UPDATE `CHAT_CONVERSATION`
+                SET
+                    `TITLE` = :title,
+                    `PROVIDER` = COALESCE(`PROVIDER`, :provider),
+                    `MODEL` = COALESCE(`MODEL`, :model),
+                    `LAST_MESSAGE_AT` = CURRENT_TIMESTAMP
+                WHERE `ID` = :conversation_id AND `USER_ID` = :user_id
+                """
+            ),
+            {
+                "title": title,
+                "provider": conversation["provider"],
+                "model": conversation["model"],
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+            },
+        )
+
+    messages = list_conversation_messages(user_id, conversation_id)
+    created = next((item for item in messages if item["id"] == message_id), None)
+    if not created:
+        raise ValueError("Failed to append conversation message.")
+    return created
