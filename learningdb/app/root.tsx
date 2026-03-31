@@ -17,6 +17,8 @@ import '@fontsource/roboto/700.css';
 import { appTheme } from "./theme";
 
 export const links: Route.LinksFunction = () => [
+  { rel: "icon", type: "image/png", href: "/learningdblogo.png" },
+  { rel: "apple-touch-icon", href: "/learningdblogo.png" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",

@@ -95,9 +95,28 @@ export default function Layout({ children }: LayoutProps) {
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
+              display: "flex",
+              alignItems: "center",
             }}
           >
-            LearningDB - Bancie Database
+            <Box
+              component="img"
+              src="/learningdblogo.png"
+              alt="LearningDB"
+              sx={{ height: 32, width: "auto", display: "block" }}
+            />
+            <Box
+              component="span"
+              sx={{
+                ml: 1,
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              LearningDB
+            </Box>
           </Typography>
         </Toolbar>
       </AppBar>

@@ -109,7 +109,7 @@ export default function Home() {
       >
         <Stack spacing={1}>
           <Chip
-            label="Mobile-first dashboard"
+            label="AI-powered dashboard"
             color="default"
             sx={{
               width: "fit-content",
@@ -118,9 +118,12 @@ export default function Home() {
               fontWeight: 600,
             }}
           />
-          <Typography variant={isMobile ? "h5" : "h4"}>Welcome to LearningDB</Typography>
+          <Typography variant={isMobile ? "h5" : "h4"}>
+            Welcome to LearningDB
+          </Typography>
           <Typography variant="body1" sx={{ opacity: 0.92, maxWidth: 680 }}>
-            Daily tracking and Bayesian analysis in a focused, touch-friendly workspace.
+            Daily tracking and Bayesian analysis in a focused, touch-friendly
+            workspace.
           </Typography>
         </Stack>
       </Box>
@@ -129,9 +132,21 @@ export default function Home() {
         {features.map((feature) => (
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={feature.title}>
             <Card sx={{ height: "100%" }}>
-              <CardActionArea onClick={() => navigate(feature.path)} sx={{ height: "100%" }}>
-                <CardContent sx={{ p: { xs: 2, sm: 2.5 }, display: "grid", gap: 1.2 }}>
-                  <Box sx={{ color: feature.color, display: "flex", alignItems: "center", gap: 1 }}>
+              <CardActionArea
+                onClick={() => navigate(feature.path)}
+                sx={{ height: "100%" }}
+              >
+                <CardContent
+                  sx={{ p: { xs: 2, sm: 2.5 }, display: "grid", gap: 1.2 }}
+                >
+                  <Box
+                    sx={{
+                      color: feature.color,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
                     {feature.icon}
                     <Chip
                       label={feature.tag}
@@ -144,11 +159,25 @@ export default function Home() {
                     />
                   </Box>
                   <Typography variant="h6">{feature.title}</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ minHeight: 40 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ minHeight: 40 }}
+                  >
                     {feature.description}
                   </Typography>
-                  <Box sx={{ display: "flex", alignItems: "center", color: "primary.main", mt: 0.2 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, mr: 0.4 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      color: "primary.main",
+                      mt: 0.2,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 700, mr: 0.4 }}
+                    >
                       Open
                     </Typography>
                     <ArrowForwardRoundedIcon fontSize="small" />
