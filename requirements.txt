@@ -1,18 +1,18 @@
 sqlalchemy
 ace_tools==0.0
-appnope==0.1.4
+appnope==0.1.4; platform_system == "Darwin"
 asttokens==3.0.0
 babel==2.17.0
-blessed==1.21.0
-blessings==1.7
-bpython==0.24
+blessed==1.21.0; platform_system == "Darwin"
+blessings==1.7; platform_system == "Darwin"
+bpython==0.24; platform_system == "Darwin"
 certifi==2025.8.3
 charset-normalizer==3.4.3
 colour==0.1.5
 comm==0.2.3
 contourpy==1.3.2
-curtsies==0.4.2
-cwcwidth==0.1.10
+curtsies==0.4.2; platform_system == "Darwin"
+cwcwidth==0.1.10; platform_system == "Darwin"
 cycler==0.12.1
 debugpy==1.8.15
 decorator==5.2.1
@@ -60,7 +60,7 @@ pytest==8.4.1
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 pytz==2025.2
-pyxdg==0.28
+pyxdg==0.28; platform_system == "Darwin"
 pyzmq==27.0.0
 requests==2.32.5
 scikit-learn==1.7.1
@@ -81,3 +81,9 @@ wcwidth==0.2.13
 pydantic
 fastapi[standard]
 uvicorn
+httpx
+langchain
+langchain-openai
+langchain-anthropic
+openai
+anthropic

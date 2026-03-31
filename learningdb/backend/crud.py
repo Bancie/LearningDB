@@ -250,3 +250,68 @@ def insert_record(table_name: str, data: dict):
         conn.execute(table.insert(), data)
     
     return {"success": True, "message": f"Record inserted into {table_name}"}
+
+
+def ensure_chat_preference_table() -> None:
+    """Create chat preference table if it does not exist."""
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS `USER_CHAT_PREFERENCE` (
+                    `USER_ID` INT NOT NULL PRIMARY KEY,
+                    `PROVIDER` VARCHAR(64) NOT NULL,
+                    `MODEL` VARCHAR(128) NOT NULL,
+                    `UPDATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        ON UPDATE CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+
+
+def get_chat_preference(user_id: int) -> dict | None:
+    """Return provider/model preference for a user."""
+    ensure_chat_preference_table()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT `USER_ID`, `PROVIDER`, `MODEL`, `UPDATED_AT`
+                FROM `USER_CHAT_PREFERENCE`
+                WHERE `USER_ID` = :user_id
+                """
+            ),
+            {"user_id": user_id},
+        ).mappings().first()
+    if not row:
+        return None
+    updated_at = row.get("UPDATED_AT")
+    return {
+        "user_id": int(row["USER_ID"]),
+        "provider": str(row["PROVIDER"]),
+        "model": str(row["MODEL"]),
+        "updated_at": updated_at.isoformat() if updated_at else None,
+    }
+
+
+def upsert_chat_preference(user_id: int, provider: str, model: str) -> dict:
+    """Create or update chat preference for a user."""
+    ensure_chat_preference_table()
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `USER_CHAT_PREFERENCE` (`USER_ID`, `PROVIDER`, `MODEL`)
+                VALUES (:user_id, :provider, :model)
+                ON DUPLICATE KEY UPDATE
+                    `PROVIDER` = VALUES(`PROVIDER`),
+                    `MODEL` = VALUES(`MODEL`)
+                """
+            ),
+            {"user_id": user_id, "provider": provider, "model": model},
+        )
+    preference = get_chat_preference(user_id)
+    if not preference:
+        raise ValueError("Failed to persist chat preference.")
+    return preference

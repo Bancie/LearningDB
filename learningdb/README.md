@@ -228,6 +228,8 @@ docker compose up --build
 - **Web**: `http://localhost:3000`
 - **API**: `http://localhost:8000`
 - **API Docs**: `http://localhost:8000/docs`
+- **Orchestrator Health**: `http://localhost:8100/health`
+- **Orchestrator Providers**: `http://localhost:8100/providers`
 - **MySQL (host)**: `localhost:3308`
 
 ### Kiểm tra an toàn trước khi start
@@ -251,6 +253,13 @@ docker compose up -d
 ```
 
 Sau khi lên lại, kiểm tra dữ liệu trong DB hoặc qua màn hình ứng dụng để xác nhận dữ liệu vẫn còn.
+
+### Reset volume DB (xóa toàn bộ dữ liệu)
+
+```bash
+docker compose down
+docker volume rm bancie-mysql-data
+```
 
 ---
 

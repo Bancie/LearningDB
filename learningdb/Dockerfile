@@ -13,7 +13,9 @@ COPY . /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
 ARG VITE_API_BASE_URL=http://localhost:8000/api
+ARG VITE_ORCH_API_BASE_URL=http://localhost:8100
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_ORCH_API_BASE_URL=$VITE_ORCH_API_BASE_URL
 RUN npm run build
 
 FROM node:20-alpine

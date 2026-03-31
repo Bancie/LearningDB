@@ -56,6 +56,11 @@ class RunBayesRequest(BaseModel):
     total_minute: Optional[float] = None
 
 
+class UpsertChatPreferenceRequest(BaseModel):
+    provider: str
+    model: str
+
+
 # API Endpoints
 
 @app.get("/")
@@ -66,6 +71,28 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/api/users/{user_id}/chat-preferences")
+def get_chat_preference(user_id: int):
+    """Get provider/model preference for a user."""
+    try:
+        preference = crud.get_chat_preference(user_id)
+        return {"data": preference}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/users/{user_id}/chat-preferences")
+def upsert_chat_preference(user_id: int, request: UpsertChatPreferenceRequest):
+    """Create or update provider/model preference for a user."""
+    try:
+        preference = crud.upsert_chat_preference(
+            user_id=user_id, provider=request.provider, model=request.model
+        )
+        return {"data": preference}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # --- Table Operations ---

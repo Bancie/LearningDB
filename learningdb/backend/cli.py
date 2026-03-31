@@ -144,15 +144,23 @@ def _check_mysql(env_values: dict[str, str], repo_root: Path) -> tuple[str, int]
             except mysql.connector.Error:
                 pass
 
-        if _try_start_db_service(repo_root):
-            post_start_port = 3308 if (port is None and host in {"localhost", "127.0.0.1"}) else (port or 3306)
-            post_start_args = dict(connect_args)
-            post_start_args["port"] = post_start_port
-            try:
-                _connect_mysql(post_start_args)
-                return host, post_start_port
-            except mysql.connector.Error:
-                pass
+        start_db_ok = _try_start_db_service(repo_root)
+        if start_db_ok:
+            primary_post_start_port = 3308 if (port is None and host in {"localhost", "127.0.0.1"}) else (port or 3306)
+            post_start_ports = [primary_post_start_port]
+            if host in {"localhost", "127.0.0.1"}:
+                for fallback_port in (3308, 3306):
+                    if fallback_port not in post_start_ports:
+                        post_start_ports.append(fallback_port)
+
+            for post_start_port in post_start_ports:
+                post_start_args = dict(connect_args)
+                post_start_args["port"] = post_start_port
+                try:
+                    _connect_mysql(post_start_args)
+                    return host, post_start_port
+                except mysql.connector.Error:
+                    pass
 
         typer.secho(
             f"Cannot connect to MySQL ({first_exc}). Start DB first then retry. "

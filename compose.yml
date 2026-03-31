@@ -36,11 +36,56 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       DB_HOST: db
+      DB_PORT: 3306
       DB_NAME: ${DB_NAME}
     ports:
       - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     depends_on:
       db:
+        condition: service_healthy
+
+  orchestrator:
+    build:
+      context: .
+      dockerfile: learningdb/orchestrator/Dockerfile
+    restart: unless-stopped
+    environment:
+      ORCH_BACKEND_BASE_URL: http://api:8000/api
+      ORCH_DEFAULT_PROVIDER: ${ORCH_DEFAULT_PROVIDER:-openai}
+      ORCH_DEFAULT_MODEL: ${ORCH_DEFAULT_MODEL:-gpt-4.1-mini}
+      ORCH_REQUEST_TIMEOUT_SECONDS: ${ORCH_REQUEST_TIMEOUT_SECONDS:-45}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ORCH_APP_HOST: 0.0.0.0
+      ORCH_APP_PORT: 8100
+    ports:
+      - "8100:8100"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      api:
         condition: service_healthy
 
   web:
@@ -49,15 +94,30 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api}
+        VITE_ORCH_API_BASE_URL: ${VITE_ORCH_API_BASE_URL:-http://localhost:8100}
     restart: unless-stopped
     environment:
       PORT: 3000
     ports:
       - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
 
 volumes:
   bancie_mysql_data:
-    external: true
     name: bancie-mysql-data
