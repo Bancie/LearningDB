@@ -1,6 +1,6 @@
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import { motion } from "framer-motion";
-import { Button, Stack, TextField } from "@mui/material";
+import { Button, Stack, TextField, useTheme } from "@mui/material";
 
 type ChatComposerProps = {
   value: string;
@@ -21,7 +21,39 @@ export default function ChatComposer({
   mode = "chat",
   motionLayoutId,
 }: ChatComposerProps) {
+  const theme = useTheme();
   const isIntro = mode === "intro";
+
+  const chatBarBorder =
+    theme.palette.mode === "light" ? "1px solid rgba(148, 163, 184, 0.28)" : "1px solid rgba(255, 255, 255, 0.12)";
+  const chatBarShadow =
+    theme.palette.mode === "light"
+      ? "0 10px 28px rgba(15, 23, 42, 0.1)"
+      : "0 10px 28px rgba(0, 0, 0, 0.45)";
+
+  /** Reset global MuiOutlinedInput theme so the field sits inside the composer bar, not as a second card. */
+  const outlinedReset = {
+    borderRadius: isIntro ? "10px" : "12px",
+    bgcolor: "transparent",
+    boxShadow: "none",
+    transition: theme.transitions.create(["background-color"], {
+      duration: theme.transitions.duration.shorter,
+    }),
+    "&:hover": {
+      bgcolor: "action.hover",
+      boxShadow: "none",
+    },
+    "&.Mui-focused": {
+      bgcolor: "transparent",
+      boxShadow: "none",
+    },
+    "& fieldset": { border: "none" },
+    "&:hover fieldset": { border: "none" },
+    "&.Mui-focused fieldset": { border: "none" },
+    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+    "&:hover .MuiOutlinedInput-notchedOutline": { border: "none" },
+    "&.Mui-focused .MuiOutlinedInput-notchedOutline": { border: "none" },
+  };
 
   return (
     <motion.div layout layoutId={motionLayoutId} transition={{ duration: 0.3, ease: "easeInOut" }}>
@@ -30,11 +62,11 @@ export default function ChatComposer({
         spacing={1}
         sx={{
           alignItems: "flex-end",
-          p: isIntro ? 1 : 0,
-          borderRadius: isIntro ? "50px" : 0,
-          bgcolor: isIntro ? "background.paper" : "transparent",
-          boxShadow: isIntro ? "0 10px 28px rgba(15, 23, 42, 0.12)" : "none",
-          border: isIntro ? "1px solid rgba(148, 163, 184, 0.28)" : "none",
+          p: isIntro ? 1 : 1,
+          borderRadius: isIntro ? "50px" : "15px",
+          bgcolor: "background.paper",
+          boxShadow: isIntro ? "0 10px 28px rgba(15, 23, 42, 0.12)" : chatBarShadow,
+          border: isIntro ? "1px solid rgba(148, 163, 184, 0.28)" : chatBarBorder,
         }}
       >
         <TextField
@@ -52,13 +84,9 @@ export default function ChatComposer({
             }
           }}
           sx={{
-            "& .MuiOutlinedInput-root": {
-              borderRadius: isIntro ? "10px" : "15px",
-              bgcolor: "background.paper",
-              "& fieldset": { border: "none" },
-              "&:hover fieldset": { border: "none" },
-              "&.Mui-focused fieldset": { border: "none" },
-            },
+            flex: 1,
+            minWidth: 0,
+            "& .MuiOutlinedInput-root": outlinedReset,
           }}
         />
         <Button
@@ -68,8 +96,9 @@ export default function ChatComposer({
           startIcon={<SendRoundedIcon />}
           sx={{
             height: 40,
+            flexShrink: 0,
             minWidth: isIntro ? 108 : undefined,
-            borderRadius: isIntro ? "40px" : "15px",
+            borderRadius: isIntro ? "40px" : "12px",
           }}
         >
           Send

@@ -245,7 +245,10 @@ export default function ImportData() {
 
         {columns.length > 0 && (
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.2 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 700, mb: 1.2, color: "text.primary", letterSpacing: "-0.01em" }}
+            >
               Record Details
             </Typography>
             <Grid container spacing={1.5} sx={{ mb: 2 }}>
