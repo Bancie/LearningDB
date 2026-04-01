@@ -25,7 +25,10 @@ type SnackbarState = {
   severity: "success" | "error";
 };
 
-export default function ChatMessageList({ messages, isSending }: ChatMessageListProps) {
+export default function ChatMessageList({
+  messages,
+  isSending,
+}: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
@@ -44,7 +47,11 @@ export default function ChatMessageList({ messages, isSending }: ChatMessageList
   const copyAssistantReply = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setSnackbar({ open: true, message: "Da sao chep cau tra loi", severity: "success" });
+      setSnackbar({
+        open: true,
+        message: "Da sao chep cau tra loi",
+        severity: "success",
+      });
     } catch {
       setSnackbar({
         open: true,
@@ -55,31 +62,49 @@ export default function ChatMessageList({ messages, isSending }: ChatMessageList
   };
 
   return (
-    <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignSelf: "stretch",
+      }}
+    >
       <Paper
         ref={scrollRef}
         elevation={0}
         sx={(theme) => ({
-          p: 1.5,
+          width: "100%",
+          minWidth: 0,
+          minHeight: 0,
           flex: 1,
+          p: { xs: 1.25, sm: 1.75 },
           overflowY: "auto",
+          overflowX: "hidden",
           border: "none",
+          borderRadius: "15px",
           bgcolor:
             theme.palette.mode === "dark"
               ? alpha(theme.palette.primary.main, 0.12)
               : alpha(theme.palette.primary.main, 0.04),
-          minHeight: 280,
+          boxSizing: "border-box",
         })}
       >
-        <Stack spacing={1.2}>
+        <Stack spacing={1.25}>
           {messages.map((message) => {
             const isUser = message.role === "user";
             return (
               <Box
                 key={message.id}
                 sx={{
-                  alignSelf: isUser ? "flex-end" : "flex-start",
-                  maxWidth: { xs: "96%", sm: "86%" },
+                  alignSelf: isUser ? "flex-end" : "stretch",
+                  width: isUser ? "auto" : "100%",
+                  minWidth: 0,
+                  maxWidth: isUser
+                    ? { xs: "92%", sm: "min(560px, 88%)" }
+                    : "100%",
                   borderRadius: "15px",
                   px: 1.3,
                   py: 1,
@@ -90,14 +115,21 @@ export default function ChatMessageList({ messages, isSending }: ChatMessageList
               >
                 <ChatMarkdown content={message.content} isUser={isUser} />
                 {!isUser && (
-                  <Stack direction="row" justifyContent="flex-end" sx={{ mt: 0.5 }}>
+                  <Stack
+                    direction="row"
+                    justifyContent="flex-end"
+                    sx={{ mt: 0.5 }}
+                  >
                     <IconButton
                       size="small"
                       aria-label="Sao chep cau tra loi AI"
                       onClick={() => void copyAssistantReply(message.content)}
                       sx={{
                         color: "text.secondary",
-                        "&:hover": { color: "text.primary", bgcolor: "action.hover" },
+                        "&:hover": {
+                          color: "text.primary",
+                          bgcolor: "action.hover",
+                        },
                       }}
                     >
                       <ContentCopyIcon fontSize="small" />

@@ -1,6 +1,5 @@
 import Layout from "~/components/Layout";
-import { Box, Paper, Stack, type SelectChangeEvent } from "@mui/material";
-import { alpha } from "@mui/material/styles";
+import { Box, Stack, type SelectChangeEvent } from "@mui/material";
 import {
   createConversation,
   deleteConversation,
@@ -16,7 +15,6 @@ import {
 } from "~/services/orchestrator";
 import { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import ChatHeader from "~/components/chat/ChatHeader";
 import ConversationHistoryList from "~/components/chat/ConversationHistoryList";
 import ToolsSection from "~/components/chat/ToolsSection";
 import { menuItems } from "~/components/Layout";
@@ -28,12 +26,16 @@ const toMessageId = () =>
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random()}`;
 
-function pickNewestEmptyConversation(items: ConversationSummary[]): ConversationSummary | undefined {
+function pickNewestEmptyConversation(
+  items: ConversationSummary[],
+): ConversationSummary | undefined {
   const empties = items.filter((c) => !c.last_message_at);
   if (empties.length === 0) {
     return undefined;
   }
-  return empties.reduce((a, b) => (Date.parse(a.updated_at) >= Date.parse(b.updated_at) ? a : b));
+  return empties.reduce((a, b) =>
+    Date.parse(a.updated_at) >= Date.parse(b.updated_at) ? a : b,
+  );
 }
 
 export default function Workspace() {
@@ -49,19 +51,23 @@ export default function Workspace() {
   const [isSavingPreference, setIsSavingPreference] = useState(false);
 
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversationId, setActiveConversationId] = useState<
+    string | null
+  >(null);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [isDeletingConversation, setIsDeletingConversation] = useState(false);
-  const [deletingConversationId, setDeletingConversationId] = useState<string | null>(null);
+  const [deletingConversationId, setDeletingConversationId] = useState<
+    string | null
+  >(null);
   const [error, setError] = useState("");
   const [uiMode, setUiMode] = useState<"intro" | "chat">("intro");
 
   const selectedProvider = useMemo(
     () => providers.find((item) => item.id === provider),
-    [providers, provider]
+    [providers, provider],
   );
   const models = selectedProvider?.models ?? [];
 
@@ -85,8 +91,14 @@ export default function Workspace() {
     return conversationRes.data;
   };
 
-  const loadConversation = async (nextUserId: number, conversationId: string) => {
-    const messageRes = await getConversationMessages(nextUserId, conversationId);
+  const loadConversation = async (
+    nextUserId: number,
+    conversationId: string,
+  ) => {
+    const messageRes = await getConversationMessages(
+      nextUserId,
+      conversationId,
+    );
     setActiveConversationId(conversationId);
     setMessages(
       messageRes.data.map((item) => ({
@@ -94,7 +106,7 @@ export default function Workspace() {
         role: item.role,
         content: item.content,
         createdAt: item.created_at,
-      }))
+      })),
     );
     return messageRes.data.length;
   };
@@ -121,8 +133,11 @@ export default function Workspace() {
         setProvider(preferred.provider);
         setModel(preferred.model);
       } else {
-        const firstProvider = providerData.find((item) => item.available) ?? providerData[0];
-        const firstModel = firstProvider?.models.find((item) => item.available) ?? firstProvider?.models[0];
+        const firstProvider =
+          providerData.find((item) => item.available) ?? providerData[0];
+        const firstModel =
+          firstProvider?.models.find((item) => item.available) ??
+          firstProvider?.models[0];
         if (firstProvider?.id) {
           setProvider(firstProvider.id);
         }
@@ -132,7 +147,10 @@ export default function Workspace() {
       }
 
       if (conversationRes.data.length > 0) {
-        const messageCount = await loadConversation(parsedUserId, conversationRes.data[0].id);
+        const messageCount = await loadConversation(
+          parsedUserId,
+          conversationRes.data[0].id,
+        );
         setUiMode(messageCount === 0 ? "intro" : "chat");
       } else {
         setActiveConversationId(null);
@@ -168,7 +186,9 @@ export default function Workspace() {
   const handleProviderChange = async (event: SelectChangeEvent) => {
     const nextProvider = event.target.value;
     setProvider(nextProvider);
-    const nextProviderEntry = providers.find((item) => item.id === nextProvider);
+    const nextProviderEntry = providers.find(
+      (item) => item.id === nextProvider,
+    );
     const fallbackModel =
       nextProviderEntry?.models.find((item) => item.available)?.id ??
       nextProviderEntry?.models[0]?.id ??
@@ -199,7 +219,9 @@ export default function Workspace() {
     const shouldReuseCurrentConversation =
       messages.length === 0 &&
       !isSending &&
-      (Boolean(activeConversationId) || uiMode === "intro" || input.trim().length > 0);
+      (Boolean(activeConversationId) ||
+        uiMode === "intro" ||
+        input.trim().length > 0);
     if (shouldReuseCurrentConversation) {
       return;
     }
@@ -211,10 +233,16 @@ export default function Workspace() {
       // keep stale conversations
     }
     const reuseEmptyElsewhere = pickNewestEmptyConversation(listForReuse);
-    if (reuseEmptyElsewhere && reuseEmptyElsewhere.id !== activeConversationId) {
+    if (
+      reuseEmptyElsewhere &&
+      reuseEmptyElsewhere.id !== activeConversationId
+    ) {
       setError("");
       try {
-        const messageCount = await loadConversation(parsedUserId, reuseEmptyElsewhere.id);
+        const messageCount = await loadConversation(
+          parsedUserId,
+          reuseEmptyElsewhere.id,
+        );
         setUiMode(messageCount === 0 ? "intro" : "chat");
       } catch (err) {
         console.error(err);
@@ -231,7 +259,10 @@ export default function Workspace() {
         model,
       });
       const created = response.data;
-      setConversations((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
+      setConversations((prev) => [
+        created,
+        ...prev.filter((item) => item.id !== created.id),
+      ]);
       setActiveConversationId(created.id);
       setMessages([]);
       setUiMode("intro");
@@ -418,7 +449,9 @@ export default function Workspace() {
           onCreateConversation={createNewConversation}
           onSelectConversation={handleSelectConversation}
           onDeleteConversation={handleDeleteConversation}
-          disableCreate={isCreatingConversation || isSending || isDeletingConversation}
+          disableCreate={
+            isCreatingConversation || isSending || isDeletingConversation
+          }
           creating={isCreatingConversation}
           disableDelete={isDeletingConversation || isSending}
           deletingConversationId={deletingConversationId}
@@ -436,53 +469,27 @@ export default function Workspace() {
         />
       )}
     >
-      <Stack spacing={0} sx={{ height: "calc(100vh - 108px)", minHeight: 0 }}>
+      <Stack
+        spacing={0}
+        sx={{ height: "calc(100vh - 108px)", minHeight: 0, minWidth: 0, width: "100%" }}
+      >
         {isChatIndexRoute ? (
-          <Paper
-            sx={(theme) => ({
-              p: { xs: 1.2, sm: 1.8 },
+          <Box
+            sx={{
               display: "flex",
               flexDirection: "column",
               minHeight: 0,
+              minWidth: 0,
               flex: 1,
-              position: "relative",
-              borderRadius: "20px",
-              background:
-                theme.palette.mode === "dark"
-                  ? `linear-gradient(180deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.primary.dark, 0.35)} 100%)`
-                  : "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(245,249,255,0.96) 100%)",
-            })}
+              width: "100%",
+              height: "100%",
+              pb: { xs: 1, sm: 1.25 },
+            }}
           >
-            <Box sx={{ position: "absolute", top: { xs: 10, sm: 12 }, right: { xs: 10, sm: 12 }, zIndex: 2 }}>
-              <ChatHeader
-                userId={userId}
-                onUserIdChange={setUserId}
-                provider={provider}
-                model={model}
-                providers={providers}
-                models={models}
-                bootstrapped={bootstrapped}
-                isBootstrapping={isBootstrapping}
-                isSavingPreference={isSavingPreference}
-                onBootstrap={bootstrap}
-                onProviderChange={handleProviderChange}
-                onModelChange={handleModelChange}
-              />
+            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: "auto" }}>
+              <Outlet context={outletContext} />
             </Box>
-            <Box
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
-              <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
-                <Outlet context={outletContext} />
-              </Box>
-            </Box>
-          </Paper>
+          </Box>
         ) : (
           <Box
             sx={{

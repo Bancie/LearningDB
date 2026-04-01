@@ -2,6 +2,7 @@ import type { Route } from "./+types/home";
 import { Alert, Box, Chip, Stack, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOutletContext } from "react-router";
+import ChatHeader from "~/components/chat/ChatHeader";
 import ChatComposer from "~/components/chat/ChatComposer";
 import ChatMessageList from "~/components/chat/ChatMessageList";
 import type { WorkspaceOutletContext } from "~/workspace-context";
@@ -15,7 +16,18 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const {
+    userId,
+    setUserId,
+    providers,
+    provider,
+    model,
+    models,
     bootstrapped,
+    isBootstrapping,
+    isSavingPreference,
+    bootstrap,
+    handleProviderChange,
+    handleModelChange,
     isSending,
     error,
     uiMode,
@@ -24,6 +36,21 @@ export default function Home() {
     messages,
     sendMessage,
   } = useOutletContext<WorkspaceOutletContext>();
+
+  const chatHeaderProps = {
+    userId,
+    onUserIdChange: setUserId,
+    provider,
+    model,
+    providers,
+    models,
+    bootstrapped,
+    isBootstrapping,
+    isSavingPreference,
+    onBootstrap: bootstrap,
+    onProviderChange: handleProviderChange,
+    onModelChange: handleModelChange,
+  } as const;
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -37,52 +64,80 @@ export default function Home() {
           style={{ height: "100%" }}
         >
           <Stack
-            spacing={2}
+            spacing={0}
             sx={{
               minHeight: 0,
               height: "100%",
-              justifyContent: "center",
-              alignItems: "center",
               px: { xs: 1, sm: 2.5 },
             }}
           >
-            <Typography
-              variant="h3"
+            <Stack
+              direction="row"
+              justifyContent="flex-end"
+              sx={{ flexShrink: 0, width: "100%", alignSelf: "stretch" }}
+            >
+              <ChatHeader {...chatHeaderProps} />
+            </Stack>
+            <Stack
+              spacing={2}
               sx={{
-                textAlign: "center",
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                fontSize: { xs: "2rem", sm: "2.6rem" },
+                flex: 1,
+                minHeight: 0,
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              Ask LearningDB AI
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ textAlign: "center", maxWidth: 640 }}>
-              Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", justifyContent: "center" }}>
-              {["Write", "Plan", "Research", "Learn"].map((item) => (
-                <Chip key={item} label={item} variant="outlined" sx={{ bgcolor: "background.paper" }} />
-              ))}
-            </Stack>
+              <Typography
+                variant="h3"
+                sx={{
+                  textAlign: "center",
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  fontSize: { xs: "2rem", sm: "2.6rem" },
+                }}
+              >
+                Ask LearningDB AI
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ textAlign: "center", maxWidth: 640 }}
+              >
+                Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ flexWrap: "wrap", justifyContent: "center" }}
+              >
+                {["Write", "Plan", "Research", "Learn"].map((item) => (
+                  <Chip
+                    key={item}
+                    label={item}
+                    variant="outlined"
+                    sx={{ bgcolor: "background.paper" }}
+                  />
+                ))}
+              </Stack>
 
-            <Box sx={{ width: "100%", maxWidth: 720, pt: 1 }}>
-              <ChatComposer
-                value={input}
-                onChange={setInput}
-                onSend={sendMessage}
-                disabled={!bootstrapped || isSending}
-                mode="intro"
-                motionLayoutId="home-chat-composer"
-                placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
-              />
-            </Box>
-
-            {error && (
-              <Box sx={{ width: "100%", maxWidth: 720 }}>
-                <Alert severity="error">{error}</Alert>
+              <Box sx={{ width: "100%", maxWidth: 720, pt: 1 }}>
+                <ChatComposer
+                  value={input}
+                  onChange={setInput}
+                  onSend={sendMessage}
+                  disabled={!bootstrapped || isSending}
+                  mode="intro"
+                  motionLayoutId="home-chat-composer"
+                  placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
+                />
               </Box>
-            )}
+
+              {error && (
+                <Box sx={{ width: "100%", maxWidth: 720 }}>
+                  <Alert severity="error">{error}</Alert>
+                </Box>
+              )}
+            </Stack>
           </Stack>
         </motion.div>
       ) : (
@@ -92,29 +147,72 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.26, ease: "easeOut" }}
-          style={{ height: "100%" }}
+          style={{
+            height: "100%",
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+          }}
         >
-          <Stack spacing={1.25} sx={{ minHeight: 0, height: "100%" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Box
+            sx={{
+              flexShrink: 0,
+              alignSelf: "flex-start",
+              maxWidth: { xs: "100%", sm: "min(560px, 72%)" },
+              mb: { xs: 1, sm: 1.25 },
+              px: { xs: 1.5, sm: 2, md: 2.5 },
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
               Ask LearningDB AI
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
             </Typography>
+          </Box>
+
+          <Stack
+            spacing={1.25}
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              minWidth: 0,
+              width: "100%",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              bgcolor: "background.paper",
+              borderRadius: "15px",
+              px: { xs: 1.5, sm: 2, md: 2.5 },
+              py: { xs: 1, sm: 1.25 },
+            }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="flex-end"
+              sx={{ flexShrink: 0, width: "100%" }}
+            >
+              <ChatHeader {...chatHeaderProps} />
+            </Stack>
 
             {error && <Alert severity="error">{error}</Alert>}
 
             <ChatMessageList messages={messages} isSending={isSending} />
 
-            <ChatComposer
-              value={input}
-              onChange={setInput}
-              onSend={sendMessage}
-              disabled={!bootstrapped || isSending}
-              mode="chat"
-              motionLayoutId="home-chat-composer"
-              placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
-            />
+            <Box sx={{ flexShrink: 0, width: "100%", pt: 0.25 }}>
+              <ChatComposer
+                value={input}
+                onChange={setInput}
+                onSend={sendMessage}
+                disabled={!bootstrapped || isSending}
+                mode="chat"
+                motionLayoutId="home-chat-composer"
+                placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
+              />
+            </Box>
           </Stack>
         </motion.div>
       )}

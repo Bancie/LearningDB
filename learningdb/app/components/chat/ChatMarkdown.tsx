@@ -12,8 +12,11 @@ export default function ChatMarkdown({ content, isUser = false }: ChatMarkdownPr
   return (
     <Box
       sx={{
-        fontSize: "0.9rem",
+        minWidth: 0,
+        maxWidth: "100%",
+        fontSize: { xs: "0.85rem", sm: "0.9rem" },
         lineHeight: 1.55,
+        overflowWrap: "anywhere",
         "& p": { my: 0.8 },
         "& ul, & ol": { pl: 2.5, my: 0.8 },
         "& li": { my: 0.3 },
@@ -27,28 +30,31 @@ export default function ChatMarkdown({ content, isUser = false }: ChatMarkdownPr
         "& table": {
           borderCollapse: "collapse",
           width: "100%",
+          maxWidth: "100%",
+          tableLayout: "fixed",
           my: 1,
-          display: "block",
-          overflowX: "auto",
         },
         "& th, & td": {
           border: "1px solid",
           borderColor: isUser ? "rgba(255,255,255,0.4)" : "rgba(15,23,42,0.16)",
-          px: 1,
+          px: { xs: 0.5, sm: 1 },
           py: 0.5,
           textAlign: "left",
-          whiteSpace: "nowrap",
+          verticalAlign: "top",
+          whiteSpace: "normal",
+          wordBreak: "break-word",
         },
         "& pre": {
           my: 1,
           p: 1.2,
+          maxWidth: "100%",
           overflowX: "auto",
           borderRadius: 1.5,
           bgcolor: isUser ? "rgba(5,16,34,0.35)" : "rgba(15,23,42,0.06)",
         },
         "& code": {
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-          fontSize: "0.82rem",
+          fontSize: { xs: "0.76rem", sm: "0.82rem" },
           borderRadius: 0.8,
         },
         "& :not(pre) > code": {

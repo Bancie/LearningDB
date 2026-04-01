@@ -25,11 +25,11 @@ export default function ChatComposer({
   const isIntro = mode === "intro";
 
   const chatBarBorder =
-    theme.palette.mode === "light" ? "1px solid rgba(148, 163, 184, 0.28)" : "1px solid rgba(255, 255, 255, 0.12)";
-  const chatBarShadow =
     theme.palette.mode === "light"
-      ? "0 10px 28px rgba(15, 23, 42, 0.1)"
-      : "0 10px 28px rgba(0, 0, 0, 0.45)";
+      ? "1px solid rgba(148, 163, 184, 0.28)"
+      : "1px solid rgba(255, 255, 255, 0.12)";
+  /** Chat mode: single elevation token (workspace preview). */
+  const chatModeShadow = "0px 4px 12px 0px rgba(0, 0, 0, 0.15)";
 
   /** Reset global MuiOutlinedInput theme so the field sits inside the composer bar, not as a second card. */
   const outlinedReset = {
@@ -56,7 +56,11 @@ export default function ChatComposer({
   };
 
   return (
-    <motion.div layout layoutId={motionLayoutId} transition={{ duration: 0.3, ease: "easeInOut" }}>
+    <motion.div
+      layout
+      layoutId={motionLayoutId}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
       <Stack
         direction="row"
         spacing={1}
@@ -65,8 +69,12 @@ export default function ChatComposer({
           p: isIntro ? 1 : 1,
           borderRadius: isIntro ? "50px" : "15px",
           bgcolor: "background.paper",
-          boxShadow: isIntro ? "0 10px 28px rgba(15, 23, 42, 0.12)" : chatBarShadow,
-          border: isIntro ? "1px solid rgba(148, 163, 184, 0.28)" : chatBarBorder,
+          boxShadow: isIntro
+            ? "0 10px 28px rgba(15, 23, 42, 0.12)"
+            : chatModeShadow,
+          border: isIntro
+            ? "1px solid rgba(148, 163, 184, 0.28)"
+            : chatBarBorder,
         }}
       >
         <TextField
