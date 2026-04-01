@@ -2,6 +2,8 @@
 
 Separate orchestration service for chat-based interactions with LearningDB backend APIs.
 
+The `POST /chat` response field `answer` is the full assistant reply string (typically Markdown). Clients should use it as the source of truth for rendering and for copy-to-clipboard.
+
 ## MVP scope
 
 - Read-only tools only (no DB writes from chatbot).
