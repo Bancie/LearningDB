@@ -14,3 +14,7 @@ class GuardrailViolation(OrchestratorError):
 class BackendServiceError(OrchestratorError):
     """Raised when backend API call fails."""
 
+
+class BackendNotFoundError(BackendServiceError):
+    """Raised when backend returns 404."""
+

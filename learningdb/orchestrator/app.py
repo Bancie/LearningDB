@@ -11,7 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from .audit import build_request_id, configure_logging, logger
 from .chains import ChatOrchestrator, OrchestratorRuntime
 from .config import Settings
-from .exceptions import BackendServiceError, GuardrailViolation, OrchestratorError
+from .exceptions import (
+    BackendNotFoundError,
+    BackendServiceError,
+    GuardrailViolation,
+    OrchestratorError,
+)
 from .providers import provider_catalog_for_ui
 from .schemas import (
     AppendConversationMessageRequest,
@@ -196,6 +201,23 @@ async def create_conversation_endpoint(user_id: int, request: CreateConversation
         f"/users/{user_id}/conversations", request.model_dump()
     )
     return ConversationSummary.model_validate(payload["data"])
+
+
+@app.delete("/chat/conversations/{user_id}/{conversation_id}")
+async def delete_conversation_endpoint(user_id: int, conversation_id: str) -> dict[str, object]:
+    backend_client: BackendApiClient = app.state.backend_client
+    try:
+        payload = await backend_client.delete_json(
+            f"/users/{user_id}/conversations/{conversation_id}"
+        )
+    except BackendNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except BackendServiceError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    data = payload.get("data")
+    if data is None or not isinstance(data, dict):
+        raise HTTPException(status_code=502, detail="Invalid delete response from backend.")
+    return data
 
 
 @app.get(

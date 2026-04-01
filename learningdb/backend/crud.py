@@ -341,7 +341,7 @@ def ensure_chat_conversation_tables() -> None:
                     `CREATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     `UPDATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                         ON UPDATE CURRENT_TIMESTAMP,
-                    `LAST_MESSAGE_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `LAST_MESSAGE_AT` TIMESTAMP NULL DEFAULT NULL,
                     INDEX `idx_chat_conversation_user` (`USER_ID`),
                     INDEX `idx_chat_conversation_last_message_at` (`LAST_MESSAGE_AT`)
                 )
@@ -365,6 +365,59 @@ def ensure_chat_conversation_tables() -> None:
                 """
             )
         )
+    _ensure_conversation_deleted_at_column()
+    _ensure_last_message_at_nullable()
+
+
+def _ensure_last_message_at_nullable() -> None:
+    """Allow NULL LAST_MESSAGE_AT until the first message; backfill empty threads."""
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    ALTER TABLE `CHAT_CONVERSATION`
+                    MODIFY COLUMN `LAST_MESSAGE_AT` TIMESTAMP NULL DEFAULT NULL
+                    """
+                )
+            )
+    except Exception:
+        pass
+
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    UPDATE `CHAT_CONVERSATION` c
+                    SET `LAST_MESSAGE_AT` = NULL
+                    WHERE c.`DELETED_AT` IS NULL
+                      AND NOT EXISTS (
+                          SELECT 1 FROM `CHAT_MESSAGE` m
+                          WHERE m.`CONVERSATION_ID` = c.`ID`
+                      )
+                    """
+                )
+            )
+    except Exception:
+        pass
+
+
+def _ensure_conversation_deleted_at_column() -> None:
+    """Add DELETED_AT for soft-delete on existing CHAT_CONVERSATION tables."""
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    ALTER TABLE `CHAT_CONVERSATION`
+                    ADD COLUMN `DELETED_AT` TIMESTAMP NULL DEFAULT NULL
+                    """
+                )
+            )
+    except Exception:
+        # Column may already exist (duplicate column name).
+        pass
 
 
 def list_conversations(user_id: int) -> list[dict]:
@@ -384,7 +437,8 @@ def list_conversations(user_id: int) -> list[dict]:
                     `LAST_MESSAGE_AT`
                 FROM `CHAT_CONVERSATION`
                 WHERE `USER_ID` = :user_id
-                ORDER BY `LAST_MESSAGE_AT` DESC, `UPDATED_AT` DESC
+                    AND `DELETED_AT` IS NULL
+                ORDER BY COALESCE(`LAST_MESSAGE_AT`, `UPDATED_AT`) DESC, `UPDATED_AT` DESC
                 """
             ),
             {"user_id": user_id},
@@ -425,9 +479,9 @@ def create_conversation(
             text(
                 """
                 INSERT INTO `CHAT_CONVERSATION`
-                    (`ID`, `USER_ID`, `TITLE`, `PROVIDER`, `MODEL`)
+                    (`ID`, `USER_ID`, `TITLE`, `PROVIDER`, `MODEL`, `LAST_MESSAGE_AT`)
                 VALUES
-                    (:id, :user_id, :title, :provider, :model)
+                    (:id, :user_id, :title, :provider, :model, NULL)
                 """
             ),
             {
@@ -462,6 +516,7 @@ def get_conversation(conversation_id: str, user_id: int) -> dict | None:
                     `LAST_MESSAGE_AT`
                 FROM `CHAT_CONVERSATION`
                 WHERE `ID` = :conversation_id AND `USER_ID` = :user_id
+                    AND `DELETED_AT` IS NULL
                 """
             ),
             {"conversation_id": conversation_id, "user_id": user_id},
@@ -479,6 +534,44 @@ def get_conversation(conversation_id: str, user_id: int) -> dict | None:
         "last_message_at": row["LAST_MESSAGE_AT"].isoformat()
         if row["LAST_MESSAGE_AT"]
         else None,
+    }
+
+
+def soft_delete_conversation(user_id: int, conversation_id: str) -> dict:
+    """Soft-delete a conversation (sets DELETED_AT)."""
+    ensure_chat_conversation_tables()
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+                UPDATE `CHAT_CONVERSATION`
+                SET `DELETED_AT` = CURRENT_TIMESTAMP
+                WHERE `ID` = :conversation_id
+                    AND `USER_ID` = :user_id
+                    AND `DELETED_AT` IS NULL
+                """
+            ),
+            {"conversation_id": conversation_id, "user_id": user_id},
+        )
+        rowcount = getattr(result, "rowcount", None)
+        if rowcount == 0:
+            raise ValueError("Conversation not found or already deleted.")
+
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT `DELETED_AT`
+                FROM `CHAT_CONVERSATION`
+                WHERE `ID` = :conversation_id AND `USER_ID` = :user_id
+                """
+            ),
+            {"conversation_id": conversation_id, "user_id": user_id},
+        ).mappings().first()
+    deleted_at = row["DELETED_AT"] if row else None
+    return {
+        "id": conversation_id,
+        "deleted_at": deleted_at.isoformat() if deleted_at else None,
     }
 
 

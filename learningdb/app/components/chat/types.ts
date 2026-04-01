@@ -13,5 +13,6 @@ export type ConversationSummary = {
   model: string;
   created_at: string;
   updated_at: string;
-  last_message_at: string;
+  /** Null when no message has been sent yet (empty draft thread). */
+  last_message_at: string | null;
 };

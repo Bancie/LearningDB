@@ -190,31 +190,40 @@ export default function Layout({
             borderTopLeftRadius: isMobile ? 20 : 0,
             borderTopRightRadius: isMobile ? 20 : 0,
             overflowX: "hidden",
-            px: isChatFirst ? 1.2 : 1,
-            py: isChatFirst ? 1 : 1.5,
+            px: isChatFirst ? (isSidebarCollapsed ? 0.5 : 1.2) : 1,
+            py: isChatFirst ? (isSidebarCollapsed ? 0.75 : 1) : 1.5,
             background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
           },
         }}
       >
         {isChatFirst ? (
-          <Box sx={{ display: "grid", gridTemplateRows: "auto 1fr auto", height: "100%" }}>
-            <Box sx={{ px: 0.75, py: 0.5 }}>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 700,
-                  opacity: desktopOpen || isMobile ? 1 : 0,
-                  minHeight: 30,
-                }}
-              >
-                AI Workspace
-              </Typography>
-            </Box>
-            <Box sx={{ minHeight: 0, overflowY: "auto", px: 0.2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              height: "100%",
+              minHeight: 0,
+            }}
+          >
+            {!isSidebarCollapsed && (
+              <Box sx={{ flexShrink: 0, px: 0.75, py: 0.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, minHeight: 30 }}>
+                  AI Workspace
+                </Typography>
+              </Box>
+            )}
+            <Box
+              sx={{
+                flex: isSidebarCollapsed ? "0 0 auto" : "1 1 auto",
+                minHeight: 0,
+                overflowY: isSidebarCollapsed ? "visible" : "auto",
+                px: 0.2,
+              }}
+            >
               {renderSidebarSection(sidebarHistoryContent)}
             </Box>
-            <Box sx={{ pt: 1 }}>
-              <Divider sx={{ mb: 1 }} />
+            <Box sx={{ flexShrink: 0, pt: isSidebarCollapsed ? 0.5 : 1 }}>
+              {!isSidebarCollapsed && <Divider sx={{ mb: 1 }} />}
               {renderSidebarSection(sidebarToolsContent)}
             </Box>
           </Box>

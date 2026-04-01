@@ -8,7 +8,7 @@ from typing import Any
 import httpx
 
 from ..config import Settings
-from ..exceptions import BackendServiceError
+from ..exceptions import BackendNotFoundError, BackendServiceError
 
 
 class BackendApiClient:
@@ -80,3 +80,35 @@ class BackendApiClient:
         return await self._request_json(
             method="POST", path=path, json_payload=payload
         )
+
+    async def delete_json(self, path: str) -> dict[str, Any]:
+        """Issue DELETE request; do not retry on 404."""
+        attempts = self._settings.backend_max_retries + 1
+        backoff = self._settings.backend_retry_backoff_seconds
+
+        last_error: Exception | None = None
+        for attempt in range(attempts):
+            try:
+                response = await self._client.request(method="DELETE", url=path)
+                if response.status_code == 404:
+                    raise BackendNotFoundError(f"Backend returned 404 for {path}.")
+                response.raise_for_status()
+                if not response.content:
+                    return {}
+                payload = response.json()
+                if not isinstance(payload, dict):
+                    raise BackendServiceError(
+                        f"Backend returned invalid payload type for {path}."
+                    )
+                return payload
+            except BackendNotFoundError:
+                raise
+            except (httpx.HTTPError, ValueError) as exc:
+                last_error = exc
+                if attempt >= attempts - 1:
+                    break
+                await asyncio.sleep(backoff * (attempt + 1))
+
+        raise BackendServiceError(
+            f"Backend API call failed for {path}: {last_error}"
+        ) from last_error

@@ -192,6 +192,8 @@ def serve(
     port: int = typer.Option(8000, help="Backend port."),
     web_host: str = typer.Option("0.0.0.0", help="Frontend host."),
     web_port: int = typer.Option(5173, help="Frontend port."),
+    orch_host: str = typer.Option("0.0.0.0", help="Orchestrator host."),
+    orch_port: int = typer.Option(8100, help="Orchestrator port."),
 ) -> None:
     """Run MySQL-backed API and web app together."""
     repo_root = Path(__file__).resolve().parents[2]
@@ -213,6 +215,14 @@ def serve(
     shell_env["DB_HOST"] = db_host
     shell_env["DB_PORT"] = str(db_port)
     shell_env.setdefault("VITE_API_BASE_URL", f"http://{_resolve_api_public_host(host)}:{port}/api")
+    shell_env.setdefault("VITE_ORCH_API_BASE_URL", f"http://{_resolve_api_public_host(orch_host)}:{orch_port}")
+
+    typer.echo(
+        "[serve] endpoints: "
+        f"web=http://{_resolve_api_public_host(web_host)}:{web_port} "
+        f"api=http://{_resolve_api_public_host(host)}:{port}/api "
+        f"orchestrator=http://{_resolve_api_public_host(orch_host)}:{orch_port}"
+    )
 
     if prod:
         typer.echo("[web] building frontend...")
@@ -244,6 +254,25 @@ def serve(
         bufsize=1,
     )
 
+    orch_proc = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "orchestrator.app:app",
+            "--host",
+            orch_host,
+            "--port",
+            str(orch_port),
+        ],
+        cwd=app_root,
+        env=shell_env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
     if prod:
         web_cmd = ["npm", "run", "start", "--", "--host", web_host, "--port", str(web_port)]
     else:
@@ -261,12 +290,14 @@ def serve(
     threads = []
     if api_proc.stdout is not None:
         threads.append(threading.Thread(target=_print_stream, args=("api", api_proc.stdout), daemon=True))
+    if orch_proc.stdout is not None:
+        threads.append(threading.Thread(target=_print_stream, args=("orch", orch_proc.stdout), daemon=True))
     if web_proc.stdout is not None:
         threads.append(threading.Thread(target=_print_stream, args=("web", web_proc.stdout), daemon=True))
     for thread in threads:
         thread.start()
 
-    processes = [api_proc, web_proc]
+    processes = [api_proc, orch_proc, web_proc]
 
     def _handle_signal(signum: int, _frame: object) -> None:
         typer.echo(f"\nReceived signal {signum}. Stopping services...")

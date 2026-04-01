@@ -132,6 +132,18 @@ def create_conversation(user_id: int, request: CreateConversationRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/api/users/{user_id}/conversations/{conversation_id}")
+def delete_conversation(user_id: int, conversation_id: str):
+    """Soft-delete a conversation."""
+    try:
+        data = crud.soft_delete_conversation(user_id=user_id, conversation_id=conversation_id)
+        return {"data": data}
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/users/{user_id}/conversations/{conversation_id}/messages")
 def list_conversation_messages(user_id: int, conversation_id: str):
     try:

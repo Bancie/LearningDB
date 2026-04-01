@@ -92,7 +92,7 @@ export interface ConversationSummary {
   model: string;
   created_at: string;
   updated_at: string;
-  last_message_at: string;
+  last_message_at: string | null;
 }
 
 export interface ConversationMessage {
@@ -117,6 +117,16 @@ export const createConversation = (
     first_user_message?: string;
   }
 ) => orchestratorApi.post<ConversationSummary>(`/chat/conversations/${userId}`, payload ?? {});
+
+export interface DeletedConversationPayload {
+  id: string;
+  deleted_at: string | null;
+}
+
+export const deleteConversation = (userId: number, conversationId: string) =>
+  orchestratorApi.delete<DeletedConversationPayload>(
+    `/chat/conversations/${userId}/${conversationId}`
+  );
 
 export const getConversationMessages = (userId: number, conversationId: string) =>
   orchestratorApi.get<ConversationMessage[]>(
