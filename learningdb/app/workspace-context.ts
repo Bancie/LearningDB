@@ -1,0 +1,33 @@
+import type { SelectChangeEvent } from "@mui/material";
+import type { ConversationSummary, ProviderCatalogItem } from "~/services/orchestrator";
+import type { UiMessage } from "~/components/chat/types";
+
+export type WorkspaceOutletContext = {
+  userId: string;
+  setUserId: (value: string) => void;
+  providers: ProviderCatalogItem[];
+  provider: string;
+  model: string;
+  models: ProviderCatalogItem["models"];
+  bootstrapped: boolean;
+  isBootstrapping: boolean;
+  isSavingPreference: boolean;
+  bootstrap: () => Promise<void>;
+  handleProviderChange: (event: SelectChangeEvent) => Promise<void>;
+  handleModelChange: (event: SelectChangeEvent) => Promise<void>;
+  conversations: ConversationSummary[];
+  activeConversationId: string | null;
+  messages: UiMessage[];
+  input: string;
+  setInput: (value: string) => void;
+  isSending: boolean;
+  isCreatingConversation: boolean;
+  isDeletingConversation: boolean;
+  deletingConversationId: string | null;
+  error: string;
+  uiMode: "intro" | "chat";
+  createNewConversation: () => Promise<void>;
+  handleDeleteConversation: (conversationId: string) => Promise<void>;
+  handleSelectConversation: (conversationId: string) => Promise<void>;
+  sendMessage: () => Promise<void>;
+};

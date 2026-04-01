@@ -17,7 +17,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import Layout from '~/components/Layout';
 import { runBayes } from '~/services/api';
 import type { BayesResult } from '~/services/api';
 
@@ -63,13 +62,13 @@ export default function RunBayes() {
   );
 
   return (
-    <Layout>
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <>
+      <Stack spacing={2}>
         <Typography variant="h5" gutterBottom>
           Run Bayes Analysis
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             fullWidth={isMobile}
             label="Total Minutes (optional)"
@@ -142,7 +141,12 @@ export default function RunBayes() {
                   </TableRow>
                 ))}
                 {data.length > 0 && (
-                  <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                  <TableRow
+                    sx={(theme) => ({
+                      backgroundColor:
+                        theme.palette.mode === "dark" ? theme.palette.grey[800] : theme.palette.grey[100],
+                    })}
+                  >
                     <TableCell colSpan={2}>
                       <strong>TOTAL</strong>
                     </TableCell>
@@ -171,7 +175,7 @@ export default function RunBayes() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
+      </Stack>
 
       <Snackbar
         open={snackbar.open}
@@ -180,6 +184,6 @@ export default function RunBayes() {
       >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
-    </Layout>
+    </>
   );
 }

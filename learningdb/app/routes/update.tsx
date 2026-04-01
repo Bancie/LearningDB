@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Alert,
+  Box,
   Button,
   Chip,
   FormControl,
@@ -17,7 +18,6 @@ import {
   useTheme,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
-import Layout from '~/components/Layout';
 import {
   getActivityIds,
   getActivityList,
@@ -185,9 +185,9 @@ export default function UpdateData() {
   };
 
   return (
-    <Layout>
+    <>
       <Stack spacing={2}>
-        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+        <Box>
           <Typography variant="h5" gutterBottom>
             Update Data
           </Typography>
@@ -216,11 +216,11 @@ export default function UpdateData() {
               label={`Editing Activity #${selectedActivity}`}
             />
           )}
-        </Paper>
+        </Box>
 
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Paper sx={{ p: 2.5, height: '100%' }}>
+            <Paper elevation={0} variant="outlined" sx={{ p: 2.5, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 Update Status
               </Typography>
@@ -247,7 +247,7 @@ export default function UpdateData() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <Paper sx={{ p: 2.5, height: '100%' }}>
+            <Paper elevation={0} variant="outlined" sx={{ p: 2.5, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 Update Prior Probability
               </Typography>
@@ -268,7 +268,7 @@ export default function UpdateData() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <Paper sx={{ p: 2.5, height: '100%' }}>
+            <Paper elevation={0} variant="outlined" sx={{ p: 2.5, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 Update Posterior
               </Typography>
@@ -308,7 +308,7 @@ export default function UpdateData() {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <Paper sx={{ p: 2.5, height: '100%' }}>
+            <Paper elevation={0} variant="outlined" sx={{ p: 2.5, height: '100%' }}>
               <Typography variant="h6" gutterBottom>
                 Utilities
               </Typography>
@@ -338,6 +338,6 @@ export default function UpdateData() {
       >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
-    </Layout>
+    </>
   );
 }

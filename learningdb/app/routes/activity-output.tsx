@@ -17,7 +17,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import Layout from '~/components/Layout';
 import { getCurrentActivityOutput } from '~/services/api';
 import type { ActivityOutput } from '~/services/api';
 
@@ -56,13 +55,13 @@ export default function CurrentActivityOutput() {
   };
 
   return (
-    <Layout>
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <>
+      <Stack spacing={2}>
         <Typography variant="h5" gutterBottom>
           Current Activity Output
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             fullWidth={isMobile}
             label="User ID"
@@ -131,7 +130,7 @@ export default function CurrentActivityOutput() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
+      </Stack>
 
       <Snackbar
         open={snackbar.open}
@@ -140,6 +139,6 @@ export default function CurrentActivityOutput() {
       >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
-    </Layout>
+    </>
   );
 }

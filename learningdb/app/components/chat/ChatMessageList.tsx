@@ -1,4 +1,5 @@
 import { Box, CircularProgress, Paper, Stack, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useEffect, useRef } from "react";
 import ChatMarkdown from "./ChatMarkdown";
 import type { UiMessage } from "./types";
@@ -22,14 +23,18 @@ export default function ChatMessageList({ messages, isSending }: ChatMessageList
   return (
     <Paper
       ref={scrollRef}
-      variant="outlined"
-      sx={{
+      elevation={0}
+      sx={(theme) => ({
         p: 1.5,
         flex: 1,
         overflowY: "auto",
-        bgcolor: "#f8faff",
+        border: "none",
+        bgcolor:
+          theme.palette.mode === "dark"
+            ? alpha(theme.palette.primary.main, 0.12)
+            : alpha(theme.palette.primary.main, 0.04),
         minHeight: 280,
-      }}
+      })}
     >
       <Stack spacing={1.2}>
         {messages.map((message) => {
@@ -40,12 +45,12 @@ export default function ChatMessageList({ messages, isSending }: ChatMessageList
               sx={{
                 alignSelf: isUser ? "flex-end" : "flex-start",
                 maxWidth: { xs: "96%", sm: "86%" },
-                borderRadius: 2,
+                borderRadius: "15px",
                 px: 1.3,
                 py: 1,
                 bgcolor: isUser ? "primary.main" : "background.paper",
                 color: isUser ? "primary.contrastText" : "text.primary",
-                border: isUser ? "none" : "1px solid rgba(15, 23, 42, 0.08)",
+                border: "none",
               }}
             >
               <ChatMarkdown content={message.content} isUser={isUser} />

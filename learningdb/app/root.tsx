@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -6,7 +7,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -14,7 +15,22 @@ import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
-import { appTheme } from "./theme";
+import {
+  COLOR_MODE_STORAGE_KEY,
+  ColorModeContext,
+  type ColorSchemePreference,
+} from "./color-mode";
+import { createAppTheme } from "./theme";
+
+function resolveColorMode(
+  preference: ColorSchemePreference,
+  prefersDark: boolean
+): "light" | "dark" {
+  if (preference === "system") {
+    return prefersDark ? "dark" : "light";
+  }
+  return preference;
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/learningdblogo.png" },
@@ -49,13 +65,60 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
-  return (
-    <ThemeProvider theme={appTheme}>
-      <CssBaseline />
-      <Outlet />
-    </ThemeProvider>
+function AppThemeShell() {
+  const [preference, setPreference] = React.useState<ColorSchemePreference>("light");
+  const [storageReady, setStorageReady] = React.useState(false);
+  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)", { noSsr: true });
+
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem(COLOR_MODE_STORAGE_KEY);
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        setPreference(stored);
+      }
+    } catch {
+      /* ignore */
+    }
+    setStorageReady(true);
+  }, []);
+
+  const resolvedMode = resolveColorMode(preference, prefersDark);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-theme", resolvedMode);
+    if (!storageReady) {
+      return;
+    }
+    try {
+      localStorage.setItem(COLOR_MODE_STORAGE_KEY, preference);
+    } catch {
+      /* ignore */
+    }
+  }, [preference, resolvedMode, storageReady]);
+
+  const theme = React.useMemo(() => createAppTheme(resolvedMode), [resolvedMode]);
+
+  const colorModeValue = React.useMemo(
+    () => ({
+      preference,
+      setPreference,
+      resolvedMode,
+    }),
+    [preference, resolvedMode]
   );
+
+  return (
+    <ColorModeContext.Provider value={colorModeValue}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Outlet />
+      </ThemeProvider>
+    </ColorModeContext.Provider>
+  );
+}
+
+export default function App() {
+  return <AppThemeShell />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

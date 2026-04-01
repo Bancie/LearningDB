@@ -11,6 +11,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Toolbar,
   Typography,
   useMediaQuery,
@@ -27,7 +29,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import BrightnessAutoIcon from "@mui/icons-material/BrightnessAuto";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import { alpha } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router";
+import { useColorMode } from "~/color-mode";
 
 const desktopDrawerWidth = 280;
 const mobileBottomNavHeight = 68;
@@ -51,25 +58,39 @@ export const menuItems: NavItem[] = [
 
 const mobilePrimaryItems = ["/", "/import", "/activity-list", "/update"];
 
+export type ChatFirstSidebarContext = {
+  collapsed: boolean;
+  isMobile: boolean;
+  /** Closes the temporary drawer on small screens (no-op on desktop). */
+  closeMobileDrawer: () => void;
+};
+
 interface LayoutProps {
   children: React.ReactNode;
   mode?: "default" | "chatFirst";
+  /** When set (e.g. AI workspace), logo click runs this instead of only navigating to `/`. */
+  onBrandClick?: () => void;
   sidebarHistoryContent?:
     | React.ReactNode
-    | ((context: { collapsed: boolean; isMobile: boolean }) => React.ReactNode);
+    | ((context: ChatFirstSidebarContext) => React.ReactNode);
   sidebarToolsContent?:
     | React.ReactNode
-    | ((context: { collapsed: boolean; isMobile: boolean }) => React.ReactNode);
+    | ((context: ChatFirstSidebarContext) => React.ReactNode);
 }
 
 export default function Layout({
   children,
   mode = "default",
+  onBrandClick,
   sidebarHistoryContent,
   sidebarToolsContent,
 }: LayoutProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { preference: colorSchemePreference, setPreference: setColorSchemePreference } =
+    useColorMode();
+  const [themeMenuAnchor, setThemeMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const themeMenuOpen = Boolean(themeMenuAnchor);
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"), { noSsr: true });
   const navigate = useNavigate();
   const location = useLocation();
   const [desktopOpen, setDesktopOpen] = React.useState(true);
@@ -89,17 +110,20 @@ export default function Layout({
   const drawerVariant: DrawerProps["variant"] = isMobile ? "temporary" : "permanent";
   const isSidebarCollapsed = !desktopOpen && !isMobile;
 
+  const closeMobileDrawer = React.useCallback(() => {
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  }, [isMobile]);
+
   const renderSidebarSection = (
-    content:
-      | React.ReactNode
-      | ((context: { collapsed: boolean; isMobile: boolean }) => React.ReactNode)
-      | undefined
+    content: React.ReactNode | ((context: ChatFirstSidebarContext) => React.ReactNode) | undefined
   ) => {
     if (!content) {
       return null;
     }
     if (typeof content === "function") {
-      return content({ collapsed: isSidebarCollapsed, isMobile });
+      return content({ collapsed: isSidebarCollapsed, isMobile, closeMobileDrawer });
     }
     return content;
   };
@@ -115,21 +139,42 @@ export default function Layout({
           borderBottomRightRadius: 14,
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: 64, md: 72 } }}>
+        <Toolbar
+          sx={{
+            minHeight: { xs: 64, md: 72 },
+            position: "relative",
+            zIndex: (z) => z.zIndex.drawer + 2,
+          }}
+        >
           <IconButton
             color="inherit"
             edge="start"
-            onClick={() =>
-              isMobile ? setMobileMenuOpen(true) : setDesktopOpen((prev) => !prev)
-            }
-            sx={{ mr: 1.5 }}
-            aria-label="open navigation"
+            type="button"
+            onClick={() => {
+              if (isMobile) {
+                setMobileMenuOpen((prev) => !prev);
+              } else {
+                setDesktopOpen((prev) => !prev);
+              }
+            }}
+            sx={{ mr: 1.5, flexShrink: 0 }}
+            aria-label={isMobile ? "Toggle navigation menu" : desktopOpen ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={isMobile ? mobileMenuOpen : desktopOpen}
           >
             <MenuIcon />
           </IconButton>
           <Typography
             variant="h6"
-            onClick={() => handleNavigate("/")}
+            onClick={() => {
+              if (onBrandClick) {
+                onBrandClick();
+                if (isMobile) {
+                  setMobileMenuOpen(false);
+                }
+              } else {
+                handleNavigate("/");
+              }
+            }}
             sx={{
               cursor: "pointer",
               fontWeight: 700,
@@ -159,6 +204,70 @@ export default function Layout({
               LearningDB
             </Box>
           </Typography>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }} />
+          <IconButton
+            color="inherit"
+            edge="end"
+            type="button"
+            onClick={(e) => setThemeMenuAnchor(e.currentTarget)}
+            aria-label="Theme: light, dark, or system"
+            aria-haspopup="true"
+            aria-expanded={themeMenuOpen ? "true" : "false"}
+            id="theme-menu-button"
+          >
+            {colorSchemePreference === "system" ? (
+              <BrightnessAutoIcon />
+            ) : colorSchemePreference === "light" ? (
+              <LightModeIcon />
+            ) : (
+              <DarkModeIcon />
+            )}
+          </IconButton>
+          <Menu
+            anchorEl={themeMenuAnchor}
+            open={themeMenuOpen}
+            onClose={() => setThemeMenuAnchor(null)}
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            transformOrigin={{ vertical: "top", horizontal: "right" }}
+            slotProps={{ list: { "aria-labelledby": "theme-menu-button", dense: true } }}
+          >
+            <MenuItem
+              selected={colorSchemePreference === "light"}
+              onClick={() => {
+                setColorSchemePreference("light");
+                setThemeMenuAnchor(null);
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <LightModeIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Light</ListItemText>
+            </MenuItem>
+            <MenuItem
+              selected={colorSchemePreference === "dark"}
+              onClick={() => {
+                setColorSchemePreference("dark");
+                setThemeMenuAnchor(null);
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <DarkModeIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Dark</ListItemText>
+            </MenuItem>
+            <MenuItem
+              selected={colorSchemePreference === "system"}
+              onClick={() => {
+                setColorSchemePreference("system");
+                setThemeMenuAnchor(null);
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <BrightnessAutoIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>System</ListItemText>
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
 
@@ -186,13 +295,25 @@ export default function Layout({
                   duration: theme.transitions.duration.standard,
                 })
               : undefined,
-            borderRight: !isMobile ? "1px solid rgba(15, 23, 42, 0.08)" : "none",
-            borderTopLeftRadius: isMobile ? 20 : 0,
-            borderTopRightRadius: isMobile ? 20 : 0,
+            borderRight: "none",
+            ...(isChatFirst
+              ? {
+                  borderTopLeftRadius: 0,
+                  borderTopRightRadius: "15px",
+                  borderBottomRightRadius: "15px",
+                  borderBottomLeftRadius: 0,
+                }
+              : {
+                  borderTopLeftRadius: isMobile ? 20 : 0,
+                  borderTopRightRadius: isMobile ? 20 : 0,
+                }),
             overflowX: "hidden",
             px: isChatFirst ? (isSidebarCollapsed ? 0.5 : 1.2) : 1,
             py: isChatFirst ? (isSidebarCollapsed ? 0.75 : 1) : 1.5,
-            background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
+            background: (t) =>
+              t.palette.mode === "dark"
+                ? "linear-gradient(180deg, #151d28 0%, #0f1419 100%)"
+                : "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
           },
         }}
       >
@@ -205,13 +326,6 @@ export default function Layout({
               minHeight: 0,
             }}
           >
-            {!isSidebarCollapsed && (
-              <Box sx={{ flexShrink: 0, px: 0.75, py: 0.5 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, minHeight: 30 }}>
-                  AI Workspace
-                </Typography>
-              </Box>
-            )}
             <Box
               sx={{
                 flex: isSidebarCollapsed ? "0 0 auto" : "1 1 auto",
@@ -306,10 +420,13 @@ export default function Layout({
             bottom: 10,
             height: mobileBottomNavHeight,
             borderRadius: 4,
-            boxShadow: "0 10px 28px rgba(15, 23, 42, 0.18)",
-            border: "1px solid rgba(11, 110, 230, 0.12)",
+            boxShadow:
+              theme.palette.mode === "dark"
+                ? "0 10px 28px rgba(0, 0, 0, 0.45)"
+                : "0 10px 28px rgba(15, 23, 42, 0.18)",
+            border: (t) => `1px solid ${alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.35 : 0.12)}`,
             zIndex: theme.zIndex.appBar + 1,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
+            backgroundColor: (t) => alpha(t.palette.background.paper, 0.95),
             backdropFilter: "blur(8px)",
           }}
         >

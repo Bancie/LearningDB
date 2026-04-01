@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   IconButton,
   Menu,
   MenuItem,
@@ -117,14 +116,11 @@ export default function ChatHeader({
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        slotProps={{ paper: { sx: { width: { xs: 320, sm: 420 }, p: 1.25, borderRadius: 2 } } }}
+        slotProps={{
+          paper: { sx: { width: { xs: 320, sm: 420 }, px: 1.25, py: 1.875, borderRadius: 2 } },
+        }}
       >
         <Stack spacing={1}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            Chat options
-          </Typography>
-          <Divider />
-
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
             <TextField
               fullWidth
@@ -138,7 +134,7 @@ export default function ChatHeader({
               variant="contained"
               onClick={() => void onBootstrap()}
               disabled={isBootstrapping}
-              sx={{ whiteSpace: "nowrap" }}
+              sx={{ whiteSpace: "nowrap", borderRadius: "17px" }}
             >
               {isBootstrapping ? "Connecting..." : "Connect"}
             </Button>
@@ -160,7 +156,11 @@ export default function ChatHeader({
                 size="small"
                 onClick={(e) => setProviderMenuAnchorEl(e.currentTarget)}
                 disabled={!bootstrapped}
-                sx={{ justifyContent: "space-between", textTransform: "none" }}
+                sx={{
+                  justifyContent: "space-between",
+                  textTransform: "none",
+                  borderRadius: "20px",
+                }}
                 endIcon={<ChevronRightRoundedIcon sx={{ opacity: 0.7 }} />}
               >
                 <Box

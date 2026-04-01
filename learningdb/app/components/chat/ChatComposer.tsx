@@ -31,7 +31,7 @@ export default function ChatComposer({
         sx={{
           alignItems: "flex-end",
           p: isIntro ? 1 : 0,
-          borderRadius: isIntro ? 4 : 0,
+          borderRadius: isIntro ? "50px" : 0,
           bgcolor: isIntro ? "background.paper" : "transparent",
           boxShadow: isIntro ? "0 10px 28px rgba(15, 23, 42, 0.12)" : "none",
           border: isIntro ? "1px solid rgba(148, 163, 184, 0.28)" : "none",
@@ -53,8 +53,11 @@ export default function ChatComposer({
           }}
           sx={{
             "& .MuiOutlinedInput-root": {
-              borderRadius: isIntro ? 3 : 1,
+              borderRadius: isIntro ? "10px" : "15px",
               bgcolor: "background.paper",
+              "& fieldset": { border: "none" },
+              "&:hover fieldset": { border: "none" },
+              "&.Mui-focused fieldset": { border: "none" },
             },
           }}
         />
@@ -63,7 +66,11 @@ export default function ChatComposer({
           onClick={() => void onSend()}
           disabled={disabled}
           startIcon={<SendRoundedIcon />}
-          sx={{ height: 40, minWidth: isIntro ? 108 : undefined }}
+          sx={{
+            height: 40,
+            minWidth: isIntro ? 108 : undefined,
+            borderRadius: isIntro ? "40px" : "15px",
+          }}
         >
           Send
         </Button>

@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import Layout from '~/components/Layout';
 import { getActivityList } from '~/services/api';
 
 export function meta() {
@@ -166,14 +165,14 @@ export default function ActivityList() {
   }, [data, searchTerm, statusFilter, sortField, sortOrder]);
 
   return (
-    <Layout>
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <>
+      <Stack spacing={2}>
         <Typography variant="h5" gutterBottom>
           Activity List
         </Typography>
 
         {/* User ID and Load */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             fullWidth={isMobile}
             label="User ID"
@@ -354,7 +353,7 @@ export default function ActivityList() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
+      </Stack>
 
       <Snackbar
         open={snackbar.open}
@@ -363,6 +362,6 @@ export default function ActivityList() {
       >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
-    </Layout>
+    </>
   );
 }

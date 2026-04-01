@@ -17,7 +17,6 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import Layout from '~/components/Layout';
 import { getActivityView } from '~/services/api';
 import type { ActivityData } from '~/services/api';
 
@@ -56,13 +55,13 @@ export default function ViewActivities() {
   };
 
   return (
-    <Layout>
-      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <>
+      <Stack spacing={2}>
         <Typography variant="h5" gutterBottom>
           View Activities
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 1, mb: 0, alignItems: 'center', flexWrap: 'wrap' }}>
           <TextField
             fullWidth={isMobile}
             label="User ID"
@@ -133,7 +132,7 @@ export default function ViewActivities() {
             </Table>
           </TableContainer>
         )}
-      </Paper>
+      </Stack>
 
       <Snackbar
         open={snackbar.open}
@@ -142,6 +141,6 @@ export default function ViewActivities() {
       >
         <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
-    </Layout>
+    </>
   );
 }

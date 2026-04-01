@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   Alert,
+  Box,
   Button,
   Chip,
   CircularProgress,
-  Paper,
   FormControl,
   Grid,
   InputLabel,
@@ -18,7 +18,6 @@ import {
   useTheme,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
-import Layout from '~/components/Layout';
 import { getTables, getTableColumns, insertRecord } from '~/services/api';
 import type { Column } from '~/services/api';
 
@@ -215,9 +214,9 @@ export default function ImportData() {
   };
 
   return (
-    <Layout>
-      <Stack spacing={2}>
-        <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <>
+      <Stack spacing={3}>
+        <Box>
           <Typography variant="h5" gutterBottom>
             Import Data
           </Typography>
@@ -242,10 +241,10 @@ export default function ImportData() {
               sx={{ mt: 1.5, fontWeight: 600 }}
             />
           )}
-        </Paper>
+        </Box>
 
         {columns.length > 0 && (
-          <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.2 }}>
               Record Details
             </Typography>
@@ -263,7 +262,7 @@ export default function ImportData() {
             >
               {loading ? 'Inserting...' : 'Insert Record'}
             </Button>
-          </Paper>
+          </Box>
         )}
       </Stack>
 
@@ -276,6 +275,6 @@ export default function ImportData() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Layout>
+    </>
   );
 }
