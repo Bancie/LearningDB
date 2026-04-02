@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { Alert, Box, Chip, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOutletContext } from "react-router";
 import ChatHeader from "~/components/chat/ChatHeader";
@@ -35,6 +35,8 @@ export default function Home() {
     setInput,
     messages,
     sendMessage,
+    createNewConversation,
+    isCreatingConversation,
   } = useOutletContext<WorkspaceOutletContext>();
 
   const chatHeaderProps = {
@@ -87,6 +89,17 @@ export default function Home() {
                 alignItems: "center",
               }}
             >
+              <Box
+                component="img"
+                src="/learningdblogo.png"
+                alt="LearningDB"
+                sx={{
+                  height: { xs: 56, sm: 64 },
+                  width: "auto",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
               <Typography
                 variant="h3"
                 sx={{
@@ -158,18 +171,38 @@ export default function Home() {
           <Box
             sx={{
               flexShrink: 0,
-              alignSelf: "flex-start",
-              maxWidth: { xs: "100%", sm: "min(560px, 72%)" },
+              alignSelf: "stretch",
+              width: "100%",
               mb: { xs: 1, sm: 1.25 },
               px: { xs: 1.5, sm: 2, md: 2.5 },
+              display: "flex",
+              flexDirection: { xs: "row", sm: "column" },
+              alignItems: { xs: "flex-start", sm: "flex-start" },
+              justifyContent: { xs: "space-between", sm: "flex-start" },
+              gap: { xs: 1, sm: 0 },
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-              Ask LearningDB AI
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
-            </Typography>
+            <Box sx={{ flex: 1, minWidth: 0, maxWidth: { sm: "min(560px, 72%)" } }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+                Ask LearningDB AI
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => void createNewConversation()}
+              disabled={isCreatingConversation || isSending}
+              sx={{
+                display: { xs: "inline-flex", sm: "none" },
+                flexShrink: 0,
+                whiteSpace: "nowrap",
+              }}
+            >
+              New chat
+            </Button>
           </Box>
 
           <Stack

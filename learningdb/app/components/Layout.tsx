@@ -287,7 +287,7 @@ export default function Layout({
           width: !isMobile ? sidebarWidth : undefined,
           flexShrink: 0,
           "& .MuiDrawer-paper": {
-            width: isMobile ? (isChatFirst ? "400px" : "100vw") : sidebarWidth,
+            width: isMobile ? (isChatFirst ? "calc(100vw * 2 / 3)" : "100vw") : sidebarWidth,
             mt: isMobile && !isChatFirst ? 0 : "72px",
             height: isMobile && !isChatFirst ? "auto" : "calc(100% - 72px)",
             transition: !isMobile

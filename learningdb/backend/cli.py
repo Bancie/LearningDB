@@ -108,6 +108,31 @@ def _resolve_api_public_host(bind_host: str) -> str:
     return normalized
 
 
+def _port_bindable(port: int, *, ipv4: str = "0.0.0.0") -> bool:
+    """True if nothing is listening on this TCP port (best-effort bind probe)."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind((ipv4, port))
+        except OSError:
+            return False
+    return True
+
+
+def _next_free_port(start: int, *, max_steps: int = 64) -> int:
+    """Return the first port in [start, start + max_steps) that is bindable."""
+    for candidate in range(start, start + max_steps):
+        if candidate > 65535:
+            break
+        if _port_bindable(candidate):
+            return candidate
+    typer.secho(
+        f"No free TCP port found starting at {start} (tried {max_steps} steps).",
+        fg=typer.colors.RED,
+        err=True,
+    )
+    raise typer.Exit(code=1)
+
+
 def _check_mysql(env_values: dict[str, str], repo_root: Path) -> tuple[str, int]:
     required = ("DB_HOST", "DB_USER", "DB_PASS", "DB_NAME")
     missing = [key for key in required if not env_values.get(key)]
@@ -194,6 +219,11 @@ def serve(
     web_port: int = typer.Option(5173, help="Frontend port."),
     orch_host: str = typer.Option("0.0.0.0", help="Orchestrator host."),
     orch_port: int = typer.Option(8100, help="Orchestrator port."),
+    auto_ports: bool = typer.Option(
+        False,
+        "--auto-ports",
+        help="If a default port is in use, pick the next free port and sync env URLs.",
+    ),
 ) -> None:
     """Run MySQL-backed API and web app together."""
     repo_root = Path(__file__).resolve().parents[2]
@@ -210,12 +240,30 @@ def serve(
     env_values = _read_env(env_path)
     db_host, db_port = _check_mysql(env_values, repo_root)
 
+    requested = (port, orch_port, web_port)
+    if auto_ports:
+        port = _next_free_port(port)
+        orch_port = _next_free_port(orch_port)
+        web_port = _next_free_port(web_port)
+        if (port, orch_port, web_port) != requested:
+            typer.echo(
+                f"[serve] auto-ports: api={port} orch={orch_port} web={web_port} "
+                f"(requested api={requested[0]} orch={requested[1]} web={requested[2]})"
+            )
+
     shell_env = os.environ.copy()
     shell_env.update(env_values)
     shell_env["DB_HOST"] = db_host
     shell_env["DB_PORT"] = str(db_port)
-    shell_env.setdefault("VITE_API_BASE_URL", f"http://{_resolve_api_public_host(host)}:{port}/api")
-    shell_env.setdefault("VITE_ORCH_API_BASE_URL", f"http://{_resolve_api_public_host(orch_host)}:{orch_port}")
+    if auto_ports:
+        public_api = _resolve_api_public_host(host)
+        public_orch = _resolve_api_public_host(orch_host)
+        shell_env["VITE_API_BASE_URL"] = f"http://{public_api}:{port}/api"
+        shell_env["VITE_ORCH_API_BASE_URL"] = f"http://{public_orch}:{orch_port}"
+        shell_env["ORCH_BACKEND_BASE_URL"] = f"http://127.0.0.1:{port}/api"
+    else:
+        shell_env.setdefault("VITE_API_BASE_URL", f"http://{_resolve_api_public_host(host)}:{port}/api")
+        shell_env.setdefault("VITE_ORCH_API_BASE_URL", f"http://{_resolve_api_public_host(orch_host)}:{orch_port}")
 
     typer.echo(
         "[serve] endpoints: "

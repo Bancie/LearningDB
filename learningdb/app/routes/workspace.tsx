@@ -486,7 +486,15 @@ export default function Workspace() {
               pb: { xs: 1, sm: 1.25 },
             }}
           >
-            <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: "auto" }}>
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                overflow: "hidden",
+                height: "100%",
+              }}
+            >
               <Outlet context={outletContext} />
             </Box>
           </Box>
