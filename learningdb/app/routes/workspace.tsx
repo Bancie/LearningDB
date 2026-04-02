@@ -156,12 +156,14 @@ export default function Workspace() {
         }
       }
 
+      let uiModeResolved: "intro" | "chat" = "intro";
       if (conversationRes.data.length > 0) {
         const messageCount = await loadConversation(
           parsedUserId,
           conversationRes.data[0].id,
         );
-        setUiMode(messageCount === 0 ? "intro" : "chat");
+        uiModeResolved = messageCount === 0 ? "intro" : "chat";
+        setUiMode(uiModeResolved);
       } else {
         setActiveConversationId(null);
         setMessages([]);

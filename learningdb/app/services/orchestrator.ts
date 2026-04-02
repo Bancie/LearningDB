@@ -1,7 +1,7 @@
 import axios from "axios";
+import { resolveOrchestratorBaseUrl } from "./resolvePublicServiceUrls";
 
-const ORCH_BASE_URL =
-  import.meta.env.VITE_ORCH_API_BASE_URL ?? "http://localhost:8100";
+const ORCH_BASE_URL = resolveOrchestratorBaseUrl();
 
 const orchestratorApi = axios.create({
   baseURL: ORCH_BASE_URL,
