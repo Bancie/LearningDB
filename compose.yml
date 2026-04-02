@@ -88,9 +88,9 @@ services:
       api:
         condition: service_healthy
 
-  # Web bundle embeds VITE_* at build time. For mobile on the same LAN, set
-  # VITE_API_BASE_URL and VITE_ORCH_API_BASE_URL in .env to http://<LAN-IP>:8000/api
-  # and http://<LAN-IP>:8100, then rebuild web (see .env.example).
+  # Web uses runtime hostname for API calls in the browser (same host as the page).
+  # VITE_* defaults below are for SSR/build fallbacks only. Open on laptop: http://localhost:3000
+  # On phone (same Wi‑Fi): http://<this-machine-LAN-IP>:3000
   web:
     build:
       context: ./learningdb
