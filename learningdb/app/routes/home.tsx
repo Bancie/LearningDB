@@ -8,6 +8,8 @@ import ChatComposer from "~/components/chat/ChatComposer";
 import ChatMessageList from "~/components/chat/ChatMessageList";
 import type { WorkspaceOutletContext } from "~/workspace-context";
 
+const CHAT_COMPOSER_PLACEHOLDER = "Input your request here...";
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "LearningDB - AI Workspace" },
@@ -117,7 +119,8 @@ export default function Home() {
                 color="text.secondary"
                 sx={{ textAlign: "center", maxWidth: 640 }}
               >
-                Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
+                Chat naturally, AI will help you query and summarize your study
+                data.
               </Typography>
               <Stack
                 direction="row"
@@ -142,7 +145,7 @@ export default function Home() {
                   disabled={!bootstrapped || isSending}
                   mode="intro"
                   motionLayoutId="home-chat-composer"
-                  placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
+                  placeholder={CHAT_COMPOSER_PLACEHOLDER}
                 />
               </Box>
 
@@ -183,12 +186,22 @@ export default function Home() {
               gap: { xs: 1, sm: 0 },
             }}
           >
-            <Box sx={{ flex: 1, minWidth: 0, maxWidth: { sm: "min(560px, 72%)" } }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+            <Box
+              sx={{ flex: 1, minWidth: 0, maxWidth: { sm: "min(560px, 72%)" } }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, lineHeight: 1.3 }}
+              >
                 Ask LearningDB AI
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc tap.
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+              >
+                Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc
+                tap.
               </Typography>
             </Box>
             <Button
@@ -248,7 +261,7 @@ export default function Home() {
                 disabled={!bootstrapped || isSending}
                 mode="chat"
                 motionLayoutId="home-chat-composer"
-                placeholder="Nhap yeu cau, vi du: hien thi activity list cua user nay"
+                placeholder={CHAT_COMPOSER_PLACEHOLDER}
               />
             </Box>
           </Stack>

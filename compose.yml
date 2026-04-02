@@ -122,5 +122,8 @@ services:
         condition: service_healthy
 
 volumes:
+  # Pre-existing Docker volume for MySQL data (not created by this compose project).
+  # If missing: docker volume create bancie-mysql-data
   bancie_mysql_data:
     name: bancie-mysql-data
+    external: true
