@@ -359,7 +359,9 @@ def ensure_chat_conversation_tables() -> None:
                     `CONTENT` TEXT NOT NULL,
                     `REQUEST_ID` VARCHAR(128) NULL,
                     `CREATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `SEQ` INT UNSIGNED NULL DEFAULT NULL,
                     INDEX `idx_chat_message_conversation` (`CONVERSATION_ID`, `CREATED_AT`),
+                    INDEX `idx_chat_message_conversation_seq` (`CONVERSATION_ID`, `SEQ`),
                     INDEX `idx_chat_message_user` (`USER_ID`)
                 )
                 """
@@ -367,6 +369,67 @@ def ensure_chat_conversation_tables() -> None:
         )
     _ensure_conversation_deleted_at_column()
     _ensure_last_message_at_nullable()
+    _ensure_message_seq_column()
+
+
+def _ensure_message_seq_column() -> None:
+    """Per-conversation sequence so message order is stable when CREATED_AT ties (same-second inserts)."""
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """
+                    ALTER TABLE `CHAT_MESSAGE`
+                    ADD COLUMN `SEQ` INT UNSIGNED NULL DEFAULT NULL
+                    """
+                )
+            )
+    except Exception:
+        pass
+
+    try:
+        with engine.begin() as conn:
+            cids = conn.execute(
+                text(
+                    """
+                    SELECT DISTINCT `CONVERSATION_ID`
+                    FROM `CHAT_MESSAGE`
+                    WHERE `SEQ` IS NULL
+                    """
+                )
+            ).scalars().all()
+            for cid in cids:
+                rows = conn.execute(
+                    text(
+                        """
+                        SELECT `ID`
+                        FROM `CHAT_MESSAGE`
+                        WHERE `CONVERSATION_ID` = :cid
+                        ORDER BY
+                            `CREATED_AT` ASC,
+                            CASE `ROLE`
+                                WHEN 'user' THEN 0
+                                WHEN 'assistant' THEN 1
+                                ELSE 2
+                            END ASC,
+                            `ID` ASC
+                        """
+                    ),
+                    {"cid": cid},
+                ).fetchall()
+                for idx, (mid,) in enumerate(rows):
+                    conn.execute(
+                        text(
+                            """
+                            UPDATE `CHAT_MESSAGE`
+                            SET `SEQ` = :seq
+                            WHERE `ID` = :mid
+                            """
+                        ),
+                        {"seq": idx, "mid": mid},
+                    )
+    except Exception:
+        pass
 
 
 def _ensure_last_message_at_nullable() -> None:
@@ -595,7 +658,14 @@ def list_conversation_messages(user_id: int, conversation_id: str) -> list[dict]
                 FROM `CHAT_MESSAGE`
                 WHERE `CONVERSATION_ID` = :conversation_id
                     AND `USER_ID` = :user_id
-                ORDER BY `CREATED_AT` ASC
+                ORDER BY
+                    COALESCE(`SEQ`, 4294967295) ASC,
+                    `CREATED_AT` ASC,
+                    CASE `ROLE`
+                        WHEN 'user' THEN 0
+                        WHEN 'assistant' THEN 1
+                        ELSE 2
+                    END ASC
                 """
             ),
             {"conversation_id": conversation_id, "user_id": user_id},
@@ -630,13 +700,24 @@ def append_conversation_message(
 
     message_id = str(uuid.uuid4())
     with engine.begin() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT COALESCE(MAX(`SEQ`), -1) AS n
+                FROM `CHAT_MESSAGE`
+                WHERE `CONVERSATION_ID` = :conversation_id
+                """
+            ),
+            {"conversation_id": conversation_id},
+        ).mappings().first()
+        next_seq = int(row["n"]) + 1
         conn.execute(
             text(
                 """
                 INSERT INTO `CHAT_MESSAGE`
-                    (`ID`, `CONVERSATION_ID`, `USER_ID`, `ROLE`, `CONTENT`, `REQUEST_ID`)
+                    (`ID`, `CONVERSATION_ID`, `USER_ID`, `ROLE`, `CONTENT`, `REQUEST_ID`, `SEQ`)
                 VALUES
-                    (:id, :conversation_id, :user_id, :role, :content, :request_id)
+                    (:id, :conversation_id, :user_id, :role, :content, :request_id, :seq)
                 """
             ),
             {
@@ -646,6 +727,7 @@ def append_conversation_message(
                 "role": role,
                 "content": content,
                 "request_id": request_id,
+                "seq": next_seq,
             },
         )
 

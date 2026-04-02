@@ -65,7 +65,7 @@ export default function ChatComposer({
         direction="row"
         spacing={1}
         sx={{
-          alignItems: isIntro ? "center" : "flex-end",
+          alignItems: "center",
           p: isIntro ? 1 : 1,
           borderRadius: isIntro ? "50px" : "15px",
           bgcolor: "background.paper",

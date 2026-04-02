@@ -1,4 +1,5 @@
 import type { Route } from "./+types/home";
+import AddCommentRoundedIcon from "@mui/icons-material/AddCommentRounded";
 import { Alert, Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOutletContext } from "react-router";
@@ -195,13 +196,17 @@ export default function Home() {
               size="small"
               onClick={() => void createNewConversation()}
               disabled={isCreatingConversation || isSending}
+              aria-label={
+                isCreatingConversation ? "Creating conversation" : "New chat"
+              }
               sx={{
                 display: { xs: "inline-flex", sm: "none" },
                 flexShrink: 0,
-                whiteSpace: "nowrap",
+                minWidth: 40,
+                px: 1,
               }}
             >
-              New chat
+              <AddCommentRoundedIcon aria-hidden />
             </Button>
           </Box>
 

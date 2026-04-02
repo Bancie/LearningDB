@@ -99,16 +99,26 @@ export default function Workspace() {
       nextUserId,
       conversationId,
     );
+    /** Same-second inserts share CREATED_AT; tie-break so user precedes assistant. */
+    const sorted = [...messageRes.data].sort((a, b) => {
+      const ta = new Date(a.created_at ?? 0).getTime();
+      const tb = new Date(b.created_at ?? 0).getTime();
+      if (ta !== tb) {
+        return ta - tb;
+      }
+      const roleRank = (r: string) => (r === "user" ? 0 : 1);
+      return roleRank(a.role) - roleRank(b.role);
+    });
     setActiveConversationId(conversationId);
     setMessages(
-      messageRes.data.map((item) => ({
+      sorted.map((item) => ({
         id: item.id,
         role: item.role,
         content: item.content,
         createdAt: item.created_at,
       })),
     );
-    return messageRes.data.length;
+    return sorted.length;
   };
 
   const bootstrap = async () => {
