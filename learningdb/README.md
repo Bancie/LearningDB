@@ -1,552 +1,320 @@
-# LearningDB Web Application
+# LearningDB
 
-Ứng dụng web theo dõi hoạt động học tập hàng ngày với tính năng phân tích Bayesian.
+Ứng dụng theo dõi học tập + phân tích Bayes, gồm 4 lớp chính: `web`, `api`, `orchestrator`, `db`.
+
+README này mô tả phiên bản hiện tại của hệ thống: kiến trúc, module, file structure, cách chạy, và cách dùng chatbot với cơ chế write-safe 2 bước (chỉ thêm/sửa, không xóa).
 
 ## Mục lục
 
-- [Tổng quan](#tổng-quan)
-- [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
-- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [Cài đặt và Chạy](#cài-đặt-và-chạy)
-- [Backend API](#backend-api)
-- [Frontend Routes](#frontend-routes)
-- [Database Schema](#database-schema)
-- [Tính năng chi tiết](#tính-năng-chi-tiết)
-- [Phát triển và Mở rộng](#phát-triển-và-mở-rộng)
+- [1. Tổng quan](#1-tổng-quan)
+- [2. Kiến trúc hệ thống](#2-kiến-trúc-hệ-thống)
+- [3. Cấu trúc thư mục](#3-cấu-trúc-thư-mục)
+- [4. Module và trách nhiệm](#4-module-và-trách-nhiệm)
+- [5. API và contracts](#5-api-và-contracts)
+- [6. Write-safe 2 bước (no-delete)](#6-write-safe-2-bước-no-delete)
+- [7. Cài đặt và chạy](#7-cài-đặt-và-chạy)
+- [8. Cách sử dụng nhanh](#8-cách-sử-dụng-nhanh)
+- [9. Test và kiểm chứng](#9-test-và-kiểm-chứng)
+- [10. Troubleshooting](#10-troubleshooting)
 
----
+## 1. Tổng quan
 
-## Tổng quan
+LearningDB cung cấp:
 
-LearningDB là một ứng dụng web full-stack được upgrade từ desktop app Tkinter, giúp:
+- Theo dõi hoạt động học tập theo người dùng.
+- CRUD dữ liệu ở backend (UI/manual + API).
+- Chatbot orchestrator (LangChain) để truy vấn và thực hiện add/update qua tool-calling.
+- Cơ chế an toàn cho write: xác nhận 2 bước, allowlist bảng, không cho delete.
 
-- Theo dõi các hoạt động học tập hàng ngày
-- Nhập dữ liệu vào các bảng MySQL
-- Phân tích và tính toán xác suất Bayesian
-- Quản lý trạng thái và ưu tiên của các hoạt động
+### Tech stack
 
-### Tech Stack
+| Layer | Tech |
+| --- | --- |
+| Web | React 19, React Router 7, TypeScript, MUI |
+| Orchestrator | FastAPI, LangChain, HTTPX |
+| API Backend | FastAPI, SQLAlchemy, Pandas |
+| DB | MySQL |
+| Runtime | Docker Compose / local CLI |
 
-| Layer        | Technology                                                |
-| ------------ | --------------------------------------------------------- |
-| **Frontend** | React 19, React Router 7, Material UI (MUI) 7, TypeScript |
-| **Backend**  | Python 3, FastAPI, SQLAlchemy, Pandas                     |
-| **Database** | MySQL                                                     |
-| **Styling**  | TailwindCSS, MUI Theme                                    |
+## 2. Kiến trúc hệ thống
 
----
+```mermaid
+flowchart TD
+    browser[Browser]
+    web[Web App<br/>React Router]
+    orch[Orchestrator<br/>FastAPI + LangChain]
+    api[Backend API<br/>FastAPI]
+    db[(MySQL)]
 
-## Kiến trúc hệ thống
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT (Browser)                         │
-│                     http://localhost:5173                        │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                │ HTTP Requests
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    FRONTEND (React Router)                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   Layout    │  │   Routes    │  │     API Service         │  │
-│  │  (MUI)      │  │  (Pages)    │  │  (Axios → Backend)      │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                │ REST API (JSON)
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    BACKEND (FastAPI)                             │
-│                    http://localhost:8000                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │   main.py   │  │   crud.py   │  │     database.py         │  │
-│  │  (Routes)   │  │  (Logic)    │  │  (SQLAlchemy Engine)    │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                                │
-                                │ SQL Queries
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    DATABASE (MySQL)                              │
-│                    localhost:3306                                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  ACTIVITY   │  │ ACTIVITY_LOG│  │   Other Tables...       │  │
-│  │  (Core)     │  │  (Tracking) │  │   (SLEEP_LOG, etc.)     │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+    browser --> web
+    web -->|"GET/POST /chat, /providers, /chat/preferences"| orch
+    web -->|"REST /api/*"| api
+    orch -->|"Tool calls /api/*"| api
+    api --> db
 ```
 
----
+### Luồng chính
 
-## Cấu trúc thư mục
+- Web gọi orchestrator để chat.
+- Orchestrator gọi LLM + tools.
+- Tools gọi backend API.
+- Backend thao tác DB.
 
-```
-learningdb/
-├── app/                          # Frontend React Application
-│   ├── components/               # Reusable Components
-│   │   └── Layout.tsx            # Main layout với MUI Drawer
-│   ├── routes/                   # Page Components (React Router)
-│   │   ├── home.tsx              # Trang chủ Dashboard
-│   │   ├── import.tsx            # Import Data - nhập dữ liệu
-│   │   ├── activity-log.tsx      # Current Activity Log
-│   │   ├── activity-output.tsx   # Current Activity Output
-│   │   ├── activity-list.tsx     # Activity List với Search/Filter/Sort
-│   │   ├── update.tsx            # Update Data (probabilities, status)
-│   │   ├── view.tsx              # View Activities (Bayes view)
-│   │   └── bayes.tsx             # Run Bayes Analysis
-│   ├── services/                 # API Services
-│   │   └── api.ts                # Axios API client
-│   ├── routes.ts                 # Route configuration
-│   ├── root.tsx                  # Root component
-│   └── app.css                   # Global styles
-│
-├── backend/                      # Backend Python Application
-│   ├── main.py                   # FastAPI application & endpoints
-│   ├── crud.py                   # Database CRUD operations
-│   ├── database.py               # SQLAlchemy engine & connection
-│   ├── requirements.txt          # Python dependencies
-│   └── .venv/                    # Python virtual environment (not in git)
-│
-├── public/                       # Static assets
-├── package.json                  # Node.js dependencies
-├── tsconfig.json                 # TypeScript configuration
-├── vite.config.ts                # Vite configuration
-└── README.md                     # Documentation (this file)
-```
+## 3. Cấu trúc thư mục
 
----
-
-## Cài đặt và Chạy
-
-### Yêu cầu
-
-- Node.js 18+
-- Python 3.10+
-- MySQL Server
-
-### 1. Cấu hình Database
-
-Tạo file `.env` ở thư mục gốc (`LearningDB/.env`):
-
-```env
-DB_USER=root
-DB_PASS=your_password
-DB_HOST=localhost
-DB_NAME=bancie
+```text
+LearningDB/
+├── compose.yml
+├── requirements.txt
+├── .env
+├── .env.example
+└── learningdb/
+    ├── README.md
+    ├── Dockerfile                     # web image
+    ├── app/                           # frontend
+    │   ├── routes/
+    │   │   ├── workspace.tsx          # chat workspace state machine
+    │   │   ├── home.tsx               # chat UI
+    │   │   ├── import.tsx
+    │   │   ├── update.tsx
+    │   │   └── ...
+    │   ├── services/
+    │   │   ├── orchestrator.ts        # orchestrator client/contracts
+    │   │   └── api.ts
+    │   └── components/
+    │       └── chat/...
+    ├── backend/
+    │   ├── main.py                    # REST endpoints
+    │   ├── crud.py                    # DB logic
+    │   ├── database.py
+    │   └── cli.py                     # learningdb serve
+    └── orchestrator/
+        ├── app.py                     # /health, /providers, /chat...
+        ├── chains/agent.py            # tool-calling loop
+        ├── tools/
+        │   ├── registry.py            # tool registry read/write
+        │   ├── models.py              # pydantic input schemas
+        │   └── http_client.py
+        ├── guardrails.py              # allowlist & safety checks
+        ├── write_phase.py             # confirmation token + preview
+        ├── schemas.py                 # ChatRequest/Response contracts
+        └── tests/
 ```
 
-### 2. Cài đặt Backend
+## 4. Module và trách nhiệm
+
+### Web (`learningdb/app`)
+
+- `routes/workspace.tsx`
+  - Quản lý state chat, conversation history, provider/model, gửi request chat.
+  - Nối flow xác nhận 2 bước: giữ `confirmation_token`, gửi token khi user xác nhận.
+- `services/orchestrator.ts`
+  - Contract TypeScript cho `ChatRequest`, `ChatResponse`, `action_preview`.
+
+### Backend API (`learningdb/backend`)
+
+- `main.py`: routing `GET/POST/PATCH/... /api/*`.
+- `crud.py`: nghiệp vụ SQL cụ thể.
+- Các endpoint write đã có:
+  - `POST /api/tables/insert`
+  - `PATCH /api/tables/{table_name}/rows`
+  - `POST /api/update/prior`
+  - `POST /api/update/posterior`
+  - `POST /api/update/status`
+
+### Orchestrator (`learningdb/orchestrator`)
+
+- `app.py`
+  - API chat-facing: `/chat`, `/providers`, `/chat/preferences/*`, `/chat/conversations/*`.
+- `chains/agent.py`
+  - Vòng lặp tool-calling với allowlist guardrails.
+  - Bật write khi `allow_write=true`.
+  - Tích hợp xác nhận 2 bước cho write.
+- `tools/registry.py`
+  - Định nghĩa read/write tools và mapping endpoint backend.
+- `guardrails.py`
+  - Chặn tool ngoài allowlist.
+  - Chặn write nếu `allow_write=false`.
+  - Giới hạn bảng được phép ghi qua `ORCH_WRITE_TABLE_ALLOWLIST`.
+- `write_phase.py`
+  - Tạo `action_preview`.
+  - Ký/verify token xác nhận bằng HMAC + TTL.
+
+## 5. API và contracts
+
+### Backend base
+
+- `http://localhost:8000/api`
+
+### Orchestrator base
+
+- `http://localhost:8100`
+
+### Chat request (orchestrator)
+
+`POST /chat`
+
+```json
+{
+  "user_id": 1,
+  "message": "Cap nhat status activity_id 1 thanh done",
+  "conversation_id": "optional",
+  "history": [],
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "allow_write": true,
+  "confirmation_token": "optional-step-2-token"
+}
+```
+
+### Chat response (orchestrator)
+
+- `answer`, `tool_invocations`, `warnings`
+- Có thể có `action_preview` khi write cần xác nhận.
+
+## 6. Write-safe 2 bước (no-delete)
+
+Hệ thống write qua chatbot chỉ cho **add/update**, không cho delete.
+
+### Step 1: Preview
+
+- User gửi yêu cầu write (`allow_write=true`).
+- Agent nhận intent write và trả:
+  - `warnings: ["write_confirmation_required"]`
+  - `action_preview` gồm:
+    - `action_type`
+    - `summary`
+    - `confirmation_token`
+    - `proposed_payload`
+- Chưa thực thi write.
+
+### Step 2: Confirm
+
+- User xác nhận.
+- Web gửi request mới kèm `confirmation_token`.
+- Orchestrator verify:
+  - chữ ký token
+  - hạn token (TTL)
+  - user/action/payload khớp
+- Hợp lệ thì mới thực thi write tool.
+
+### Chính sách no-delete
+
+- Không đăng ký delete tools trong registry.
+- Guardrail deny-by-default với tool ngoài allowlist.
+- Prompt write mode cũng cấm delete/remove.
+
+## 7. Cài đặt và chạy
+
+### 7.1 Yêu cầu
+
+- Node.js 20+
+- Python 3.12/3.13 khuyến nghị
+- Docker (nếu chạy compose)
+
+### 7.2 Chạy full stack bằng Docker Compose
+
+Từ thư mục gốc project:
 
 ```bash
-# Di chuyển vào thư mục backend
-cd learningdb/backend
-
-# Tạo virtual environment (theo FastAPI: https://fastapi.tiangolo.com/virtual-environments/)
-python3 -m venv .venv
-
-# Kích hoạt .venv
-source .venv/bin/activate  # macOS/Linux
-# hoặc: .venv\Scripts\activate  # Windows
-
-# (Tùy chọn) Nâng cấp pip
-python -m pip install --upgrade pip
-
-# Cài đặt dependencies
-pip install -r requirements.txt
+docker compose up --build
 ```
 
-**Lưu ý:** Thư mục `.venv/` đã được thêm vào `.gitignore` (và `learningdb/backend/.gitignore`), nên sẽ không bị commit lên Git. Nếu bạn đang dùng `venv` cũ, có thể xóa và tạo lại với `.venv`: `rm -rf venv` rồi chạy lại các lệnh tạo và kích hoạt `.venv` ở trên.
+Endpoints:
 
-### 3. Cài đặt Frontend
+- Web: `http://localhost:3000`
+- API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+- Orchestrator health: `http://localhost:8100/health`
+- DB host port: `localhost:3308`
 
-```bash
-# Di chuyển vào thư mục learningdb
-cd learningdb
-
-# Cài đặt npm packages
-npm install
-```
-
-### 4. Cài CLI `learningdb`
+### 7.3 Chạy local dev 1 lệnh (web + api)
 
 ```bash
-# Từ thư mục gốc project
-cd learningdb/backend
-source .venv/bin/activate
-pip install -e .
-```
-
-### 5. Chạy ứng dụng (1 lệnh local)
-
-```bash
-# Từ thư mục gốc project
 source learningdb/backend/.venv/bin/activate
 learningdb serve
 ```
 
-Mặc định lệnh trên sẽ:
+Mặc định:
 
-- Kiểm tra `.env` và kết nối MySQL local
-- Chạy backend FastAPI ở `http://localhost:8000`
-- Chạy frontend dev server (HMR) ở `http://localhost:5173`
+- Web dev: `http://localhost:5173`
+- API: `http://localhost:8000`
 
-Chế độ gần production:
+## 8. Cách sử dụng nhanh
 
-```bash
-learningdb serve --prod
-```
+### Chat read-only
 
-### 6. Truy cập
+1. Mở workspace chat.
+2. Chọn provider/model.
+3. Gửi câu hỏi truy vấn dữ liệu.
 
-- **Frontend**: http://localhost:5173
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs (Swagger UI)
+### Chat add/update (2 bước xác nhận)
 
----
+1. Gửi yêu cầu write (thêm/sửa).
+2. Nhận preview action.
+3. Xác nhận để thực thi (hoặc hủy).
 
-## Chạy bằng Docker Compose (1 lệnh)
-
-`LearningDB` đã được cấu hình để chạy full stack bằng file `compose.yml` ở thư mục gốc project.
-
-### Yêu cầu trước khi chạy
-
-- Đảm bảo volume dữ liệu hiện có là `bancie-mysql-data`.
-- Không để MySQL cũ chạy đồng thời cùng volume đó (tránh lock/corrupt data).
-- Cổng DB host dùng mặc định `3308` để tránh đụng `3306/3307` đang dùng.
-- Không dùng `docker compose down -v` nếu muốn giữ dữ liệu.
-
-### Chạy stack
+### API test nhanh
 
 ```bash
-cd ..
-docker compose up --build
+curl -s http://localhost:8100/providers
+curl -s http://localhost:8100/health
 ```
 
-### Endpoint sau khi chạy
+## 9. Test và kiểm chứng
 
-- **Web**: `http://localhost:3000`
-- **API**: `http://localhost:8000`
-- **API Docs**: `http://localhost:8000/docs`
-- **Orchestrator Health**: `http://localhost:8100/health`
-- **Orchestrator Providers**: `http://localhost:8100/providers`
-- **MySQL (host)**: `localhost:3308`
-
-### Kiểm tra an toàn trước khi start
+### Orchestrator test suite
 
 ```bash
-# 1) Xác nhận volume tồn tại
-docker volume ls | grep bancie-mysql-data
-
-# 2) Dừng container MySQL cũ nếu đang dùng cùng volume
-docker ps --format '{{.Names}}' | grep bancie-mysql && docker stop bancie-mysql
-
-# 3) Start compose
-docker compose up --build
+docker compose run --rm orchestrator sh -lc 'PYTHONPATH=/app python -m pytest orchestrator/tests -q'
 ```
 
-### Kiểm tra dữ liệu sau restart
+Các nhóm test chính:
+
+- guardrails allow/deny
+- HTTP client retry/PATCH
+- write phase token/preview/verify
+- registry write tools
+- app chat endpoint
+
+### E2E gợi ý
+
+- Case read: query data không write.
+- Case write step-1: nhận `action_preview`.
+- Case write step-2: gửi token, write được thực thi.
+- Case delete intent: bị từ chối theo policy.
+
+## 10. Troubleshooting
+
+### `No module named langchain_anthropic`
+
+- Đảm bảo rebuild orchestrator image sau khi update dependency:
 
 ```bash
-docker compose down
-docker compose up -d
+docker compose up -d --build orchestrator
 ```
 
-Sau khi lên lại, kiểm tra dữ liệu trong DB hoặc qua màn hình ứng dụng để xác nhận dữ liệu vẫn còn.
+### Chat timeout khi gọi model
 
-### Reset volume DB (xóa toàn bộ dữ liệu)
+- Tăng `ORCH_REQUEST_TIMEOUT_SECONDS` trong `.env` (ví dụ `45`).
+
+### Write không chạy
+
+- Kiểm tra:
+  - `allow_write=true`
+  - request step-2 có `confirmation_token`
+  - token chưa hết hạn
+  - bảng nằm trong `ORCH_WRITE_TABLE_ALLOWLIST`
+
+### Cổng bị chiếm
 
 ```bash
-docker compose down
-docker volume rm bancie-mysql-data
-```
-
----
-
-## Backend API
-
-### Base URL
-
-```
-http://localhost:8000/api
-```
-
-### Endpoints
-
-#### Table Operations
-
-| Method | Endpoint                       | Mô tả                           |
-| ------ | ------------------------------ | ------------------------------- |
-| GET    | `/tables`                      | Lấy danh sách tất cả tables     |
-| GET    | `/tables/{table_name}/columns` | Lấy thông tin columns của table |
-| POST   | `/tables/insert`               | Insert record vào table         |
-
-#### Activity Operations
-
-| Method | Endpoint                               | Mô tả                       |
-| ------ | -------------------------------------- | --------------------------- |
-| GET    | `/activities`                          | Lấy danh sách Activity IDs  |
-| GET    | `/activities/list/{user_id}`           | Lấy Activity List của user  |
-| GET    | `/activities/view/{user_id}`           | Lấy Bayes view của user     |
-| GET    | `/activities/current-log/{user_id}`    | Lấy Current Activity Log    |
-| GET    | `/activities/current-output/{user_id}` | Lấy Current Activity Output |
-
-#### Update Operations
-
-| Method | Endpoint            | Mô tả                               |
-| ------ | ------------------- | ----------------------------------- |
-| POST   | `/update/prior`     | Cập nhật Prior Probability          |
-| POST   | `/update/posterior` | Cập nhật Posterior Probability      |
-| POST   | `/update/status`    | Cập nhật Activity Status            |
-| POST   | `/update/zero`      | Zero out non-in_progress activities |
-
-#### Bayes Operations
-
-| Method | Endpoint             | Mô tả                     |
-| ------ | -------------------- | ------------------------- |
-| GET    | `/bayes/check-prior` | Kiểm tra tổng Prior = 1.0 |
-| GET    | `/bayes/run`         | Chạy Bayesian Analysis    |
-
-### Request/Response Examples
-
-**Insert Record:**
-
-```json
-POST /api/tables/insert
-{
-  "table_name": "ACTIVITY",
-  "data": {
-    "ACT_NAME": "New Activity",
-    "USER_ID": 1,
-    "ACT_STATUS": "in_progress"
-  }
-}
-```
-
-**Run Bayes:**
-
-```json
-GET /api/bayes/run?total_minute=120
-
-Response:
-{
-  "data": [
-    {
-      "ACTIVITY_ID": 1,
-      "ACT_NAME": "Activity Name",
-      "Total": 0.25,
-      "Learning": 0.15,
-      "Overview": 0.05,
-      "Practice": 0.05
-    }
-  ]
-}
-```
-
----
-
-## Frontend Routes
-
-| Path               | Component             | Chức năng                                |
-| ------------------ | --------------------- | ---------------------------------------- |
-| `/`                | `home.tsx`            | Dashboard với các feature cards          |
-| `/import`          | `import.tsx`          | Nhập dữ liệu vào bất kỳ table nào        |
-| `/activity-log`    | `activity-log.tsx`    | Xem Current Activity Log                 |
-| `/activity-output` | `activity-output.tsx` | Xem Current Activity Output              |
-| `/activity-list`   | `activity-list.tsx`   | Xem Activity List với Search/Filter/Sort |
-| `/update`          | `update.tsx`          | Cập nhật probabilities và status         |
-| `/view`            | `view.tsx`            | Xem Bayes probabilities                  |
-| `/bayes`           | `bayes.tsx`           | Chạy Bayesian Analysis                   |
-
----
-
-## Database Schema
-
-### Core Tables
-
-#### ACTIVITY
-
-```sql
-- ACTIVITY_ID (PK, AUTO_INCREMENT)
-- USER_ID (FK)
-- ACT_NAME
-- ACT_STATUS (ENUM: not_started, in_progress, paused, completed, skipped, cancelled)
-- PRIOR_PROB
-- POSTERIOR_PROB_LEARNING
-- POSTERIOR_PROB_OVERVIEW
-- POSTERIOR_PROB_PRACTICE
-- CREATED_AT (TIMESTAMP)
-- UPDATED_AT (TIMESTAMP)
-```
-
-#### ACTIVITY_LOG
-
-```sql
-- ACTI_LOG_ID (PK, AUTO_INCREMENT)
-- ACTIVITY_ID (FK)
-- USER_ID (FK)
-- START_TIME (DATETIME)
-```
-
-#### ACTIVITY_OUTPUT
-
-```sql
-- AO_ID (PK, AUTO_INCREMENT)
-- ACTIVITY_ID (FK)
-- USER_ID (FK)
-- START_TIME (DATETIME)
-- FINISH_TIME (DATETIME)
-```
-
-### Views
-
-- `bayes_act` - View kết hợp ACTIVITY với USER để hiển thị Bayes data
-- `current_activity_log` - View hiển thị activity log hiện tại
-- `current_activity_output` - View hiển thị activity output hiện tại
-
----
-
-## Tính năng chi tiết
-
-### 1. Import Data (`/import`)
-
-- Chọn table từ dropdown (tự động load từ database)
-- Form tự động generate dựa trên column types
-- Hỗ trợ các input types:
-  - **DateTime/Timestamp**: Date picker + nút "Now"
-  - **Date**: Date picker + nút "Today"
-  - **Enum**: Dropdown select
-  - **Boolean**: Select 0/1
-  - **Text/Number**: Text input
-
-### 2. Activity List (`/activity-list`)
-
-- **Search**: Tìm kiếm theo tên hoặc ID
-- **Filter**: Lọc theo status (in_progress, completed, paused, etc.)
-- **Sort**: Sắp xếp theo ID, Name, Status, Created_At
-- **Display**: Hiển thị counter số lượng kết quả
-
-### 3. Update Data (`/update`)
-
-- Chọn Activity ID từ danh sách in_progress
-- Cập nhật:
-  - Status (change activity status)
-  - Prior Probability (0-1)
-  - Posterior Probability (Learning/Overview/Practice)
-- Utilities:
-  - "Zero Out Others" - Reset probabilities cho non-in_progress
-  - "Check Prior Sum" - Kiểm tra tổng prior = 1.0
-
-### 4. Run Bayes (`/bayes`)
-
-- Nhập Total Minutes (optional)
-- Hiển thị kết quả phân tích Bayesian
-- Tính toán phân bổ thời gian cho từng activity
-- Hiển thị tổng cộng ở cuối bảng
-
----
-
-## Phát triển và Mở rộng
-
-### Thêm Route mới
-
-1. Tạo file trong `app/routes/new-page.tsx`
-2. Thêm route vào `app/routes.ts`:
-
-```typescript
-route("new-page", "routes/new-page.tsx"),
-```
-
-3. Thêm menu item vào `app/components/Layout.tsx`:
-
-```typescript
-{ text: 'New Page', icon: <NewIcon />, path: '/new-page' },
-```
-
-### Thêm API Endpoint mới
-
-1. Thêm function vào `backend/crud.py`:
-
-```python
-def new_function(param: type) -> list:
-    query = text("SELECT ...")
-    with engine.connect() as conn:
-        df = pd.read_sql(query, conn)
-    return df.to_dict(orient='records')
-```
-
-2. Thêm endpoint vào `backend/main.py`:
-
-```python
-@app.get("/api/new-endpoint")
-def new_endpoint():
-    return {"data": crud.new_function()}
-```
-
-3. Thêm API call vào `app/services/api.ts`:
-
-```typescript
-export const newApiCall = () => api.get<{ data: NewType[] }>("/new-endpoint");
-```
-
-### Development Commands
-
-```bash
-# Full-stack local (recommended)
-learningdb serve       # Backend + frontend dev
-learningdb serve --prod  # Backend + frontend prod-like
-
-# Frontend
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run typecheck    # Run TypeScript check
-
-# Backend
-uvicorn main:app --reload  # Start backend only
-```
-
-### Environment Variables
-
-| Variable  | Description    | Default   |
-| --------- | -------------- | --------- |
-| `DB_USER` | MySQL username | root      |
-| `DB_PASS` | MySQL password | -         |
-| `DB_HOST` | MySQL host     | localhost |
-| `DB_NAME` | Database name  | bancie    |
-
----
-
-## Troubleshooting
-
-### Backend không kết nối được MySQL
-
-- Kiểm tra MySQL service đang chạy
-- Kiểm tra thông tin trong `.env`
-- Đảm bảo database `bancie` đã được tạo
-
-### Frontend không gọi được API
-
-- Kiểm tra backend đang chạy ở port 8000
-- Kiểm tra CORS settings trong `main.py`
-- Mở DevTools > Network để xem lỗi chi tiết
-
-### Port đã được sử dụng
-
-```bash
-# Tìm process đang dùng port
+lsof -i :3000
 lsof -i :5173
 lsof -i :8000
-
-# Kill process
-kill -9 <PID>
+lsof -i :8100
 ```
 
 ---
 
-## License
-
-Private project for personal learning tracking.
-
----
-
-_Built with React Router + FastAPI + MySQL_
+Private project for personal learning and experimentation.

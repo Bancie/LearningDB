@@ -30,3 +30,21 @@ def test_get_json_retries_and_returns_payload() -> None:
     assert payload == {"ok": True}
     assert call_count["value"] == 2
     asyncio.run(client.close())
+
+
+def test_patch_json_uses_patch_method() -> None:
+    settings = Settings(backend_base_url="http://test.local/api")
+    client = BackendApiClient(settings)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "PATCH"
+        return httpx.Response(status_code=200, json={"ok": True})
+
+    client._client = httpx.AsyncClient(  # type: ignore[attr-defined]
+        base_url=settings.backend_base_url,
+        transport=httpx.MockTransport(handler),
+    )
+
+    payload = asyncio.run(client.patch_json("/tables/activity/rows", {"updates": {"x": 1}}))
+    assert payload == {"ok": True}
+    asyncio.run(client.close())

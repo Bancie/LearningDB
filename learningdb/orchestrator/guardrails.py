@@ -22,11 +22,12 @@ WRITE_TOOLS = {
     "update_prior",
     "update_posterior",
     "insert_record",
+    "patch_table_row",
 }
 
 
 def enforce_tool_allowlist(tool_name: str, allow_write: bool = False) -> None:
-    """Reject unknown tools and block write tools in MVP mode."""
+    """Reject unknown tools and block write tools when write mode is disabled."""
     if tool_name in READ_ONLY_TOOLS:
         return
     if tool_name in WRITE_TOOLS and not allow_write:
@@ -36,6 +37,23 @@ def enforce_tool_allowlist(tool_name: str, allow_write: bool = False) -> None:
     if tool_name in WRITE_TOOLS:
         return
     raise GuardrailViolation(f"Tool '{tool_name}' is not in the allowlist.")
+
+
+def is_write_tool(tool_name: str) -> bool:
+    """Return whether tool mutates backend state."""
+    return tool_name in WRITE_TOOLS
+
+
+def enforce_write_table_allowed(table_name: str, allowlist: tuple[str, ...]) -> str:
+    """Validate table_name is in orchestrator write allowlist."""
+    normalized = table_name.strip().lower()
+    if not normalized:
+        raise GuardrailViolation("table_name is required for write operations.")
+    if normalized not in allowlist:
+        raise GuardrailViolation(
+            f"table_name '{table_name}' is not allowed for write operations."
+        )
+    return normalized
 
 
 def clamp_limit(raw_limit: int | None, default_limit: int, max_limit: int = 200) -> int:

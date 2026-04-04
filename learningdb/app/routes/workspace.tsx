@@ -39,6 +39,16 @@ function pickNewestEmptyConversation(
   );
 }
 
+function isConfirmationMessage(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  return ["confirm", "xac nhan", "ok", "yes", "dong y"].includes(normalized);
+}
+
+function isCancelMessage(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  return ["cancel", "huy", "khong", "no", "thoi"].includes(normalized);
+}
+
 export default function Workspace() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,6 +75,10 @@ export default function Workspace() {
   >(null);
   const [error, setError] = useState("");
   const [uiMode, setUiMode] = useState<"intro" | "chat">("intro");
+  const [pendingWriteConfirmation, setPendingWriteConfirmation] = useState<{
+    token: string;
+    summary: string;
+  } | null>(null);
 
   const selectedProvider = useMemo(
     () => providers.find((item) => item.id === provider),
@@ -170,6 +184,7 @@ export default function Workspace() {
         setMessages([]);
         setUiMode("intro");
       }
+      setPendingWriteConfirmation(null);
       setBootstrapped(true);
     } catch (err) {
       console.error(err);
@@ -279,6 +294,7 @@ export default function Workspace() {
       setActiveConversationId(created.id);
       setMessages([]);
       setUiMode("intro");
+      setPendingWriteConfirmation(null);
     } catch (err) {
       console.error(err);
       setError("Khong tao duoc cuoc tro chuyen moi.");
@@ -302,6 +318,7 @@ export default function Workspace() {
         setActiveConversationId(null);
         setMessages([]);
         setUiMode("intro");
+        setPendingWriteConfirmation(null);
       }
     } catch (err) {
       console.error(err);
@@ -321,6 +338,7 @@ export default function Workspace() {
     try {
       const messageCount = await loadConversation(parsedUserId, conversationId);
       setUiMode(messageCount === 0 ? "intro" : "chat");
+      setPendingWriteConfirmation(null);
     } catch (err) {
       console.error(err);
       setError("Khong tai duoc lich su hoi thoai.");
@@ -351,6 +369,22 @@ export default function Workspace() {
       role: "user",
       content: input.trim(),
     };
+    if (pendingWriteConfirmation && isCancelMessage(userMessage.content)) {
+      setMessages((prev) => [
+        ...prev,
+        userMessage,
+        {
+          id: toMessageId(),
+          role: "assistant",
+          content: "Da huy yeu cau thay doi du lieu dang cho xac nhan.",
+        },
+      ]);
+      setInput("");
+      setPendingWriteConfirmation(null);
+      setError("");
+      return;
+    }
+
     const previousMessages = messages;
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -380,13 +414,33 @@ export default function Workspace() {
         history,
         provider,
         model,
+        allow_write: true,
+        confirmation_token:
+          pendingWriteConfirmation && isConfirmationMessage(userMessage.content)
+            ? pendingWriteConfirmation.token
+            : undefined,
       });
+      const actionPreview = response.data.action_preview;
+      if (actionPreview?.requires_confirmation) {
+        setPendingWriteConfirmation({
+          token: actionPreview.confirmation_token,
+          summary: actionPreview.summary,
+        });
+      } else if (
+        pendingWriteConfirmation &&
+        isConfirmationMessage(userMessage.content)
+      ) {
+        setPendingWriteConfirmation(null);
+      }
+
       setMessages((prev) => [
         ...prev,
         {
           id: toMessageId(),
           role: "assistant",
-          content: response.data.answer,
+          content: actionPreview?.requires_confirmation
+            ? `${response.data.answer}\n\nProposed action: ${actionPreview.summary}\nReply 'confirm' to execute or 'cancel' to discard.`
+            : response.data.answer,
         },
       ]);
       setProvider(response.data.resolved_provider);

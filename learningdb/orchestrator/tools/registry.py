@@ -1,4 +1,4 @@
-"""Whitelisted read-only tools mapped to backend endpoints."""
+"""Whitelisted tool registry mapped to backend endpoints."""
 
 from __future__ import annotations
 
@@ -9,13 +9,18 @@ from typing import Any, Awaitable, Callable
 from pydantic import BaseModel
 
 from ..config import Settings
-from ..guardrails import clamp_limit
+from ..guardrails import clamp_limit, enforce_write_table_allowed
 from .http_client import BackendApiClient
 from .models import (
     CheckPriorInput,
     GetTableColumnsInput,
     GetTablesInput,
+    InsertRecordInput,
     RunBayesInput,
+    TableRowPatchInput,
+    UpdatePosteriorInput,
+    UpdatePriorInput,
+    UpdateStatusInput,
     UserScopedInput,
 )
 
@@ -54,10 +59,14 @@ def _normalize_result(payload: dict[str, Any], source_endpoint: str, limit: int)
     return {"rows": [payload], "count": 1, "source_endpoint": source_endpoint}
 
 
-def build_read_only_registry(
-    client: BackendApiClient, settings: Settings
-) -> dict[str, ToolDefinition]:
-    """Build all read-only tools for MVP."""
+def _normalize_write_result(payload: dict[str, Any], source_endpoint: str) -> dict[str, Any]:
+    """Normalize write endpoint payloads for tool responses."""
+    result = payload.get("data", payload)
+    return {"result": result, "source_endpoint": source_endpoint}
+
+
+def build_tool_registry(client: BackendApiClient, settings: Settings) -> dict[str, ToolDefinition]:
+    """Build read and write tool registry."""
 
     async def get_activity_list(args: dict[str, Any]) -> dict[str, Any]:
         parsed = UserScopedInput.model_validate(args)
@@ -111,6 +120,67 @@ def build_read_only_registry(
         endpoint = f"/tables/{parsed.table_name}/columns"
         payload = await client.get_json(endpoint)
         return _normalize_result(payload, endpoint, settings.tool_result_row_limit)
+
+    async def insert_record(args: dict[str, Any]) -> dict[str, Any]:
+        parsed = InsertRecordInput.model_validate(args)
+        table_name = enforce_write_table_allowed(
+            parsed.table_name, settings.write_table_allowlist
+        )
+        endpoint = "/tables/insert"
+        payload = await client.post_json(
+            endpoint,
+            {
+                "table_name": table_name,
+                "data": parsed.data,
+            },
+        )
+        return _normalize_write_result(payload, endpoint)
+
+    async def patch_table_row(args: dict[str, Any]) -> dict[str, Any]:
+        parsed = TableRowPatchInput.model_validate(args)
+        table_name = enforce_write_table_allowed(
+            parsed.table_name, settings.write_table_allowlist
+        )
+        endpoint = f"/tables/{table_name}/rows"
+        payload = await client.patch_json(
+            endpoint,
+            {
+                "primary_key": parsed.primary_key,
+                "updates": parsed.updates,
+            },
+        )
+        return _normalize_write_result(payload, endpoint)
+
+    async def update_prior(args: dict[str, Any]) -> dict[str, Any]:
+        parsed = UpdatePriorInput.model_validate(args)
+        endpoint = "/update/prior"
+        payload = await client.post_json(
+            endpoint,
+            {"activity_id": parsed.activity_id, "prob": parsed.prob},
+        )
+        return _normalize_write_result(payload, endpoint)
+
+    async def update_posterior(args: dict[str, Any]) -> dict[str, Any]:
+        parsed = UpdatePosteriorInput.model_validate(args)
+        endpoint = "/update/posterior"
+        payload = await client.post_json(
+            endpoint,
+            {
+                "activity_id": parsed.activity_id,
+                "column_choice": parsed.column_choice,
+                "prob": parsed.prob,
+            },
+        )
+        return _normalize_write_result(payload, endpoint)
+
+    async def update_status(args: dict[str, Any]) -> dict[str, Any]:
+        parsed = UpdateStatusInput.model_validate(args)
+        endpoint = "/update/status"
+        payload = await client.post_json(
+            endpoint,
+            {"activity_id": parsed.activity_id, "status": parsed.status},
+        )
+        return _normalize_write_result(payload, endpoint)
 
     definitions = [
         ToolDefinition(
@@ -168,6 +238,41 @@ def build_read_only_registry(
             endpoint="/tables/{table_name}/columns",
             input_schema=GetTableColumnsInput,
             handler=get_table_columns,
+        ),
+        ToolDefinition(
+            name="insert_record",
+            description="Insert one record into an allowlisted table.",
+            endpoint="/tables/insert",
+            input_schema=InsertRecordInput,
+            handler=insert_record,
+        ),
+        ToolDefinition(
+            name="patch_table_row",
+            description="Update one existing row by primary key in an allowlisted table.",
+            endpoint="/tables/{table_name}/rows",
+            input_schema=TableRowPatchInput,
+            handler=patch_table_row,
+        ),
+        ToolDefinition(
+            name="update_prior",
+            description="Update ACT_PRIOR_PROB for an activity.",
+            endpoint="/update/prior",
+            input_schema=UpdatePriorInput,
+            handler=update_prior,
+        ),
+        ToolDefinition(
+            name="update_posterior",
+            description="Update ACT_POSTERIOR_PROB_{1..3} for an activity.",
+            endpoint="/update/posterior",
+            input_schema=UpdatePosteriorInput,
+            handler=update_posterior,
+        ),
+        ToolDefinition(
+            name="update_status",
+            description="Update ACT_STATUS for an activity.",
+            endpoint="/update/status",
+            input_schema=UpdateStatusInput,
+            handler=update_status,
         ),
     ]
     return {item.name: item for item in definitions}

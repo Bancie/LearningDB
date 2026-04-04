@@ -34,7 +34,12 @@ class ChatRequest(BaseModel):
     model: str | None = Field(default=None, max_length=128)
     allow_write: bool = Field(
         default=False,
-        description="Reserved for future write-safe phase. Must remain false in MVP.",
+        description="Enable add/update tool calls. Delete operations are never allowed.",
+    )
+    confirmation_token: str | None = Field(
+        default=None,
+        max_length=1024,
+        description="Step-2 write confirmation token returned by action_preview.",
     )
 
 

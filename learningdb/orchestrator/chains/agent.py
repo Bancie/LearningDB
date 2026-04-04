@@ -11,17 +11,29 @@ from pydantic import ValidationError
 from ..audit import logger, mask_sensitive
 from ..config import Settings
 from ..exceptions import GuardrailViolation
-from ..guardrails import enforce_tool_allowlist, require_user_id
+from ..guardrails import enforce_tool_allowlist, is_write_tool, require_user_id
 from ..llm_factory import build_chat_model
 from ..providers import get_default_model_for_provider, is_supported_model
 from ..schemas import ChatRequest, ChatResponse, ToolInvocation
-from ..tools import BackendApiClient, build_read_only_registry, run_tool
+from ..tools import BackendApiClient, build_tool_registry, run_tool
+from ..write_phase import (
+    build_action_preview,
+    extract_confirmed_action,
+    verify_confirmation_token,
+)
 
-SYSTEM_PROMPT = (
+READ_ONLY_SYSTEM_PROMPT = (
     "You are the LearningDB assistant. "
     "You must use tools for factual database answers. "
     "Only use read-only tools. Never execute or suggest write actions. "
     "If required data is missing, ask a short clarifying question."
+)
+
+WRITE_ENABLED_SYSTEM_PROMPT = (
+    "You are the LearningDB assistant. "
+    "You can use both read and write tools to add or update data when explicitly requested. "
+    "Never use or suggest any delete/remove operation. "
+    "Before write actions, ask short clarification if required fields are missing."
 )
 
 
@@ -37,7 +49,7 @@ class ChatOrchestrator:
     def __init__(self, runtime: OrchestratorRuntime) -> None:
         self._settings = runtime.settings
         self._backend_client = runtime.backend_client
-        self._registry = build_read_only_registry(runtime.backend_client, runtime.settings)
+        self._registry = build_tool_registry(runtime.backend_client, runtime.settings)
         self._langchain_tools = self._build_langchain_tools()
 
     def _build_langchain_tools(self) -> list[Any]:
@@ -62,6 +74,65 @@ class ChatOrchestrator:
             return json.dumps(payload, ensure_ascii=True)
 
         return _runner
+
+    def _build_write_summary(self, tool_name: str, args: dict[str, Any]) -> str:
+        if tool_name == "insert_record":
+            return f"Insert 1 row into table '{args.get('table_name', '')}'."
+        if tool_name == "patch_table_row":
+            return (
+                f"Update 1 row in table '{args.get('table_name', '')}' "
+                f"with key {args.get('primary_key', {})}."
+            )
+        if tool_name == "update_prior":
+            return (
+                f"Set prior probability for activity_id={args.get('activity_id')} "
+                f"to {args.get('prob')}."
+            )
+        if tool_name == "update_posterior":
+            return (
+                "Set posterior probability "
+                f"(column_choice={args.get('column_choice')}) for activity_id={args.get('activity_id')} "
+                f"to {args.get('prob')}."
+            )
+        if tool_name == "update_status":
+            return (
+                f"Set status for activity_id={args.get('activity_id')} "
+                f"to '{args.get('status', '')}'."
+            )
+        return f"Execute write action '{tool_name}'."
+
+    def _build_confirmation_response(
+        self,
+        request_id: str,
+        conversation_id: str,
+        resolved_provider: str,
+        resolved_model: str,
+        chat: ChatRequest,
+        tool_name: str,
+        raw_args: dict[str, Any],
+    ) -> ChatResponse:
+        preview = build_action_preview(
+            user_id=chat.user_id,
+            action_type=tool_name,
+            summary=self._build_write_summary(tool_name, raw_args),
+            proposed_payload=raw_args,
+            secret=self._settings.write_confirmation_secret,
+            ttl_seconds=self._settings.write_confirmation_ttl_seconds,
+        )
+        answer = (
+            "This action will modify data. Please confirm to continue by sending "
+            "a follow-up message with the confirmation token."
+        )
+        return ChatResponse(
+            request_id=request_id,
+            conversation_id=conversation_id,
+            answer=answer,
+            resolved_provider=resolved_provider,
+            resolved_model=resolved_model,
+            tool_invocations=[],
+            warnings=["write_confirmation_required"],
+            action_preview=preview,
+        )
 
     async def respond(self, request_id: str, chat: ChatRequest) -> ChatResponse:
         """Process one chat request with bounded tool round trips."""
@@ -88,7 +159,135 @@ class ChatOrchestrator:
             fallback_id=request_id,
         )
 
-        messages: list[Any] = [SystemMessage(content=SYSTEM_PROMPT)]
+        if chat.allow_write and chat.confirmation_token:
+            confirmed = extract_confirmed_action(
+                token=chat.confirmation_token,
+                secret=self._settings.write_confirmation_secret,
+            )
+            if not confirmed:
+                answer = (
+                    "Confirmation token is invalid or expired. "
+                    "Please request the action again."
+                )
+                await self._persist_chat_turn(
+                    user_id=chat.user_id,
+                    conversation_id=conversation_id,
+                    user_message=chat.message,
+                    assistant_message=answer,
+                    request_id=request_id,
+                )
+                return ChatResponse(
+                    request_id=request_id,
+                    conversation_id=conversation_id,
+                    answer=answer,
+                    resolved_provider=resolved_provider,
+                    resolved_model=resolved_model,
+                    tool_invocations=[],
+                    warnings=["write_confirmation_invalid"],
+                )
+            action_type, token_user_id, token_payload = confirmed
+            if token_user_id != chat.user_id:
+                answer = "Confirmation token does not belong to this user."
+                await self._persist_chat_turn(
+                    user_id=chat.user_id,
+                    conversation_id=conversation_id,
+                    user_message=chat.message,
+                    assistant_message=answer,
+                    request_id=request_id,
+                )
+                return ChatResponse(
+                    request_id=request_id,
+                    conversation_id=conversation_id,
+                    answer=answer,
+                    resolved_provider=resolved_provider,
+                    resolved_model=resolved_model,
+                    tool_invocations=[],
+                    warnings=["write_confirmation_invalid"],
+                )
+            try:
+                enforce_tool_allowlist(action_type, allow_write=True)
+                if not is_write_tool(action_type):
+                    raise GuardrailViolation(
+                        "Confirmation token must target a write-capable tool."
+                    )
+                if action_type not in self._registry:
+                    raise GuardrailViolation(
+                        f"Confirmed action '{action_type}' is not registered."
+                    )
+                write_args = dict(token_payload)
+                if (
+                    "user_id"
+                    in self._registry[action_type].input_schema.model_fields
+                ):
+                    write_args = require_user_id(write_args, chat.user_id)
+                payload, latency_ms = await run_tool(
+                    self._registry, action_type, write_args
+                )
+                if self._settings.enable_audit_logs:
+                    logger.info(
+                        "request_id=%s tool=%s write=%s input=%s latency_ms=%s confirmed=true",
+                        request_id,
+                        action_type,
+                        True,
+                        mask_sensitive(write_args),
+                        latency_ms,
+                    )
+                invocation = ToolInvocation(
+                    name=action_type,
+                    status="ok",
+                    input=write_args,
+                    source_endpoint=payload.get("source_endpoint", ""),
+                    latency_ms=latency_ms,
+                )
+                answer = "Write action confirmed and executed successfully."
+                await self._persist_chat_turn(
+                    user_id=chat.user_id,
+                    conversation_id=conversation_id,
+                    user_message=chat.message,
+                    assistant_message=answer,
+                    request_id=request_id,
+                )
+                return ChatResponse(
+                    request_id=request_id,
+                    conversation_id=conversation_id,
+                    answer=answer,
+                    resolved_provider=resolved_provider,
+                    resolved_model=resolved_model,
+                    tool_invocations=[invocation],
+                    warnings=[],
+                )
+            except Exception as exc:
+                answer = f"Confirmed write action failed: {exc}"
+                await self._persist_chat_turn(
+                    user_id=chat.user_id,
+                    conversation_id=conversation_id,
+                    user_message=chat.message,
+                    assistant_message=answer,
+                    request_id=request_id,
+                )
+                return ChatResponse(
+                    request_id=request_id,
+                    conversation_id=conversation_id,
+                    answer=answer,
+                    resolved_provider=resolved_provider,
+                    resolved_model=resolved_model,
+                    tool_invocations=[
+                        ToolInvocation(
+                            name=action_type,
+                            status="error",
+                            input=token_payload,
+                            source_endpoint="",
+                            latency_ms=0,
+                            error=str(exc),
+                        )
+                    ],
+                    warnings=["write_confirmation_execution_failed"],
+                )
+
+        system_prompt = (
+            WRITE_ENABLED_SYSTEM_PROMPT if chat.allow_write else READ_ONLY_SYSTEM_PROMPT
+        )
+        messages: list[Any] = [SystemMessage(content=system_prompt)]
         for item in chat.history:
             if item.role.value == "system":
                 messages.append(SystemMessage(content=item.content))
@@ -138,6 +337,54 @@ class ChatOrchestrator:
                     enforce_tool_allowlist(tool_name, allow_write=chat.allow_write)
                     if "user_id" in self._registry[tool_name].input_schema.model_fields:
                         raw_args = require_user_id(raw_args, chat.user_id)
+                    if chat.allow_write and is_write_tool(tool_name):
+                        token = (chat.confirmation_token or "").strip()
+                        if not token:
+                            response = self._build_confirmation_response(
+                                request_id=request_id,
+                                conversation_id=conversation_id,
+                                resolved_provider=resolved_provider,
+                                resolved_model=resolved_model,
+                                chat=chat,
+                                tool_name=tool_name,
+                                raw_args=raw_args,
+                            )
+                            await self._persist_chat_turn(
+                                user_id=chat.user_id,
+                                conversation_id=conversation_id,
+                                user_message=chat.message,
+                                assistant_message=response.answer,
+                                request_id=request_id,
+                            )
+                            return response
+                        if not verify_confirmation_token(
+                            token=token,
+                            user_id=chat.user_id,
+                            action_type=tool_name,
+                            payload=raw_args,
+                            secret=self._settings.write_confirmation_secret,
+                        ):
+                            response = ChatResponse(
+                                request_id=request_id,
+                                conversation_id=conversation_id,
+                                answer=(
+                                    "Confirmation token is invalid or expired. "
+                                    "Please request the action again."
+                                ),
+                                resolved_provider=resolved_provider,
+                                resolved_model=resolved_model,
+                                tool_invocations=[],
+                                warnings=["write_confirmation_invalid"],
+                                action_preview=None,
+                            )
+                            await self._persist_chat_turn(
+                                user_id=chat.user_id,
+                                conversation_id=conversation_id,
+                                user_message=chat.message,
+                                assistant_message=response.answer,
+                                request_id=request_id,
+                            )
+                            return response
                     payload, latency_ms = await run_tool(self._registry, tool_name, raw_args)
                     content = json.dumps(payload, ensure_ascii=True)
                     tool_invocations.append(
@@ -149,13 +396,15 @@ class ChatOrchestrator:
                             latency_ms=latency_ms,
                         )
                     )
-                    logger.info(
-                        "request_id=%s tool=%s input=%s latency_ms=%s",
-                        request_id,
-                        tool_name,
-                        mask_sensitive(raw_args),
-                        latency_ms,
-                    )
+                    if self._settings.enable_audit_logs:
+                        logger.info(
+                            "request_id=%s tool=%s write=%s input=%s latency_ms=%s",
+                            request_id,
+                            tool_name,
+                            is_write_tool(tool_name),
+                            mask_sensitive(raw_args),
+                            latency_ms,
+                        )
                 except (GuardrailViolation, ValidationError, KeyError) as exc:
                     content = json.dumps({"error": str(exc)}, ensure_ascii=True)
                     tool_invocations.append(
@@ -168,6 +417,14 @@ class ChatOrchestrator:
                             error=str(exc),
                         )
                     )
+                    if self._settings.enable_audit_logs:
+                        logger.warning(
+                            "request_id=%s tool=%s write=%s blocked_error=%s",
+                            request_id,
+                            tool_name or "unknown",
+                            is_write_tool(tool_name or ""),
+                            str(exc),
+                        )
                 except Exception as exc:  # pragma: no cover - safety net
                     content = json.dumps({"error": str(exc)}, ensure_ascii=True)
                     tool_invocations.append(
@@ -180,6 +437,14 @@ class ChatOrchestrator:
                             error=str(exc),
                         )
                     )
+                    if self._settings.enable_audit_logs:
+                        logger.error(
+                            "request_id=%s tool=%s write=%s execution_error=%s",
+                            request_id,
+                            tool_name or "unknown",
+                            is_write_tool(tool_name or ""),
+                            str(exc),
+                        )
 
                 messages.append(
                     ToolMessage(

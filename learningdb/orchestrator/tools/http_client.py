@@ -81,6 +81,12 @@ class BackendApiClient:
             method="POST", path=path, json_payload=payload
         )
 
+    async def patch_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """Issue PATCH request with retry."""
+        return await self._request_json(
+            method="PATCH", path=path, json_payload=payload
+        )
+
     async def delete_json(self, path: str) -> dict[str, Any]:
         """Issue DELETE request; do not retry on 404."""
         attempts = self._settings.backend_max_retries + 1

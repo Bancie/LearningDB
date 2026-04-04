@@ -54,6 +54,13 @@ export interface ChatResponse {
   resolved_model: string;
   tool_invocations: ChatToolInvocation[];
   warnings: string[];
+  action_preview?: {
+    action_type: string;
+    summary: string;
+    confirmation_token: string;
+    requires_confirmation: boolean;
+    proposed_payload: Record<string, unknown>;
+  } | null;
 }
 
 export interface ChatRequest {
@@ -63,6 +70,8 @@ export interface ChatRequest {
   history: ChatHistoryMessage[];
   provider?: string;
   model?: string;
+  allow_write?: boolean;
+  confirmation_token?: string;
 }
 
 export const getProviders = () =>

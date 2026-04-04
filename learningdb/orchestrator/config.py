@@ -23,6 +23,9 @@ class Settings:
     tool_result_row_limit: int = 50
     max_tool_round_trips: int = 4
     enable_audit_logs: bool = True
+    write_table_allowlist: tuple[str, ...] = ("activity", "activity_log", "activity_output")
+    write_confirmation_ttl_seconds: int = 300
+    write_confirmation_secret: str = "learningdb-local-confirmation-secret"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -48,4 +51,19 @@ class Settings:
             max_tool_round_trips=int(os.getenv("ORCH_MAX_TOOL_ROUND_TRIPS", "4")),
             enable_audit_logs=os.getenv("ORCH_ENABLE_AUDIT_LOGS", "1").lower()
             not in {"0", "false", "no"},
+            write_table_allowlist=tuple(
+                table.strip().lower()
+                for table in os.getenv(
+                    "ORCH_WRITE_TABLE_ALLOWLIST",
+                    "activity,activity_log,activity_output",
+                ).split(",")
+                if table.strip()
+            ),
+            write_confirmation_ttl_seconds=int(
+                os.getenv("ORCH_WRITE_CONFIRMATION_TTL_SECONDS", "300")
+            ),
+            write_confirmation_secret=os.getenv(
+                "ORCH_WRITE_CONFIRMATION_SECRET",
+                "learningdb-local-confirmation-secret",
+            ),
         )

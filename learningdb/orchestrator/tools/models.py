@@ -24,3 +24,30 @@ class GetTablesInput(BaseModel):
 
 class GetTableColumnsInput(BaseModel):
     table_name: str = Field(min_length=1, max_length=128)
+
+
+class InsertRecordInput(BaseModel):
+    table_name: str = Field(min_length=1, max_length=128)
+    data: dict = Field(default_factory=dict)
+
+
+class TableRowPatchInput(BaseModel):
+    table_name: str = Field(min_length=1, max_length=128)
+    primary_key: dict[str, object] = Field(default_factory=dict)
+    updates: dict[str, object] = Field(default_factory=dict)
+
+
+class UpdatePriorInput(BaseModel):
+    activity_id: int = Field(gt=0)
+    prob: float
+
+
+class UpdatePosteriorInput(BaseModel):
+    activity_id: int = Field(gt=0)
+    column_choice: int = Field(ge=1, le=3)
+    prob: float
+
+
+class UpdateStatusInput(BaseModel):
+    activity_id: int = Field(gt=0)
+    status: str = Field(min_length=1, max_length=64)
