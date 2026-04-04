@@ -1,13 +1,16 @@
 """
 CRUD operations - ported from bayes.py
 """
-import pandas as pd
+import os
 import uuid
-from sqlalchemy import text, select, func, Table, MetaData
+from decimal import Decimal
+
+import pandas as pd
+from sqlalchemy import and_, asc, desc, inspect as sa_inspect, text, select, func, MetaData
 try:
-    from .database import engine
+    from .database import engine, get_table_names
 except ImportError:
-    from database import engine
+    from database import engine, get_table_names
 
 ALLOWED_STATUSES = {'not_started', 'in_progress', 'paused', 'completed', 'skipped', 'cancelled'}
 
@@ -251,6 +254,187 @@ def insert_record(table_name: str, data: dict):
         conn.execute(table.insert(), data)
     
     return {"success": True, "message": f"Record inserted into {table_name}"}
+
+
+TABLE_ROWS_MAX_LIMIT = 200
+TABLE_ROWS_DEFAULT_LIMIT = 50
+
+
+def _table_browser_denylist() -> set[str]:
+    raw = os.getenv("TABLE_BROWSER_DENYLIST", "")
+    return {t.strip().lower() for t in raw.split(",") if t.strip()}
+
+
+def resolve_browser_table_name(requested: str) -> str:
+    """Resolve requested name to the real table name; reject unknown or denylisted tables."""
+    names = get_table_names()
+    lower_map = {n.lower(): n for n in names}
+    key = requested.lower()
+    if key not in lower_map:
+        raise ValueError(f"Unknown table: {requested}")
+    canonical = lower_map[key]
+    deny = _table_browser_denylist()
+    if canonical.lower() in deny:
+        raise ValueError(f"Table is not browseable: {canonical}")
+    return canonical
+
+
+def _serialize_cell(value):
+    if value is None:
+        return None
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, (bytes, memoryview)):
+        return None
+    return value
+
+
+def _row_mapping_to_dict(mapping) -> dict:
+    return {k: _serialize_cell(v) for k, v in dict(mapping).items()}
+
+
+def _get_pk_columns(table_name: str) -> list[str]:
+    inspector = sa_inspect(engine)
+    pk = inspector.get_pk_constraint(table_name).get("constrained_columns") or []
+    return list(pk)
+
+
+def list_table_rows(
+    table_name: str,
+    *,
+    limit: int,
+    offset: int,
+    sort_by: str | None,
+    sort_dir: str,
+    filters: dict,
+) -> dict:
+    """Paginated rows with optional equality filters and single-column sort."""
+    resolved = resolve_browser_table_name(table_name)
+    if limit < 1 or limit > TABLE_ROWS_MAX_LIMIT:
+        raise ValueError(f"limit must be between 1 and {TABLE_ROWS_MAX_LIMIT}")
+    if offset < 0:
+        raise ValueError("offset must be non-negative")
+    if sort_dir not in ("asc", "desc"):
+        raise ValueError("sort_dir must be asc or desc")
+
+    metadata = MetaData()
+    metadata.reflect(bind=engine, only=[resolved])
+    table = metadata.tables[resolved]
+    column_names = {c.name for c in table.columns}
+
+    conditions = []
+    for col_name, val in (filters or {}).items():
+        if col_name not in column_names:
+            raise ValueError(f"Unknown filter column: {col_name}")
+        col = table.c[col_name]
+        if val is None:
+            conditions.append(col.is_(None))
+        else:
+            conditions.append(col == val)
+
+    where_clause = and_(*conditions) if conditions else None
+
+    count_stmt = select(func.count()).select_from(table)
+    if where_clause is not None:
+        count_stmt = count_stmt.where(where_clause)
+
+    select_stmt = select(table)
+    if where_clause is not None:
+        select_stmt = select_stmt.where(where_clause)
+
+    if sort_by:
+        if sort_by not in column_names:
+            raise ValueError(f"Unknown sort column: {sort_by}")
+        order_col = table.c[sort_by]
+        select_stmt = select_stmt.order_by(asc(order_col) if sort_dir == "asc" else desc(order_col))
+    else:
+        pk_cols = _get_pk_columns(resolved)
+        order_parts = []
+        for pk in pk_cols:
+            if pk in table.c:
+                oc = table.c[pk]
+                order_parts.append(asc(oc) if sort_dir == "asc" else desc(oc))
+        if order_parts:
+            select_stmt = select_stmt.order_by(*order_parts)
+
+    select_stmt = select_stmt.limit(limit).offset(offset)
+
+    with engine.connect() as conn:
+        total = conn.execute(count_stmt).scalar_one()
+        result = conn.execute(select_stmt)
+        rows = [_row_mapping_to_dict(row._mapping) for row in result]
+
+    return {"rows": rows, "total": int(total)}
+
+
+def update_table_row(table_name: str, primary_key: dict, updates: dict) -> dict:
+    """Update non-PK columns for the row identified by composite primary key."""
+    resolved = resolve_browser_table_name(table_name)
+    if not updates:
+        raise ValueError("updates must not be empty")
+
+    metadata = MetaData()
+    metadata.reflect(bind=engine, only=[resolved])
+    table = metadata.tables[resolved]
+    column_names = {c.name for c in table.columns}
+
+    pk_columns = _get_pk_columns(resolved)
+    if not pk_columns:
+        raise ValueError("Table has no primary key; cannot update rows safely")
+
+    for pk in pk_columns:
+        if pk not in primary_key:
+            raise ValueError(f"Missing primary key column in request: {pk}")
+
+    pk_set = set(pk_columns)
+    set_values = {}
+    for col_name, val in updates.items():
+        if col_name in pk_set:
+            raise ValueError(f"Cannot update primary key column: {col_name}")
+        if col_name not in column_names:
+            raise ValueError(f"Unknown column in updates: {col_name}")
+        set_values[col_name] = val
+
+    if not set_values:
+        raise ValueError("No valid columns to update")
+
+    where_parts = [table.c[pk] == primary_key[pk] for pk in pk_columns]
+    stmt = table.update().where(and_(*where_parts)).values(**set_values)
+
+    with engine.begin() as conn:
+        result = conn.execute(stmt)
+        if result.rowcount == 0:
+            raise ValueError("No row matched the given primary key")
+
+    return {"success": True, "message": "Row updated"}
+
+
+def delete_table_row(table_name: str, primary_key: dict) -> dict:
+    """Delete the row identified by composite primary key."""
+    resolved = resolve_browser_table_name(table_name)
+    metadata = MetaData()
+    metadata.reflect(bind=engine, only=[resolved])
+    table = metadata.tables[resolved]
+
+    pk_columns = _get_pk_columns(resolved)
+    if not pk_columns:
+        raise ValueError("Table has no primary key; cannot delete rows safely")
+
+    for pk in pk_columns:
+        if pk not in primary_key:
+            raise ValueError(f"Missing primary key column in request: {pk}")
+
+    where_parts = [table.c[pk] == primary_key[pk] for pk in pk_columns]
+    stmt = table.delete().where(and_(*where_parts))
+
+    with engine.begin() as conn:
+        result = conn.execute(stmt)
+        if result.rowcount == 0:
+            raise ValueError("No row matched the given primary key")
+
+    return {"success": True, "message": "Row deleted"}
 
 
 def ensure_chat_preference_table() -> None:

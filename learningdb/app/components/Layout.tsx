@@ -28,6 +28,7 @@ import ListIcon from "@mui/icons-material/List";
 import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import CalculateIcon from "@mui/icons-material/Calculate";
+import TableViewIcon from "@mui/icons-material/TableView";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import BrightnessAutoIcon from "@mui/icons-material/BrightnessAuto";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
@@ -53,6 +54,7 @@ export const menuItems: NavItem[] = [
   { text: "Activity List", icon: <ListIcon />, path: "/activity-list" },
   { text: "Update Data", icon: <EditIcon />, path: "/update" },
   { text: "View Activities", icon: <VisibilityIcon />, path: "/view" },
+  { text: "Data Browser", icon: <TableViewIcon />, path: "/data-browser" },
   { text: "Run Bayes", icon: <CalculateIcon />, path: "/bayes" },
 ];
 

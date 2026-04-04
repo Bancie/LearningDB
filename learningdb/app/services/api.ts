@@ -64,6 +64,48 @@ export const getTableColumns = (tableName: string) =>
 export const insertRecord = (tableName: string, data: Record<string, unknown>) =>
   api.post('/tables/insert', { table_name: tableName, data });
 
+export interface TableRowsResponse {
+  rows: Record<string, unknown>[];
+  total: number;
+}
+
+export interface ListTableRowsParams {
+  limit?: number;
+  offset?: number;
+  sort_by?: string | null;
+  sort_dir?: 'asc' | 'desc';
+  filters?: Record<string, unknown>;
+}
+
+export const listTableRows = (tableName: string, params: ListTableRowsParams = {}) => {
+  const { limit, offset, sort_by, sort_dir, filters } = params;
+  return api.get<TableRowsResponse>(`/tables/${encodeURIComponent(tableName)}/rows`, {
+    params: {
+      limit,
+      offset,
+      sort_by: sort_by ?? undefined,
+      sort_dir: sort_dir ?? undefined,
+      filters:
+        filters && Object.keys(filters).length > 0 ? JSON.stringify(filters) : undefined,
+    },
+  });
+};
+
+export const updateTableRow = (
+  tableName: string,
+  primaryKey: Record<string, unknown>,
+  updates: Record<string, unknown>,
+) =>
+  api.patch(`/tables/${encodeURIComponent(tableName)}/rows`, {
+    primary_key: primaryKey,
+    updates,
+  });
+
+export const deleteTableRow = (tableName: string, primaryKey: Record<string, unknown>) =>
+  api.delete(`/tables/${encodeURIComponent(tableName)}/rows`, {
+    data: { primary_key: primaryKey },
+  });
+
 // Activity Operations
 export const getActivityIds = (status?: string) =>
   api.get<{ activity_ids: number[] }>('/activities', { params: { status } });

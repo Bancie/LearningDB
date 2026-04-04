@@ -33,7 +33,7 @@ export default function ChatComposer({
 
   /** Reset global MuiOutlinedInput theme so the field sits inside the composer bar, not as a second card. */
   const outlinedReset = {
-    borderRadius: isIntro ? "10px" : "12px",
+    borderRadius: isIntro ? "50px" : "12px",
     bgcolor: "transparent",
     boxShadow: "none",
     transition: theme.transitions.create(["background-color"], {
@@ -67,7 +67,7 @@ export default function ChatComposer({
         sx={{
           alignItems: "center",
           p: isIntro ? 1 : 1,
-          borderRadius: isIntro ? "50px" : "15px",
+          borderRadius: isIntro ? "40px" : "15px",
           bgcolor: "background.paper",
           boxShadow: isIntro
             ? "0 10px 28px rgba(15, 23, 42, 0.12)"

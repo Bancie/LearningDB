@@ -13,6 +13,7 @@ import {
   type ChatHistoryMessage,
   type ProviderCatalogItem,
 } from "~/services/orchestrator";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import ConversationHistoryList from "~/components/chat/ConversationHistoryList";
@@ -485,45 +486,91 @@ export default function Workspace() {
         spacing={0}
         sx={{ height: "calc(100vh - 108px)", minHeight: 0, minWidth: 0, width: "100%" }}
       >
-        {isChatIndexRoute ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-              minWidth: 0,
-              flex: 1,
-              width: "100%",
-              height: "100%",
-              pb: { xs: 1, sm: 1.25 },
-            }}
-          >
-            <Box
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                minWidth: 0,
-                overflow: "hidden",
-                height: "100%",
-              }}
-            >
-              <Outlet context={outletContext} />
-            </Box>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              flex: 1,
-              minHeight: 0,
-              overflow: "auto",
-              bgcolor: "background.default",
-              width: "100%",
-              py: { xs: 0.5, sm: 1 },
-            }}
-          >
-            <Outlet context={outletContext} />
-          </Box>
-        )}
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            minWidth: 0,
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {isChatIndexRoute ? (
+              <motion.div
+                key="workspace-chat-index"
+                initial={{ opacity: 0, x: -28 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -18 }}
+                transition={{ duration: 0.28, ease: "easeOut" }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  flex: 1,
+                  minHeight: 0,
+                  minWidth: 0,
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                    minWidth: 0,
+                    flex: 1,
+                    width: "100%",
+                    height: "100%",
+                    pb: { xs: 1, sm: 1.25 },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minHeight: 0,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      height: "100%",
+                    }}
+                  >
+                    <Outlet context={outletContext} />
+                  </Box>
+                </Box>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`workspace-tool-${location.pathname}`}
+                initial={{ opacity: 0, x: 22 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 18 }}
+                transition={{ duration: 0.26, ease: "easeOut" }}
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  minWidth: 0,
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflow: "auto",
+                    bgcolor: "background.default",
+                    width: "100%",
+                    py: { xs: 0.5, sm: 1 },
+                  }}
+                >
+                  <Outlet context={outletContext} />
+                </Box>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Box>
       </Stack>
     </Layout>
   );

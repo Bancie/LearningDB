@@ -26,6 +26,8 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { Link as RouterLink } from 'react-router';
+import { dataBrowserActivityHref } from '~/data-browser-links';
 import { getActivityList } from '~/services/api';
 
 export function meta() {
@@ -272,6 +274,15 @@ export default function ActivityList() {
                 <Typography variant="body2" color="text.secondary">
                   Created: {row.CREATED_AT}
                 </Typography>
+                <Button
+                  component={RouterLink}
+                  to={dataBrowserActivityHref(row.ACTIVITY_ID)}
+                  size="small"
+                  variant="outlined"
+                  sx={{ mt: 1 }}
+                >
+                  Open in Data browser
+                </Button>
               </Paper>
             ))}
             {filteredAndSortedData.length === 0 && (
@@ -321,6 +332,9 @@ export default function ActivityList() {
                       CREATED_AT
                     </TableSortLabel>
                   </TableCell>
+                  <TableCell width={160} align="right">
+                    Actions
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -340,11 +354,21 @@ export default function ActivityList() {
                         {row.CREATED_AT}
                       </Typography>
                     </TableCell>
+                    <TableCell align="right">
+                      <Button
+                        component={RouterLink}
+                        to={dataBrowserActivityHref(row.ACTIVITY_ID)}
+                        size="small"
+                        variant="outlined"
+                      >
+                        Data browser
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {filteredAndSortedData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} align="center">
+                    <TableCell colSpan={5} align="center">
                       {data.length === 0 ? 'No data to display' : 'No activities match your search/filter'}
                     </TableCell>
                   </TableRow>

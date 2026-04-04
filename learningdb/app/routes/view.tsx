@@ -17,6 +17,8 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router';
+import { dataBrowserActivityHref } from '~/data-browser-links';
 import { getActivityView } from '~/services/api';
 import type { ActivityData } from '~/services/api';
 
@@ -89,6 +91,15 @@ export default function ViewActivities() {
                 <Typography variant="body2">Learning: {row.Learning}</Typography>
                 <Typography variant="body2">Overview: {row.Overview}</Typography>
                 <Typography variant="body2">Practice: {row.Practice}</Typography>
+                <Button
+                  component={RouterLink}
+                  to={dataBrowserActivityHref(row.ACTIVITY_ID)}
+                  size="small"
+                  variant="outlined"
+                  sx={{ mt: 1 }}
+                >
+                  Open in Data browser
+                </Button>
               </Paper>
             ))}
             {data.length === 0 && (
@@ -108,6 +119,9 @@ export default function ViewActivities() {
                   <TableCell align="right">Learning</TableCell>
                   <TableCell align="right">Overview</TableCell>
                   <TableCell align="right">Practice</TableCell>
+                  <TableCell align="right" width={140}>
+                    Actions
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -119,11 +133,21 @@ export default function ViewActivities() {
                     <TableCell align="right">{row.Learning}</TableCell>
                     <TableCell align="right">{row.Overview}</TableCell>
                     <TableCell align="right">{row.Practice}</TableCell>
+                    <TableCell align="right">
+                      <Button
+                        component={RouterLink}
+                        to={dataBrowserActivityHref(row.ACTIVITY_ID)}
+                        size="small"
+                        variant="outlined"
+                      >
+                        Data browser
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {data.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={7} align="center">
                       No data to display
                     </TableCell>
                   </TableRow>

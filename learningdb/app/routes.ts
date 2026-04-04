@@ -9,6 +9,7 @@ export default [
     route("activity-list", "routes/activity-list.tsx"),
     route("update", "routes/update.tsx"),
     route("view", "routes/view.tsx"),
+    route("data-browser", "routes/data-browser.tsx"),
     route("bayes", "routes/bayes.tsx"),
   ]),
 ] satisfies RouteConfig;

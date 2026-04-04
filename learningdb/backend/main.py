@@ -1,10 +1,12 @@
 """
 FastAPI Backend for LearningDB
 """
+import json
+from typing import Any, Optional
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
 from sqlalchemy import inspect, text
 try:
     from . import crud
@@ -50,6 +52,15 @@ class UpdateStatusRequest(BaseModel):
 class InsertRecordRequest(BaseModel):
     table_name: str
     data: dict
+
+
+class TableRowPatchRequest(BaseModel):
+    primary_key: dict[str, Any]
+    updates: dict[str, Any]
+
+
+class TableRowDeleteRequest(BaseModel):
+    primary_key: dict[str, Any]
 
 
 class RunBayesRequest(BaseModel):
@@ -204,6 +215,64 @@ def insert_record(request: InsertRecordRequest):
     try:
         result = crud.insert_record(request.table_name, request.data)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/tables/{table_name}/rows")
+def list_table_rows(
+    table_name: str,
+    limit: int = crud.TABLE_ROWS_DEFAULT_LIMIT,
+    offset: int = 0,
+    sort_by: Optional[str] = None,
+    sort_dir: str = "asc",
+    filters: Optional[str] = None,
+):
+    """List rows with pagination, optional JSON object `filters` (equality), and sort."""
+    filter_obj: dict = {}
+    if filters is not None and filters.strip():
+        try:
+            parsed = json.loads(filters)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="filters must be valid JSON object")
+        if not isinstance(parsed, dict):
+            raise HTTPException(status_code=400, detail="filters must be a JSON object")
+        filter_obj = parsed
+    try:
+        return crud.list_table_rows(
+            table_name,
+            limit=limit,
+            offset=offset,
+            sort_by=sort_by,
+            sort_dir=sort_dir.lower(),
+            filters=filter_obj,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.patch("/api/tables/{table_name}/rows")
+def patch_table_row(table_name: str, request: TableRowPatchRequest):
+    try:
+        return crud.update_table_row(table_name, request.primary_key, request.updates)
+    except ValueError as e:
+        msg = str(e)
+        code = 404 if "No row matched" in msg else 400
+        raise HTTPException(status_code=code, detail=msg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/tables/{table_name}/rows")
+def delete_table_row(table_name: str, request: TableRowDeleteRequest):
+    try:
+        return crud.delete_table_row(table_name, request.primary_key)
+    except ValueError as e:
+        msg = str(e)
+        code = 404 if "No row matched" in msg else 400
+        raise HTTPException(status_code=code, detail=msg)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
