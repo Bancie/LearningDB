@@ -429,6 +429,7 @@ export default function Workspace() {
         provider,
         model,
         allow_write: true,
+        ...(userTimeZone ? { user_timezone: userTimeZone } : {}),
         confirmation_token:
           pendingWriteConfirmation && isConfirmationMessage(userMessage.content)
             ? pendingWriteConfirmation.token

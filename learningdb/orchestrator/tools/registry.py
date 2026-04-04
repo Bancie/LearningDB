@@ -6,10 +6,12 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from time import perf_counter
 from typing import Any, Awaitable, Callable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel
 
 from ..config import Settings
+from ..request_context import chat_user_timezone
 from ..guardrails import clamp_limit, enforce_write_table_allowed
 from .http_client import BackendApiClient
 from .models import (
@@ -116,11 +118,22 @@ def build_tool_registry(client: BackendApiClient, settings: Settings) -> dict[st
         now = datetime.now(timezone.utc).replace(microsecond=0)
         utc_iso8601 = now.isoformat().replace("+00:00", "Z")
         utc_sql_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
-        return {
+        out: dict[str, Any] = {
             "utc_iso8601": utc_iso8601,
             "utc_sql_datetime": utc_sql_datetime,
             "source_endpoint": "orchestrator:get_server_time",
         }
+        tz_name = (chat_user_timezone.get() or "").strip()
+        if tz_name:
+            try:
+                z = ZoneInfo(tz_name)
+                local = now.astimezone(z).replace(microsecond=0)
+                out["user_timezone_iana"] = tz_name
+                out["user_local_iso8601"] = local.isoformat()
+                out["user_local_sql_datetime"] = local.strftime("%Y-%m-%d %H:%M:%S")
+            except (ZoneInfoNotFoundError, OSError, ValueError):
+                out["user_timezone_invalid"] = tz_name
+        return out
 
     async def get_tables(args: dict[str, Any]) -> dict[str, Any]:
         GetTablesInput.model_validate(args)
@@ -241,9 +254,12 @@ def build_tool_registry(client: BackendApiClient, settings: Settings) -> dict[st
         ToolDefinition(
             name="get_server_time",
             description=(
-                "Current UTC wall time on the server: iso8601 (Z) and SQL datetime "
-                "YYYY-MM-DD HH:MM:SS. Use when the user says now/current time/hiện tại "
-                "for timestamp fields; never invent a clock time."
+                "Current wall time: utc_iso8601 and utc_sql_datetime (UTC). "
+                "When the chat includes a user IANA timezone, also returns user_local_iso8601, "
+                "user_local_sql_datetime, user_timezone_iana for that zone. "
+                "Use for now/current time/hiện tại; prefer user_local_* when answering in the user's local clock; "
+                "use utc_sql_datetime for DB datetime columns unless the user asks to store local wall time. "
+                "Never invent a clock time."
             ),
             endpoint="orchestrator:get_server_time",
             input_schema=GetServerTimeInput,

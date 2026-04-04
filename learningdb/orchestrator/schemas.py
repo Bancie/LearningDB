@@ -41,6 +41,11 @@ class ChatRequest(BaseModel):
         max_length=3072,
         description="Step-2 write confirmation token returned by action_preview.",
     )
+    user_timezone: str | None = Field(
+        default=None,
+        max_length=100,
+        description="User IANA timezone (e.g. Asia/Ho_Chi_Minh); guides local-time reasoning.",
+    )
 
 
 class ToolInvocation(BaseModel):

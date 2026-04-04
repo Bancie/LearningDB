@@ -4,6 +4,7 @@ from typing import Any
 from learningdb.orchestrator.config import Settings
 from learningdb.orchestrator.exceptions import GuardrailViolation
 from learningdb.orchestrator.guardrails import enforce_tool_allowlist
+from learningdb.orchestrator.request_context import chat_user_timezone
 from learningdb.orchestrator.tools.registry import build_tool_registry
 
 
@@ -109,6 +110,36 @@ def test_get_server_time_returns_utc_fields() -> None:
     parts = payload["utc_sql_datetime"].split()
     assert len(parts) == 2
     assert client.calls == []
+    assert "user_local_iso8601" not in payload
+
+
+def test_get_server_time_includes_local_when_context_set() -> None:
+    settings = Settings()
+    client = _FakeClient()
+    registry = build_tool_registry(client, settings)
+    tok = chat_user_timezone.set("Asia/Ho_Chi_Minh")
+    try:
+        payload = asyncio.run(registry["get_server_time"].handler({}))
+    finally:
+        chat_user_timezone.reset(tok)
+    assert payload["user_timezone_iana"] == "Asia/Ho_Chi_Minh"
+    assert "T" in payload["user_local_iso8601"]
+    lparts = payload["user_local_sql_datetime"].split()
+    assert len(lparts) == 2
+    assert client.calls == []
+
+
+def test_get_server_time_invalid_timezone_flagged() -> None:
+    settings = Settings()
+    client = _FakeClient()
+    registry = build_tool_registry(client, settings)
+    tok = chat_user_timezone.set("Not/A/Real/Zone")
+    try:
+        payload = asyncio.run(registry["get_server_time"].handler({}))
+    finally:
+        chat_user_timezone.reset(tok)
+    assert payload["user_timezone_invalid"] == "Not/A/Real/Zone"
+    assert "user_local_iso8601" not in payload
 
 
 def test_get_server_time_allowed_in_read_only_mode() -> None:

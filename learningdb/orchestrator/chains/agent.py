@@ -14,6 +14,7 @@ from ..exceptions import GuardrailViolation
 from ..guardrails import enforce_tool_allowlist, is_write_tool, require_user_id
 from ..llm_factory import build_chat_model
 from ..providers import get_default_model_for_provider, is_supported_model
+from ..request_context import chat_user_timezone
 from ..schemas import ChatRequest, ChatResponse, ToolInvocation
 from ..tools import BackendApiClient, build_tool_registry, run_tool
 from ..write_phase import (
@@ -40,6 +41,25 @@ WRITE_ENABLED_SYSTEM_PROMPT = (
     "call get_server_time and use utc_sql_datetime from the tool result in insert_record or patch_table_row; "
     "never invent timestamps."
 )
+
+
+def _user_timezone_prompt_suffix(tz: str | None, allow_write: bool) -> str:
+    if not tz:
+        return ""
+    write_db = ""
+    if allow_write:
+        write_db = (
+            " For insert_record/patch_table_row datetime columns, default to utc_sql_datetime from "
+            "get_server_time unless the user explicitly asks to store a local wall time."
+        )
+    return (
+        f" User local timezone (IANA): {tz}. "
+        "Interpret informal time references in the user's messages (e.g. tomorrow, 3pm, morning, "
+        "hôm nay, mai) in that timezone unless they specify another zone or UTC. "
+        "When the user asks what time it is for them or compares to 'now', call get_server_time and "
+        "prefer user_local_iso8601 and user_local_sql_datetime when present."
+        + write_db
+    )
 
 
 @dataclass
@@ -146,6 +166,14 @@ class ChatOrchestrator:
 
     async def respond(self, request_id: str, chat: ChatRequest) -> ChatResponse:
         """Process one chat request with bounded tool round trips."""
+        tz = (chat.user_timezone or "").strip() or None
+        _tz_tok = chat_user_timezone.set(tz)
+        try:
+            return await self._respond_with_tz(request_id, chat, tz)
+        finally:
+            chat_user_timezone.reset(_tz_tok)
+
+    async def _respond_with_tz(self, request_id: str, chat: ChatRequest, tz: str | None) -> ChatResponse:
         from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 
         preference = await self._get_user_preference(chat.user_id)
@@ -294,9 +322,10 @@ class ChatOrchestrator:
                     warnings=["write_confirmation_execution_failed"],
                 )
 
-        system_prompt = (
+        base_prompt = (
             WRITE_ENABLED_SYSTEM_PROMPT if chat.allow_write else READ_ONLY_SYSTEM_PROMPT
         )
+        system_prompt = base_prompt + _user_timezone_prompt_suffix(tz, chat.allow_write)
         messages: list[Any] = [SystemMessage(content=system_prompt)]
         for item in chat.history:
             if item.role.value == "system":

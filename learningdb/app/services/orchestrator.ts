@@ -74,6 +74,8 @@ export interface ChatRequest {
   model?: string;
   allow_write?: boolean;
   confirmation_token?: string;
+  /** IANA timezone (USERS.USER_LOCATION); optional, enables local-time reasoning in orchestrator. */
+  user_timezone?: string;
 }
 
 export const getProviders = () =>
