@@ -21,7 +21,6 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  TextField,
   Typography,
   useMediaQuery,
   useTheme,
@@ -35,6 +34,11 @@ import {
   updateTableRow,
 } from '~/services/api';
 import type { Column } from '~/services/api';
+import {
+  TableColumnFormField,
+  formStringToSubmitValue,
+  valueToFormString,
+} from '~/components/table-record-fields';
 
 export function meta() {
   return [{ title: 'Data Browser - LearningDB' }];
@@ -54,26 +58,6 @@ function formatCell(value: unknown): string {
   if (value === null || value === undefined) return '';
   if (typeof value === 'object') return JSON.stringify(value);
   return String(value);
-}
-
-function coerceValue(sqlType: string, raw: string): unknown {
-  const t = sqlType.toLowerCase();
-  const trimmed = raw.trim();
-  if (trimmed === '') return null;
-  if (t.includes('int') || t === 'year') {
-    const n = parseInt(trimmed, 10);
-    if (!Number.isNaN(n)) return n;
-  }
-  if (
-    t.includes('decimal') ||
-    t.includes('float') ||
-    t.includes('double') ||
-    t.includes('numeric')
-  ) {
-    const n = parseFloat(trimmed);
-    if (!Number.isNaN(n)) return n;
-  }
-  return raw;
 }
 
 function pickPrimaryKey(
@@ -246,7 +230,7 @@ export default function DataBrowser() {
     setEditRow(row);
     const form: Record<string, string> = {};
     columns.forEach((c) => {
-      form[c.name] = formatCell(row[c.name]);
+      form[c.name] = valueToFormString(c, row[c.name]);
     });
     setEditForm(form);
     setEditOpen(true);
@@ -259,7 +243,7 @@ export default function DataBrowser() {
     for (const col of columns) {
       if (col.is_primary_key) continue;
       const raw = editForm[col.name] ?? '';
-      updates[col.name] = coerceValue(col.type, raw);
+      updates[col.name] = formStringToSubmitValue(col, raw, 'patch');
     }
     setLoadingData(true);
     try {
@@ -445,17 +429,15 @@ export default function DataBrowser() {
         <DialogContent dividers>
           <Stack spacing={1.5} sx={{ pt: 1 }}>
             {columns.map((col) => (
-              <TextField
+              <TableColumnFormField
                 key={col.name}
-                label={`${col.name}${col.is_primary_key ? ' (PK)' : ''}`}
-                fullWidth
-                size="small"
+                column={col}
                 value={editForm[col.name] ?? ''}
-                onChange={(e) =>
-                  setEditForm((prev) => ({ ...prev, [col.name]: e.target.value }))
-                }
+                onChange={(v) => setEditForm((prev) => ({ ...prev, [col.name]: v }))}
                 disabled={col.is_primary_key}
-                helperText={col.type}
+                size="small"
+                isMobile={isMobile}
+                labelSuffix={col.is_primary_key ? ' (PK)' : ''}
               />
             ))}
           </Stack>
