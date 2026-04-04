@@ -3,11 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import {
   Alert,
+  Box,
   Button,
+  Card,
+  CardContent,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   InputLabel,
   MenuItem,
@@ -17,8 +21,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
-  TableHead,
   TablePagination,
   TableRow,
   Typography,
@@ -77,6 +79,9 @@ function hasPrimaryKey(columns: Column[]): boolean {
   return columns.some((c) => c.is_primary_key);
 }
 
+/** Number of columns shown in the main grid; full row is available via View detail. */
+const PREVIEW_COLUMN_COUNT = 4;
+
 export default function DataBrowser() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -109,7 +114,14 @@ export default function DataBrowser() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteRow, setDeleteRow] = useState<Record<string, unknown> | null>(null);
 
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRow, setDetailRow] = useState<Record<string, unknown> | null>(null);
+
   const columnNames = useMemo(() => columns.map((c) => c.name), [columns]);
+  const previewColumnNames = useMemo(
+    () => columnNames.slice(0, PREVIEW_COLUMN_COUNT),
+    [columnNames],
+  );
 
   const loadTables = useCallback(async () => {
     setLoadingTables(true);
@@ -284,9 +296,10 @@ export default function DataBrowser() {
           Data browser
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          View, edit, and delete rows with server-side sort and pagination. Optional row scope via URL
-          query (deep links). Dangerous on production data; use TABLE_BROWSER_DENYLIST on the server if
-          needed.
+          The table lists the first {PREVIEW_COLUMN_COUNT} columns only; use{" "}
+          <strong>View detail</strong> on a row to see every field. View, edit, and delete rows with
+          server-side sort and pagination. Optional row scope via URL query (deep links). Dangerous on
+          production data; use TABLE_BROWSER_DENYLIST on the server if needed.
         </Typography>
 
         <FormControl size="small" sx={{ minWidth: isMobile ? '100%' : 280 }}>
@@ -347,66 +360,149 @@ export default function DataBrowser() {
               </FormControl>
             </Stack>
 
-            <TableContainer>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    {columnNames.map((name) => (
-                      <TableCell key={name}>{name}</TableCell>
-                    ))}
-                    <TableCell align="right" width={160}>
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loadingData && rows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={columnNames.length + 1} align="center">
-                        Loading…
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    rows.map((row, idx) => (
-                      <TableRow key={idx}>
-                        {columnNames.map((name) => (
-                          <TableCell key={name} sx={{ maxWidth: 220, wordBreak: 'break-word' }}>
-                            {formatCell(row[name])}
-                          </TableCell>
-                        ))}
-                        <TableCell align="right">
-                          <Button
-                            size="small"
-                            onClick={() => openEdit(row)}
-                            disabled={!pkOk}
+            <Stack spacing={isMobile ? 1.5 : 2} sx={{ width: '100%' }}>
+              {loadingData && rows.length === 0 ? (
+                <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
+                  Loading…
+                </Typography>
+              ) : (
+                rows.map((row, idx) => (
+                  <Card
+                    key={idx}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 2,
+                      overflow: 'visible',
+                      transition: theme.transitions.create('box-shadow', { duration: theme.transitions.duration.short }),
+                      ...(!isMobile && {
+                        borderColor: 'divider',
+                        boxShadow: theme.shadows[1],
+                        '&:hover': { boxShadow: theme.shadows[4] },
+                      }),
+                    }}
+                  >
+                    <CardContent
+                      sx={{
+                        p: isMobile ? 1.5 : 2,
+                        '&:last-child': { pb: isMobile ? 1.5 : 2 },
+                      }}
+                    >
+                      <Stack spacing={isMobile ? 1.25 : 2}>
+                        <Stack
+                          direction={isMobile ? 'column' : 'row'}
+                          spacing={isMobile ? 1.25 : 2}
+                          flexWrap="wrap"
+                          alignItems="flex-start"
+                          useFlexGap
+                        >
+                          {previewColumnNames.map((name) => (
+                            <Box
+                              key={name}
+                              sx={{
+                                flex: isMobile ? undefined : '1 1 200px',
+                                minWidth: 0,
+                                width: isMobile ? '100%' : undefined,
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                component="div"
+                                sx={{ fontWeight: 600, letterSpacing: '0.02em' }}
+                              >
+                                {name}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                sx={{ mt: 0.25, wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}
+                              >
+                                {formatCell(row[name]) || '—'}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                        <Divider />
+                        {isMobile ? (
+                          <Stack spacing={0.75}>
+                            <Button
+                              fullWidth
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                setDetailRow(row);
+                                setDetailOpen(true);
+                              }}
+                            >
+                              View detail
+                            </Button>
+                            <Stack direction="row" spacing={1}>
+                              <Button
+                                fullWidth
+                                size="small"
+                                onClick={() => openEdit(row)}
+                                disabled={!pkOk}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                fullWidth
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                  setDeleteRow(row);
+                                  setDeleteOpen(true);
+                                }}
+                                disabled={!pkOk}
+                              >
+                                Delete
+                              </Button>
+                            </Stack>
+                          </Stack>
+                        ) : (
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent="flex-end"
+                            flexWrap="wrap"
+                            useFlexGap
                           >
-                            Edit
-                          </Button>
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() => {
-                              setDeleteRow(row);
-                              setDeleteOpen(true);
-                            }}
-                            disabled={!pkOk}
-                          >
-                            Delete
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                  {!loadingData && rows.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={columnNames.length + 1} align="center">
-                        No rows
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={() => {
+                                setDetailRow(row);
+                                setDetailOpen(true);
+                              }}
+                            >
+                              View detail
+                            </Button>
+                            <Button size="small" onClick={() => openEdit(row)} disabled={!pkOk}>
+                              Edit
+                            </Button>
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={() => {
+                                setDeleteRow(row);
+                                setDeleteOpen(true);
+                              }}
+                              disabled={!pkOk}
+                            >
+                              Delete
+                            </Button>
+                          </Stack>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+              {!loadingData && rows.length === 0 && (
+                <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
+                  No rows
+                </Typography>
+              )}
+            </Stack>
 
             <TablePagination
               component="div"
@@ -419,10 +515,70 @@ export default function DataBrowser() {
                 setPage(0);
               }}
               rowsPerPageOptions={[10, 25, 50, 100]}
+              sx={
+                isMobile
+                  ? {
+                      '& .MuiTablePagination-toolbar': {
+                        flexWrap: 'wrap',
+                        justifyContent: 'center',
+                        gap: 1,
+                      },
+                    }
+                  : undefined
+              }
             />
           </>
         )}
       </Stack>
+
+      <Dialog
+        open={detailOpen}
+        onClose={() => {
+          setDetailOpen(false);
+          setDetailRow(null);
+        }}
+        maxWidth="md"
+        fullWidth
+        scroll="paper"
+      >
+        <DialogTitle>
+          Row details
+          {selectedTable ? ` — ${selectedTable}` : ''}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Table size="small">
+            <TableBody>
+              {columns.map((col) => (
+                <TableRow key={col.name}>
+                  <TableCell
+                    component="th"
+                    scope="row"
+                    sx={{ fontWeight: 600, verticalAlign: 'top', width: '32%' }}
+                  >
+                    {col.name}
+                  </TableCell>
+                  <TableCell sx={{ wordBreak: 'break-word' }}>
+                    {detailRow ? formatCell(detailRow[col.name]) : ''}
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {col.type}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDetailOpen(false);
+              setDetailRow(null);
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Edit row</DialogTitle>
