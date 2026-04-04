@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "63f5bbe657f2",
+  "session_id": "3a2aa948-2d2e-4fdb-8129-5adc8241b596",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-04T07:28:33.435559Z",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "learningdb/app/data-browser-links.ts",
+    "learningdb/app/routes/data-browser.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "d6d229b8258a",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-04T07:28:33.376393Z",
+    "agent_lines": 457,
+    "human_added": 323,
+    "human_modified": 123,
+    "human_removed": 0,
+    "total_committed": 903,
+    "agent_percentage": 50.60908084163898
+  }
+}
