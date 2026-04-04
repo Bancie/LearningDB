@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "090b3456a099",
+  "strategy": "manual-commit",
+  "branch": "cursor/table-record-fields-edit-import-parity",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "learningdb/app/components/table-record-fields.tsx",
+    "learningdb/app/routes/data-browser.tsx"
+  ],
+  "sessions": [
+    {
+      "metadata": "/09/0b3456a099/0/metadata.json",
+      "transcript": "/09/0b3456a099/0/full.jsonl",
+      "context": "",
+      "content_hash": "/09/0b3456a099/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}

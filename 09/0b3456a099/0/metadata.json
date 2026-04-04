@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "090b3456a099",
+  "session_id": "3a2aa948-2d2e-4fdb-8129-5adc8241b596",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-04T07:53:00.269547Z",
+  "branch": "cursor/table-record-fields-edit-import-parity",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "learningdb/app/components/table-record-fields.tsx",
+    "learningdb/app/routes/data-browser.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "3dd937ab8cee",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-04T07:53:00.201017Z",
+    "agent_lines": 189,
+    "human_added": 0,
+    "human_modified": 25,
+    "human_removed": 6,
+    "total_committed": 214,
+    "agent_percentage": 88.3177570093458
+  }
+}
