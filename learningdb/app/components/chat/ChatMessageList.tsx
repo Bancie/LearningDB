@@ -2,6 +2,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import {
   Alert,
   Box,
+  Chip,
   CircularProgress,
   IconButton,
   Paper,
@@ -11,12 +12,42 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useEffect, useRef, useState } from "react";
+import type { ChatToolInvocation } from "~/services/orchestrator";
 import ChatMarkdown from "./ChatMarkdown";
 import type { UiMessage } from "./types";
+
+function utcApiLabel(output: Record<string, unknown>): string {
+  const sql = output.utc_sql_datetime;
+  const iso = output.utc_iso8601;
+  if (typeof sql === "string" && sql.trim()) {
+    return `UTC (API): ${sql}`;
+  }
+  if (typeof iso === "string" && iso.trim()) {
+    return `UTC (API): ${iso}`;
+  }
+  return "";
+}
+
+function formatInUserTimeZone(isoUtc: string, timeZone: string): string | null {
+  try {
+    const d = new Date(isoUtc);
+    if (Number.isNaN(d.getTime())) {
+      return null;
+    }
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone: timeZone.trim(),
+      dateStyle: "medium",
+      timeStyle: "medium",
+    }).format(d);
+  } catch {
+    return null;
+  }
+}
 
 type ChatMessageListProps = {
   messages: UiMessage[];
   isSending: boolean;
+  userTimeZone?: string | null;
 };
 
 type SnackbarState = {
@@ -28,6 +59,7 @@ type SnackbarState = {
 export default function ChatMessageList({
   messages,
   isSending,
+  userTimeZone = null,
 }: ChatMessageListProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
@@ -114,6 +146,79 @@ export default function ChatMessageList({
                 }}
               >
                 <ChatMarkdown content={message.content} isUser={isUser} />
+                {!isUser &&
+                  message.toolInvocations &&
+                  message.toolInvocations.length > 0 && (
+                    <Stack
+                      spacing={0.75}
+                      sx={{
+                        mt: 1,
+                        pt: 1,
+                        borderTop: 1,
+                        borderColor: "divider",
+                      }}
+                    >
+                      <Typography variant="caption" color="text.secondary">
+                        Tool calls
+                      </Typography>
+                      {message.toolInvocations.map((inv: ChatToolInvocation, idx) => {
+                        const chipLabel = `${inv.name} · ${inv.status} · ${inv.latency_ms}ms`;
+                        const out = inv.output ?? undefined;
+                        const iso =
+                          out &&
+                          typeof out.utc_iso8601 === "string" &&
+                          out.utc_iso8601.trim()
+                            ? out.utc_iso8601.trim()
+                            : null;
+                        const localLine =
+                          inv.name === "get_server_time" &&
+                          iso &&
+                          userTimeZone
+                            ? formatInUserTimeZone(iso, userTimeZone)
+                            : null;
+                        return (
+                          <Box key={`${inv.name}-${idx}`}>
+                            <Chip
+                              label={chipLabel}
+                              size="small"
+                              variant="outlined"
+                              sx={{ height: "auto", py: 0.25 }}
+                            />
+                            {inv.error && (
+                              <Typography
+                                variant="caption"
+                                color="error"
+                                sx={{ display: "block", mt: 0.25 }}
+                              >
+                                {inv.error}
+                              </Typography>
+                            )}
+                            {inv.name === "get_server_time" && out && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: "block", mt: 0.35 }}
+                              >
+                                {utcApiLabel(out)}
+                                {localLine ? (
+                                  <>
+                                    <br />
+                                    Your time ({userTimeZone}): {localLine}
+                                  </>
+                                ) : userTimeZone ? (
+                                  <>
+                                    <br />
+                                    (Could not format for USER_LOCATION; check
+                                    IANA id.)
+                                  </>
+                                ) : null}
+                              </Typography>
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  )}
                 {!isUser && (
                   <Stack
                     direction="row"

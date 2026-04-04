@@ -20,16 +20,16 @@ class ChatMessage(BaseModel):
     """Single chat message used for short-term conversation context."""
 
     role: MessageRole
-    content: str = Field(min_length=1, max_length=4000)
+    content: str = Field(min_length=1, max_length=12000)
 
 
 class ChatRequest(BaseModel):
     """Incoming chat request payload."""
 
     user_id: int = Field(gt=0)
-    message: str = Field(min_length=1, max_length=4000)
+    message: str = Field(min_length=1, max_length=12000)
     conversation_id: str | None = Field(default=None, max_length=128)
-    history: list[ChatMessage] = Field(default_factory=list, max_length=20)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=60)
     provider: str | None = Field(default=None, max_length=64)
     model: str | None = Field(default=None, max_length=128)
     allow_write: bool = Field(
@@ -38,7 +38,7 @@ class ChatRequest(BaseModel):
     )
     confirmation_token: str | None = Field(
         default=None,
-        max_length=1024,
+        max_length=3072,
         description="Step-2 write confirmation token returned by action_preview.",
     )
 
@@ -52,6 +52,8 @@ class ToolInvocation(BaseModel):
     source_endpoint: str
     latency_ms: int = Field(ge=0)
     error: str | None = None
+    # Read-only tool results only; omitted for write tools to avoid leaking DB payloads.
+    output: dict[str, Any] | None = None
 
 
 class ActionPreview(BaseModel):
@@ -129,7 +131,7 @@ class CreateConversationRequest(BaseModel):
     title: str | None = Field(default=None, max_length=120)
     provider: str | None = Field(default=None, max_length=64)
     model: str | None = Field(default=None, max_length=128)
-    first_user_message: str | None = Field(default=None, max_length=4000)
+    first_user_message: str | None = Field(default=None, max_length=12000)
 
 
 class ConversationMessage(BaseModel):
@@ -144,5 +146,5 @@ class ConversationMessage(BaseModel):
 
 class AppendConversationMessageRequest(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=4000)
+    content: str = Field(min_length=1, max_length=12000)
     request_id: str | None = Field(default=None, max_length=128)

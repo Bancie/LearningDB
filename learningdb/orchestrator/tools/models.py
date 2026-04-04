@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 class UserScopedInput(BaseModel):
     user_id: int = Field(gt=0)
-    limit: int | None = Field(default=None, gt=0, le=500)
+    limit: int | None = Field(default=None, gt=0, le=1500)
 
 
 class RunBayesInput(BaseModel):
@@ -15,6 +15,12 @@ class RunBayesInput(BaseModel):
 
 
 class CheckPriorInput(BaseModel):
+    pass
+
+
+class GetServerTimeInput(BaseModel):
+    """No arguments; returns orchestrator wall-clock UTC."""
+
     pass
 
 

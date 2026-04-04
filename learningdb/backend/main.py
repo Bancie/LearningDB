@@ -6,7 +6,7 @@ from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import inspect, text
 try:
     from . import crud
@@ -73,16 +73,16 @@ class UpsertChatPreferenceRequest(BaseModel):
 
 
 class CreateConversationRequest(BaseModel):
-    title: Optional[str] = None
-    provider: Optional[str] = None
-    model: Optional[str] = None
-    first_user_message: Optional[str] = None
+    title: Optional[str] = Field(default=None, max_length=120)
+    provider: Optional[str] = Field(default=None, max_length=64)
+    model: Optional[str] = Field(default=None, max_length=128)
+    first_user_message: Optional[str] = Field(default=None, max_length=12000)
 
 
 class AppendConversationMessageRequest(BaseModel):
     role: str
-    content: str
-    request_id: Optional[str] = None
+    content: str = Field(min_length=1, max_length=12000)
+    request_id: Optional[str] = Field(default=None, max_length=128)
 
 
 # API Endpoints
@@ -95,6 +95,20 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/api/users/{user_id}/profile")
+def get_user_profile(user_id: int):
+    """Public profile fields for UI (e.g. USER_LOCATION as IANA timezone)."""
+    try:
+        profile = crud.get_user_profile(user_id)
+        if not profile:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"data": profile}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/users/{user_id}/chat-preferences")

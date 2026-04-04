@@ -1,5 +1,6 @@
 import Layout from "~/components/Layout";
 import { Box, Stack, type SelectChangeEvent } from "@mui/material";
+import { getUserProfile } from "~/services/api";
 import {
   createConversation,
   deleteConversation,
@@ -26,6 +27,9 @@ const toMessageId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random()}`;
+
+/** Keep in sync with `ChatRequest.history` max_length in learningdb/orchestrator/schemas.py */
+const ORCHESTRATOR_CHAT_HISTORY_MAX = 60;
 
 function pickNewestEmptyConversation(
   items: ConversationSummary[],
@@ -79,6 +83,7 @@ export default function Workspace() {
     token: string;
     summary: string;
   } | null>(null);
+  const [userTimeZone, setUserTimeZone] = useState<string | null>(null);
 
   const selectedProvider = useMemo(
     () => providers.find((item) => item.id === provider),
@@ -185,6 +190,13 @@ export default function Workspace() {
         setUiMode("intro");
       }
       setPendingWriteConfirmation(null);
+      try {
+        const profileRes = await getUserProfile(parsedUserId);
+        const loc = profileRes.data.data.user_location?.trim();
+        setUserTimeZone(loc || null);
+      } catch {
+        setUserTimeZone(null);
+      }
       setBootstrapped(true);
     } catch (err) {
       console.error(err);
@@ -403,10 +415,12 @@ export default function Workspace() {
         setActiveConversationId(conversationId);
       }
 
-      const history: ChatHistoryMessage[] = previousMessages.map((item) => ({
-        role: item.role,
-        content: item.content,
-      }));
+      const history: ChatHistoryMessage[] = previousMessages
+        .slice(-ORCHESTRATOR_CHAT_HISTORY_MAX)
+        .map((item) => ({
+          role: item.role,
+          content: item.content,
+        }));
       const response = await sendChatMessage({
         user_id: parsedUserId,
         conversation_id: conversationId,
@@ -441,6 +455,10 @@ export default function Workspace() {
           content: actionPreview?.requires_confirmation
             ? `${response.data.answer}\n\nProposed action: ${actionPreview.summary}\nReply 'confirm' to execute or 'cancel' to discard.`
             : response.data.answer,
+          toolInvocations:
+            response.data.tool_invocations.length > 0
+              ? response.data.tool_invocations
+              : undefined,
         },
       ]);
       setProvider(response.data.resolved_provider);
@@ -478,6 +496,7 @@ export default function Workspace() {
   const outletContext: WorkspaceOutletContext = {
     userId,
     setUserId,
+    userTimeZone,
     providers,
     provider,
     model,

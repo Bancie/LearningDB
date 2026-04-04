@@ -5,6 +5,8 @@ import type { UiMessage } from "~/components/chat/types";
 export type WorkspaceOutletContext = {
   userId: string;
   setUserId: (value: string) => void;
+  /** IANA timezone from USERS.USER_LOCATION; null if missing or invalid fetch. */
+  userTimeZone: string | null;
   providers: ProviderCatalogItem[];
   provider: string;
   model: string;

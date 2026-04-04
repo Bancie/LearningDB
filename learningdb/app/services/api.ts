@@ -141,4 +141,12 @@ export const checkPrior = () =>
 export const runBayes = (totalMinute?: number) =>
   api.get<{ data: BayesResult[] }>('/bayes/run', { params: { total_minute: totalMinute } });
 
+export interface UserProfile {
+  user_id: number;
+  user_location: string;
+}
+
+export const getUserProfile = (userId: number) =>
+  api.get<{ data: UserProfile }>(`/users/${userId}/profile`);
+
 export default api;

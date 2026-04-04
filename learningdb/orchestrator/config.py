@@ -17,14 +17,14 @@ class Settings:
     default_model: str = "gpt-4.1-mini"
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
-    request_timeout_seconds: float = 8.0
-    backend_max_retries: int = 2
+    request_timeout_seconds: float = 24.0
+    backend_max_retries: int = 6
     backend_retry_backoff_seconds: float = 0.35
-    tool_result_row_limit: int = 50
-    max_tool_round_trips: int = 4
+    tool_result_row_limit: int = 150
+    max_tool_round_trips: int = 12
     enable_audit_logs: bool = True
     write_table_allowlist: tuple[str, ...] = ("activity", "activity_log", "activity_output")
-    write_confirmation_ttl_seconds: int = 300
+    write_confirmation_ttl_seconds: int = 900
     write_confirmation_secret: str = "learningdb-local-confirmation-secret"
 
     @classmethod
@@ -41,14 +41,14 @@ class Settings:
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
             request_timeout_seconds=float(
-                os.getenv("ORCH_REQUEST_TIMEOUT_SECONDS", "8.0")
+                os.getenv("ORCH_REQUEST_TIMEOUT_SECONDS", "24.0")
             ),
-            backend_max_retries=int(os.getenv("ORCH_BACKEND_MAX_RETRIES", "2")),
+            backend_max_retries=int(os.getenv("ORCH_BACKEND_MAX_RETRIES", "6")),
             backend_retry_backoff_seconds=float(
                 os.getenv("ORCH_BACKEND_RETRY_BACKOFF_SECONDS", "0.35")
             ),
-            tool_result_row_limit=int(os.getenv("ORCH_TOOL_RESULT_ROW_LIMIT", "50")),
-            max_tool_round_trips=int(os.getenv("ORCH_MAX_TOOL_ROUND_TRIPS", "4")),
+            tool_result_row_limit=int(os.getenv("ORCH_TOOL_RESULT_ROW_LIMIT", "150")),
+            max_tool_round_trips=int(os.getenv("ORCH_MAX_TOOL_ROUND_TRIPS", "12")),
             enable_audit_logs=os.getenv("ORCH_ENABLE_AUDIT_LOGS", "1").lower()
             not in {"0", "false", "no"},
             write_table_allowlist=tuple(
@@ -60,7 +60,7 @@ class Settings:
                 if table.strip()
             ),
             write_confirmation_ttl_seconds=int(
-                os.getenv("ORCH_WRITE_CONFIRMATION_TTL_SECONDS", "300")
+                os.getenv("ORCH_WRITE_CONFIRMATION_TTL_SECONDS", "900")
             ),
             write_confirmation_secret=os.getenv(
                 "ORCH_WRITE_CONFIRMATION_SECRET",

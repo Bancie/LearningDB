@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from time import perf_counter
 from typing import Any, Awaitable, Callable
 
@@ -13,6 +14,7 @@ from ..guardrails import clamp_limit, enforce_write_table_allowed
 from .http_client import BackendApiClient
 from .models import (
     CheckPriorInput,
+    GetServerTimeInput,
     GetTableColumnsInput,
     GetTablesInput,
     InsertRecordInput,
@@ -108,6 +110,17 @@ def build_tool_registry(client: BackendApiClient, settings: Settings) -> dict[st
         endpoint = "/bayes/check-prior"
         payload = await client.get_json(endpoint)
         return _normalize_result(payload, endpoint, settings.tool_result_row_limit)
+
+    async def get_server_time(args: dict[str, Any]) -> dict[str, Any]:
+        GetServerTimeInput.model_validate(args)
+        now = datetime.now(timezone.utc).replace(microsecond=0)
+        utc_iso8601 = now.isoformat().replace("+00:00", "Z")
+        utc_sql_datetime = now.strftime("%Y-%m-%d %H:%M:%S")
+        return {
+            "utc_iso8601": utc_iso8601,
+            "utc_sql_datetime": utc_sql_datetime,
+            "source_endpoint": "orchestrator:get_server_time",
+        }
 
     async def get_tables(args: dict[str, Any]) -> dict[str, Any]:
         GetTablesInput.model_validate(args)
@@ -224,6 +237,17 @@ def build_tool_registry(client: BackendApiClient, settings: Settings) -> dict[st
             endpoint="/bayes/check-prior",
             input_schema=CheckPriorInput,
             handler=check_prior,
+        ),
+        ToolDefinition(
+            name="get_server_time",
+            description=(
+                "Current UTC wall time on the server: iso8601 (Z) and SQL datetime "
+                "YYYY-MM-DD HH:MM:SS. Use when the user says now/current time/hiện tại "
+                "for timestamp fields; never invent a clock time."
+            ),
+            endpoint="orchestrator:get_server_time",
+            input_schema=GetServerTimeInput,
+            handler=get_server_time,
         ),
         ToolDefinition(
             name="get_tables",

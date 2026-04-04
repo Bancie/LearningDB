@@ -26,14 +26,19 @@ READ_ONLY_SYSTEM_PROMPT = (
     "You are the LearningDB assistant. "
     "You must use tools for factual database answers. "
     "Only use read-only tools. Never execute or suggest write actions. "
-    "If required data is missing, ask a short clarifying question."
+    "If required data is missing, ask a short clarifying question. "
+    "When the user needs the exact current time (e.g. comparing to logs), call get_server_time; "
+    "never guess the wall clock."
 )
 
 WRITE_ENABLED_SYSTEM_PROMPT = (
     "You are the LearningDB assistant. "
     "You can use both read and write tools to add or update data when explicitly requested. "
     "Never use or suggest any delete/remove operation. "
-    "Before write actions, ask short clarification if required fields are missing."
+    "Before write actions, ask short clarification if required fields are missing. "
+    "When the user gives a relative time for a datetime field (e.g. now, current time, hiện tại, bây giờ), "
+    "call get_server_time and use utc_sql_datetime from the tool result in insert_record or patch_table_row; "
+    "never invent timestamps."
 )
 
 
@@ -41,6 +46,11 @@ WRITE_ENABLED_SYSTEM_PROMPT = (
 class OrchestratorRuntime:
     settings: Settings
     backend_client: BackendApiClient
+
+
+def _tool_output_for_client(payload: dict[str, Any]) -> dict[str, Any]:
+    """Make tool payloads JSON-safe for API responses."""
+    return json.loads(json.dumps(payload, default=str))
 
 
 class ChatOrchestrator:
@@ -387,6 +397,11 @@ class ChatOrchestrator:
                             return response
                     payload, latency_ms = await run_tool(self._registry, tool_name, raw_args)
                     content = json.dumps(payload, ensure_ascii=True)
+                    client_output = (
+                        _tool_output_for_client(payload)
+                        if not is_write_tool(tool_name)
+                        else None
+                    )
                     tool_invocations.append(
                         ToolInvocation(
                             name=tool_name,
@@ -394,6 +409,7 @@ class ChatOrchestrator:
                             input=raw_args,
                             source_endpoint=payload.get("source_endpoint", ""),
                             latency_ms=latency_ms,
+                            output=client_output,
                         )
                     )
                     if self._settings.enable_audit_logs:

@@ -256,8 +256,8 @@ def insert_record(table_name: str, data: dict):
     return {"success": True, "message": f"Record inserted into {table_name}"}
 
 
-TABLE_ROWS_MAX_LIMIT = 200
-TABLE_ROWS_DEFAULT_LIMIT = 50
+TABLE_ROWS_MAX_LIMIT = 600
+TABLE_ROWS_DEFAULT_LIMIT = 150
 
 
 def _table_browser_denylist() -> set[str]:
@@ -453,6 +453,31 @@ def ensure_chat_preference_table() -> None:
                 """
             )
         )
+
+
+def get_user_profile(user_id: int) -> dict | None:
+    """
+    Return USER_ID and USER_LOCATION from USERS.
+
+    USER_LOCATION is expected to be an IANA timezone id (e.g. Asia/Ho_Chi_Minh) for client display.
+    """
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT `USER_ID`, `USER_LOCATION`
+                FROM `USERS`
+                WHERE `USER_ID` = :user_id
+                """
+            ),
+            {"user_id": user_id},
+        ).mappings().first()
+    if not row:
+        return None
+    return {
+        "user_id": int(row["USER_ID"]),
+        "user_location": str(row["USER_LOCATION"]),
+    }
 
 
 def get_chat_preference(user_id: int) -> dict | None:

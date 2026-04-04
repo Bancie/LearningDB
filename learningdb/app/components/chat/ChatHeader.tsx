@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import type { ProviderCatalogItem } from "~/services/orchestrator";
 
 type ChatHeaderProps = {
@@ -29,6 +29,8 @@ type ChatHeaderProps = {
   onBootstrap: () => Promise<void>;
   onProviderChange: (event: SelectChangeEvent) => Promise<void>;
   onModelChange: (event: SelectChangeEvent) => Promise<void>;
+  /** Rendered after provider/model caption, immediately before the chat options icon. */
+  beforeChatOptions?: ReactNode;
 };
 
 export default function ChatHeader({
@@ -44,6 +46,7 @@ export default function ChatHeader({
   onBootstrap,
   onProviderChange,
   onModelChange,
+  beforeChatOptions,
 }: ChatHeaderProps) {
   const popoverId = useId();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -97,6 +100,7 @@ export default function ChatHeader({
         >
           {providerLabel} · {modelLabel}
         </Typography>
+        {beforeChatOptions}
         <IconButton
           size="small"
           aria-label="Chat options"

@@ -40,6 +40,7 @@ export default function Home() {
     sendMessage,
     createNewConversation,
     isCreatingConversation,
+    userTimeZone,
   } = useOutletContext<WorkspaceOutletContext>();
 
   const chatHeaderProps = {
@@ -119,8 +120,7 @@ export default function Home() {
                 color="text.secondary"
                 sx={{ textAlign: "center", maxWidth: 640 }}
               >
-                Chat naturally, AI will help you query and summarize your study
-                data.
+                Chat naturally to explore your data - import, edit, and refine it in conversation, and let AI help you query and summarize what matters.
               </Typography>
               <Stack
                 direction="row"
@@ -172,57 +172,6 @@ export default function Home() {
             minHeight: 0,
           }}
         >
-          <Box
-            sx={{
-              flexShrink: 0,
-              alignSelf: "stretch",
-              width: "100%",
-              mb: { xs: 1, sm: 1.25 },
-              px: { xs: 1.5, sm: 2, md: 2.5 },
-              display: "flex",
-              flexDirection: { xs: "row", sm: "column" },
-              alignItems: { xs: "flex-start", sm: "flex-start" },
-              justifyContent: { xs: "space-between", sm: "flex-start" },
-              gap: { xs: 1, sm: 0 },
-            }}
-          >
-            <Box
-              sx={{ flex: 1, minWidth: 0, maxWidth: { sm: "min(560px, 72%)" } }}
-            >
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 700, lineHeight: 1.3 }}
-              >
-                Ask LearningDB AI
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ mt: 0.5 }}
-              >
-                Trao doi tu nhien, AI se giup truy van va tom tat du lieu hoc
-                tap.
-              </Typography>
-            </Box>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => void createNewConversation()}
-              disabled={isCreatingConversation || isSending}
-              aria-label={
-                isCreatingConversation ? "Creating conversation" : "New chat"
-              }
-              sx={{
-                display: { xs: "inline-flex", sm: "none" },
-                flexShrink: 0,
-                minWidth: 40,
-                px: 1,
-              }}
-            >
-              <AddCommentRoundedIcon aria-hidden />
-            </Button>
-          </Box>
-
           <Stack
             spacing={1.25}
             sx={{
@@ -243,15 +192,67 @@ export default function Home() {
           >
             <Stack
               direction="row"
-              justifyContent="flex-end"
-              sx={{ flexShrink: 0, width: "100%" }}
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ flexShrink: 0, width: "100%", gap: 1 }}
             >
-              <ChatHeader {...chatHeaderProps} />
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  lineHeight: 1.3,
+                  minWidth: 0,
+                  flexShrink: 1,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Ask LearningDB AI
+              </Typography>
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <ChatHeader
+                  {...chatHeaderProps}
+                  beforeChatOptions={
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<AddCommentRoundedIcon />}
+                      onClick={() => void createNewConversation()}
+                      disabled={isCreatingConversation || isSending}
+                      aria-label={
+                        isCreatingConversation
+                          ? "Creating conversation"
+                          : "New chat"
+                      }
+                      sx={{
+                        display: { xs: "inline-flex", sm: "none" },
+                        flexShrink: 0,
+                        textTransform: "none",
+                        px: 1.25,
+                      }}
+                    >
+                      New chat
+                    </Button>
+                  }
+                />
+              </Box>
             </Stack>
 
             {error && <Alert severity="error">{error}</Alert>}
 
-            <ChatMessageList messages={messages} isSending={isSending} />
+            <ChatMessageList
+              messages={messages}
+              isSending={isSending}
+              userTimeZone={userTimeZone}
+            />
 
             <Box sx={{ flexShrink: 0, width: "100%", pt: 0.25 }}>
               <ChatComposer

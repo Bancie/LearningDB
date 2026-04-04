@@ -1,8 +1,11 @@
+import type { ChatToolInvocation } from "~/services/orchestrator";
+
 export type UiMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
+  toolInvocations?: ChatToolInvocation[];
 };
 
 export type ConversationSummary = {

@@ -13,6 +13,7 @@ READ_ONLY_TOOLS = {
     "get_current_activity_output",
     "run_bayes",
     "check_prior",
+    "get_server_time",
     "get_tables",
     "get_table_columns",
 }
@@ -56,7 +57,7 @@ def enforce_write_table_allowed(table_name: str, allowlist: tuple[str, ...]) -> 
     return normalized
 
 
-def clamp_limit(raw_limit: int | None, default_limit: int, max_limit: int = 200) -> int:
+def clamp_limit(raw_limit: int | None, default_limit: int, max_limit: int = 600) -> int:
     """Bound user/model-provided row limits to a safe range."""
     if raw_limit is None:
         return default_limit

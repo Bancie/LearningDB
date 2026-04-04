@@ -44,6 +44,8 @@ export interface ChatToolInvocation {
   source_endpoint: string;
   latency_ms: number;
   error?: string | null;
+  /** Present for successful read-only tool calls only. */
+  output?: Record<string, unknown> | null;
 }
 
 export interface ChatResponse {

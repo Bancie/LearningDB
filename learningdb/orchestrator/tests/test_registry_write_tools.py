@@ -3,6 +3,7 @@ from typing import Any
 
 from learningdb.orchestrator.config import Settings
 from learningdb.orchestrator.exceptions import GuardrailViolation
+from learningdb.orchestrator.guardrails import enforce_tool_allowlist
 from learningdb.orchestrator.tools.registry import build_tool_registry
 
 
@@ -84,3 +85,31 @@ def test_insert_record_blocks_disallowed_table() -> None:
         assert False, "Expected GuardrailViolation"
     except GuardrailViolation:
         assert True
+
+
+def test_get_server_time_in_registry_no_http() -> None:
+    settings = Settings()
+    client = _FakeClient()
+    registry = build_tool_registry(client, settings)
+
+    assert "get_server_time" in registry
+    assert client.calls == []
+
+
+def test_get_server_time_returns_utc_fields() -> None:
+    settings = Settings()
+    client = _FakeClient()
+    registry = build_tool_registry(client, settings)
+
+    payload = asyncio.run(registry["get_server_time"].handler({}))
+    assert payload["source_endpoint"] == "orchestrator:get_server_time"
+    assert "utc_iso8601" in payload
+    assert "utc_sql_datetime" in payload
+    assert payload["utc_iso8601"].endswith("Z")
+    parts = payload["utc_sql_datetime"].split()
+    assert len(parts) == 2
+    assert client.calls == []
+
+
+def test_get_server_time_allowed_in_read_only_mode() -> None:
+    enforce_tool_allowlist("get_server_time", allow_write=False)
