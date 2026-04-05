@@ -61,6 +61,8 @@ services:
       context: .
       dockerfile: learningdb/orchestrator/Dockerfile
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       ORCH_BACKEND_BASE_URL: http://api:8000/api
       ORCH_DEFAULT_PROVIDER: ${ORCH_DEFAULT_PROVIDER:-openai}
@@ -71,6 +73,13 @@ services:
       ORCH_WRITE_CONFIRMATION_SECRET: ${ORCH_WRITE_CONFIRMATION_SECRET:-learningdb-local-confirmation-secret}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Ollama: default host.docker.internal so a host-run Ollama is reachable from this container.
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      ORCH_OLLAMA_API_KEY: ${ORCH_OLLAMA_API_KEY:-}
+      ORCH_OLLAMA_BASE_URL: ${ORCH_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      ORCH_OLLAMA_ENABLE_LOCAL: ${ORCH_OLLAMA_ENABLE_LOCAL:-}
+      ORCH_OLLAMA_FALLBACK_BASE_URL: ${ORCH_OLLAMA_FALLBACK_BASE_URL:-http://host.docker.internal:11434}
+      ORCH_OLLAMA_FALLBACK_MODEL: ${ORCH_OLLAMA_FALLBACK_MODEL:-}
       ORCH_APP_HOST: 0.0.0.0
       ORCH_APP_PORT: 8100
     ports:

@@ -11,6 +11,8 @@ class ModelDescriptor:
     model: str
     label: str
     env_key: str
+    #: When True, catalog marks the model available if ORCH_OLLAMA_ENABLE_LOCAL is truthy.
+    ollama_local: bool = False
 
 
 SUPPORTED_MODELS: dict[str, list[ModelDescriptor]] = {
@@ -42,6 +44,22 @@ SUPPORTED_MODELS: dict[str, list[ModelDescriptor]] = {
             env_key="ANTHROPIC_API_KEY",
         ),
     ],
+    "ollama": [
+        ModelDescriptor(
+            provider="ollama",
+            model="gemma4:31b-cloud",
+            label="Gemma 4 31B (Cloud)",
+            env_key="OLLAMA_API_KEY",
+            ollama_local=False,
+        ),
+        ModelDescriptor(
+            provider="ollama",
+            model="gemma4:e4b",
+            label="Gemma 4 E4B (Local)",
+            env_key="ORCH_OLLAMA_ENABLE_LOCAL",
+            ollama_local=True,
+        ),
+    ],
 }
 
 
@@ -66,7 +84,16 @@ def provider_catalog_for_ui(env: dict[str, str | None]) -> list[dict[str, object
         models = []
         provider_available = False
         for item in options:
-            available = bool(env.get(item.env_key))
+            if item.provider == "ollama":
+                if item.ollama_local:
+                    flag = (env.get("ORCH_OLLAMA_ENABLE_LOCAL") or "").strip().lower()
+                    available = flag in {"1", "true", "yes", "on"}
+                else:
+                    key_a = (env.get("OLLAMA_API_KEY") or "").strip()
+                    key_b = (env.get("ORCH_OLLAMA_API_KEY") or "").strip()
+                    available = bool(key_a or key_b)
+            else:
+                available = bool(env.get(item.env_key))
             provider_available = provider_available or available
             models.append(
                 {

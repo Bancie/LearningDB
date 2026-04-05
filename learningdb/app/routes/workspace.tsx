@@ -14,6 +14,7 @@ import {
   type ChatHistoryMessage,
   type ProviderCatalogItem,
 } from "~/services/orchestrator";
+import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
@@ -27,6 +28,35 @@ const toMessageId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random()}`;
+
+const CHAT_SEND_FAILURE_INTRO_VI =
+  "He thong dang gap su co khi goi provider/model hoac backend. Ban thu lai sau.";
+
+function formatSendChatFailureDetail(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const status = err.response?.status;
+    const data = err.response?.data as Record<string, unknown> | undefined;
+    const detail = data?.detail;
+    if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+      const msg = (detail as { message?: string }).message;
+      const code = (detail as { error_code?: string }).error_code;
+      if (msg && msg.trim()) {
+        const extra = code ? ` (${code})` : "";
+        return `${CHAT_SEND_FAILURE_INTRO_VI}\n\nChi tiet: ${msg.trim()}${extra}`;
+      }
+    }
+    if (typeof detail === "string" && detail.trim()) {
+      return `${CHAT_SEND_FAILURE_INTRO_VI}\n\nChi tiet: ${detail.trim().slice(0, 500)}`;
+    }
+    if (status) {
+      return `${CHAT_SEND_FAILURE_INTRO_VI}\n\n(HTTP ${status})`;
+    }
+    if (err.code === "ERR_NETWORK") {
+      return `${CHAT_SEND_FAILURE_INTRO_VI}\n\n(Khong ket noi duoc toi orchestrator.)`;
+    }
+  }
+  return CHAT_SEND_FAILURE_INTRO_VI;
+}
 
 /** Keep in sync with `ChatRequest.history` max_length in learningdb/orchestrator/schemas.py */
 const ORCHESTRATOR_CHAT_HISTORY_MAX = 60;
@@ -473,8 +503,7 @@ export default function Workspace() {
         {
           id: toMessageId(),
           role: "assistant",
-          content:
-            "He thong dang gap su co khi goi provider/model hoac backend. Ban thu lai sau.",
+          content: formatSendChatFailureDetail(err),
         },
       ]);
     } finally {

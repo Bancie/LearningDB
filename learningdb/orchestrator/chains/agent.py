@@ -12,7 +12,7 @@ from ..audit import logger, mask_sensitive
 from ..config import Settings
 from ..exceptions import GuardrailViolation
 from ..guardrails import enforce_tool_allowlist, is_write_tool, require_user_id
-from ..llm_factory import build_chat_model
+from ..llm_factory import build_chat_model, make_ollama_chat_model
 from ..providers import get_default_model_for_provider, is_supported_model
 from ..request_context import chat_user_timezone
 from ..schemas import ChatRequest, ChatResponse, ToolInvocation
@@ -73,6 +73,47 @@ def _tool_output_for_client(payload: dict[str, Any]) -> dict[str, Any]:
     return json.loads(json.dumps(payload, default=str))
 
 
+def _with_extra_warnings(extra: list[str], *tail: str) -> list[str]:
+    return [*extra, *tail]
+
+
+def _ollama_error_triggers_local_fallback(exc: BaseException) -> bool:
+    """
+    When primary Ollama endpoint fails with rate limit, quota, or transient cloud
+    errors, allow one switch to ORCH_OLLAMA_FALLBACK_* (same as ainvoke wrapper).
+    """
+    try:
+        import httpx
+    except ImportError:
+        httpx = None  # type: ignore[assignment]
+
+    fallback_statuses = frozenset({429, 500, 502, 503, 504})
+    seen: set[int] = set()
+    stack: list[BaseException] = [exc]
+    while stack:
+        err = stack.pop()
+        eid = id(err)
+        if eid in seen:
+            continue
+        seen.add(eid)
+        if httpx is not None and isinstance(err, httpx.HTTPStatusError):
+            if err.response.status_code in fallback_statuses:
+                return True
+        low = str(err).lower()
+        if "429" in low or "too many requests" in low or "resource exhausted" in low:
+            return True
+        if "internal server error" in low and "status code: 500" in low:
+            return True
+        if any(f"status code: {c}" in low for c in ("502", "503", "504")):
+            return True
+        if err.__cause__ is not None:
+            stack.append(err.__cause__)
+        ctx = err.__context__
+        if ctx is not None and ctx is not err.__cause__:
+            stack.append(ctx)
+    return False
+
+
 class ChatOrchestrator:
     """Executes a tool-calling loop using LangChain chat model."""
 
@@ -104,6 +145,39 @@ class ChatOrchestrator:
             return json.dumps(payload, ensure_ascii=True)
 
         return _runner
+
+    async def _ainvoke_ollama_maybe_fallback(
+        self,
+        resolved_provider: str,
+        llm_tools_ref: list[Any],
+        model_ref: list[str],
+        messages: list[Any],
+        extra_warnings: list[str],
+    ) -> Any:
+        try:
+            return await llm_tools_ref[0].ainvoke(messages)
+        except Exception as exc:
+            fb_model = self._settings.ollama_fallback_model
+            if (
+                resolved_provider != "ollama"
+                or not self._settings.ollama_fallback_base_url
+                or not fb_model
+                or not _ollama_error_triggers_local_fallback(exc)
+                or model_ref[0] == fb_model
+            ):
+                raise
+            fb_url = self._settings.ollama_fallback_base_url
+            llm = make_ollama_chat_model(
+                self._settings,
+                model=fb_model,
+                base_url=fb_url,
+                api_key=None,
+            )
+            llm_tools_ref[0] = llm.bind_tools(self._langchain_tools)
+            model_ref[0] = fb_model
+            if "ollama_fallback_local" not in extra_warnings:
+                extra_warnings.append("ollama_fallback_local")
+            return await llm_tools_ref[0].ainvoke(messages)
 
     def _build_write_summary(self, tool_name: str, args: dict[str, Any]) -> str:
         if tool_name == "insert_record":
@@ -337,9 +411,19 @@ class ChatOrchestrator:
         messages.append(HumanMessage(content=chat.message))
 
         tool_invocations: list[ToolInvocation] = []
+        extra_warnings: list[str] = []
+        llm_tools_ref: list[Any] = [llm_with_tools]
+        model_ref: list[str] = [resolved_model]
 
         for _ in range(self._settings.max_tool_round_trips):
-            ai_response = await llm_with_tools.ainvoke(messages)
+            ai_response = await self._ainvoke_ollama_maybe_fallback(
+                resolved_provider,
+                llm_tools_ref,
+                model_ref,
+                messages,
+                extra_warnings,
+            )
+            resolved_model = model_ref[0]
             messages.append(ai_response)
             tool_calls = getattr(ai_response, "tool_calls", None) or []
             if not tool_calls:
@@ -363,7 +447,7 @@ class ChatOrchestrator:
                     resolved_provider=resolved_provider,
                     resolved_model=resolved_model,
                     tool_invocations=tool_invocations,
-                    warnings=[],
+                    warnings=_with_extra_warnings(extra_warnings),
                 )
 
             for call in tool_calls:
@@ -395,7 +479,13 @@ class ChatOrchestrator:
                                 assistant_message=response.answer,
                                 request_id=request_id,
                             )
-                            return response
+                            return response.model_copy(
+                                update={
+                                    "warnings": _with_extra_warnings(
+                                        extra_warnings, *response.warnings
+                                    )
+                                }
+                            )
                         if not verify_confirmation_token(
                             token=token,
                             user_id=chat.user_id,
@@ -413,7 +503,9 @@ class ChatOrchestrator:
                                 resolved_provider=resolved_provider,
                                 resolved_model=resolved_model,
                                 tool_invocations=[],
-                                warnings=["write_confirmation_invalid"],
+                                warnings=_with_extra_warnings(
+                                    extra_warnings, "write_confirmation_invalid"
+                                ),
                                 action_preview=None,
                             )
                             await self._persist_chat_turn(
@@ -516,7 +608,9 @@ class ChatOrchestrator:
             resolved_provider=resolved_provider,
             resolved_model=resolved_model,
             tool_invocations=tool_invocations,
-            warnings=["tool_round_trip_limit_reached"],
+            warnings=_with_extra_warnings(
+                extra_warnings, "tool_round_trip_limit_reached"
+            ),
         )
 
     async def _get_user_preference(self, user_id: int) -> dict[str, str]:

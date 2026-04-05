@@ -97,6 +97,9 @@ async def providers_endpoint() -> list[ProviderCatalogItem]:
     env = {
         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
         "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
+        "OLLAMA_API_KEY": os.getenv("OLLAMA_API_KEY"),
+        "ORCH_OLLAMA_API_KEY": os.getenv("ORCH_OLLAMA_API_KEY"),
+        "ORCH_OLLAMA_ENABLE_LOCAL": os.getenv("ORCH_OLLAMA_ENABLE_LOCAL"),
     }
     return provider_catalog_for_ui(env)
 

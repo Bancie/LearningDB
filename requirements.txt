@@ -85,5 +85,6 @@ httpx
 langchain
 langchain-openai
 langchain-anthropic
+langchain-ollama
 openai
 anthropic

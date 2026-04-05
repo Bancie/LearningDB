@@ -17,6 +17,10 @@ class Settings:
     default_model: str = "gpt-4.1-mini"
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_api_key: str | None = None
+    ollama_fallback_base_url: str | None = None
+    ollama_fallback_model: str | None = None
     request_timeout_seconds: float = 24.0
     backend_max_retries: int = 6
     backend_retry_backoff_seconds: float = 0.35
@@ -40,6 +44,20 @@ class Settings:
             default_model=os.getenv("ORCH_DEFAULT_MODEL", "gpt-4.1-mini"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
+            ollama_base_url=os.getenv(
+                "ORCH_OLLAMA_BASE_URL", "http://127.0.0.1:11434"
+            ).rstrip("/"),
+            ollama_api_key=os.getenv("OLLAMA_API_KEY")
+            or os.getenv("ORCH_OLLAMA_API_KEY")
+            or None,
+            ollama_fallback_base_url=(
+                (u := os.getenv("ORCH_OLLAMA_FALLBACK_BASE_URL", "").strip()) and u.rstrip("/")
+            )
+            or None,
+            ollama_fallback_model=(
+                (m := os.getenv("ORCH_OLLAMA_FALLBACK_MODEL", "").strip()) and m
+            )
+            or None,
             request_timeout_seconds=float(
                 os.getenv("ORCH_REQUEST_TIMEOUT_SECONDS", "24.0")
             ),

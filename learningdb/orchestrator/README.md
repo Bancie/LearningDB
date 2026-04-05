@@ -35,6 +35,22 @@ The `POST /chat` response field `answer` is the full assistant reply string (typ
 - `ORCH_BACKEND_MAX_RETRIES`: default `2`.
 - `ORCH_BACKEND_RETRY_BACKOFF_SECONDS`: default `0.35`.
 
+### Ollama (local or cloud)
+
+- `ORCH_OLLAMA_BASE_URL`: Ollama API base URL. Use `http://127.0.0.1:11434` when the orchestrator process runs on the same host as Ollama. When the orchestrator runs **inside Docker** and Ollama runs on the host, use `http://host.docker.internal:11434` (Compose in this repo sets `extra_hosts` for Linux). Point at your Ollama Cloud base URL when using cloud-hosted models.
+- `OLLAMA_API_KEY` / `ORCH_OLLAMA_API_KEY`: optional bearer for Ollama Cloud; passed to `ChatOllama` when set.
+- `ORCH_OLLAMA_ENABLE_LOCAL`: set to `1`, `true`, `yes`, or `on` so the `/providers` catalog marks local allowlisted models (e.g. `gemma4:e4b`) as available without a cloud key.
+- `ORCH_OLLAMA_FALLBACK_BASE_URL` + `ORCH_OLLAMA_FALLBACK_MODEL`: when both are set, a single failure from the primary Ollama endpoint with **HTTP 429**, **5xx** (500/502/503/504), or Ollama-cloud-style `Internal Server Error … (status code: 500)` triggers one switch to this fallback model for the rest of the request; responses may include warning `ollama_fallback_local`.
+
+Allowlisted Ollama model tags are defined in `orchestrator/providers.py` and must match `ollama list` on your machine.
+
+### Manual smoke test (Ollama + tools)
+
+1. Run `ollama serve` (or ensure your cloud URL is reachable) and pull an allowlisted model.
+2. Set `ORCH_DEFAULT_PROVIDER=ollama`, `ORCH_DEFAULT_MODEL` to that tag, and `ORCH_OLLAMA_ENABLE_LOCAL=1` if using a local-tagged model.
+3. Start the orchestrator with `PYTHONPATH=/path/to/repo` (repo root) so `learningdb` imports resolve (see Run below).
+4. `POST /chat` with a message that should trigger a read-only tool (e.g. listing activities); confirm `tool_invocations` in the response is non-empty when the model cooperates.
+
 ## Run
 
 ```bash

@@ -206,7 +206,12 @@ export default function ChatHeader({
                     sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}
                   >
                     <Box component="span" sx={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {item.label} {item.available ? "" : "(missing API key)"}
+                      {item.label}{" "}
+                      {item.available
+                        ? ""
+                        : item.id === "ollama"
+                          ? "(not configured)"
+                          : "(missing API key)"}
                     </Box>
                     <ChevronRightRoundedIcon fontSize="small" sx={{ opacity: 0.6 }} />
                   </MenuItem>
