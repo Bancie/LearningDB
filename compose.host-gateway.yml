@@ -1,0 +1,8 @@
+# Optional: use with plain Docker Engine on Linux so containers can reach services on the host
+# (e.g. Ollama on localhost:11434). Docker Desktop usually already provides host.docker.internal.
+#
+#   docker compose -f compose.yml -f compose.host-gateway.yml up -d
+services:
+  orchestrator:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

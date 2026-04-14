@@ -1,0 +1,12 @@
+# Temporary override for Docker-in-restricted-VM: use host network during image build
+# so RUN pip/npm can resolve DNS. Not required on a normal Docker Desktop machine.
+services:
+  api:
+    build:
+      network: host
+  orchestrator:
+    build:
+      network: host
+  web:
+    build:
+      network: host
