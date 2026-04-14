@@ -9,6 +9,9 @@ export function resolveOrchestratorBaseUrl(): string {
   if (typeof window === "undefined") {
     return fallback;
   }
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_MOCK_API === "true") {
+    return `${window.location.origin}/orch`;
+  }
   const { protocol, hostname } = window.location;
   return `${protocol}//${hostname}:8100`;
 }
@@ -17,6 +20,9 @@ export function resolveBackendApiBaseUrl(): string {
   const fallback = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
   if (typeof window === "undefined") {
     return fallback;
+  }
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_MOCK_API === "true") {
+    return `${window.location.origin}/api`;
   }
   const { protocol, hostname } = window.location;
   return `${protocol}//${hostname}:8000/api`;

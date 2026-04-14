@@ -240,6 +240,18 @@ Mặc định:
 - Web dev: `http://localhost:5173`
 - API: `http://localhost:8000`
 
+### 7.4 Chỉ frontend, không cần MySQL / backend (mock API)
+
+Khi chỉ cần UI đầy đủ với dữ liệu giả (không Docker, không DB):
+
+```bash
+cd learningdb
+npm install
+npm run dev:mock
+```
+
+Trình duyệt mở `http://localhost:5173`. Vite phục vụ `/api/*` và `/orch/*` trong bộ nhớ (hoạt động, danh sách, chat echo…). Dữ liệu **không** ghi ra đĩa; phù hợp dev giao diện, không thay thế kiểm thử tích hợp với backend thật.
+
 ## 8. Cách sử dụng nhanh
 
 ### Chat read-only
