@@ -1,0 +1,8 @@
+{
+  "primary_key": {
+    "ACTIVITY_ID": 1
+  },
+  "updates": {
+    "ACT_NAME": "Renamed activity"
+  }
+}

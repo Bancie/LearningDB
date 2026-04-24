@@ -30,7 +30,10 @@ Ensure the API is reachable (e.g. `docker compose up api` or your usual backend)
 
 ## Design / Stitch
 
-Export assets under `design/stitch/` and wire tokens through `app/design-tokens.ts` and `app/theme.ts` as needed. See `design/stitch/README.md`.
+- **API context for Stitch / agents** (OpenAPI snapshot, `API_BRIEF.md`, JSON examples, Postman): [`design/stitch-context/README.md`](design/stitch-context/README.md).
+- **Visual / tokens** from Stitch: `design/stitch/` — see [`design/stitch/README.md`](design/stitch/README.md); wire through `app/design-tokens.ts` and `app/theme.ts` as needed.
+
+Refresh OpenAPI after backend changes: `./scripts/fetch-openapi.sh` (API must be on port 8000).
 
 ## Docker Compose
 

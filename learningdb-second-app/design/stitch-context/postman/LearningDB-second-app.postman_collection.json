@@ -1,0 +1,63 @@
+{
+  "info": {
+    "name": "LearningDB second app (FastAPI CRUD)",
+    "description": "Minimal requests aligned with learningdb-second-app/app/services/api.ts. Set baseUrl to your API (default localhost:8000/api).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api"
+    },
+    {
+      "key": "tableName",
+      "value": "activity"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Tables list",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/tables"
+      }
+    },
+    {
+      "name": "Table columns",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/tables/{{tableName}}/columns"
+      }
+    },
+    {
+      "name": "Table rows",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/tables/{{tableName}}/rows?limit=20&offset=0"
+      }
+    },
+    {
+      "name": "Insert row",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"table_name\": \"activity\",\n  \"data\": { \"ACT_NAME\": \"From Postman\" }\n}"
+        },
+        "url": "{{baseUrl}}/tables/insert"
+      }
+    }
+  ]
+}

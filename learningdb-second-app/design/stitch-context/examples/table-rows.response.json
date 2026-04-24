@@ -1,0 +1,10 @@
+{
+  "rows": [
+    {
+      "ACTIVITY_ID": 1,
+      "ACT_NAME": "Sample activity",
+      "ACT_STATUS": "active"
+    }
+  ],
+  "total": 1
+}

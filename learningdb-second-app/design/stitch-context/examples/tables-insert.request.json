@@ -1,0 +1,7 @@
+{
+  "table_name": "activity",
+  "data": {
+    "ACT_NAME": "New row",
+    "ACT_STATUS": "active"
+  }
+}

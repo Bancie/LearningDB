@@ -1,0 +1,7 @@
+{
+  "tables": [
+    "activity",
+    "activity_log",
+    "activity_output"
+  ]
+}
