@@ -1,5 +1,9 @@
 # LearningDB
 
+## Second web app (CRUD)
+
+The experimental CRUD-only UI lives in [`learningdb-second-app/`](learningdb-second-app/) (dev on **port 3001**, Docker Compose service `web-second` on **3001**). See that folder’s README for commands.
+
 ## Committing submodule changes
 
 When the `learningdb` submodule has modified or untracked changes, commit them **inside the submodule first**, then update the parent repo.

@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+html[data-theme="light"] body,
+html:not([data-theme]) body {
+  background: radial-gradient(circle at top, #f8fbff 0%, #f3f6fb 55%, #edf2fa 100%);
+}
+
+html[data-theme="dark"] body {
+  background: radial-gradient(circle at top, #1a2332 0%, #0f1419 55%, #0a0e14 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
