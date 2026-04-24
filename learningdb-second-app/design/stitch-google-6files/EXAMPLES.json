@@ -1,0 +1,59 @@
+{
+  "healthResponse": {
+    "status": "healthy"
+  },
+  "tablesResponse": {
+    "tables": ["activity", "activity_log", "activity_output"]
+  },
+  "tableColumnsResponse": {
+    "columns": [
+      {
+        "name": "ACTIVITY_ID",
+        "type": "INTEGER",
+        "nullable": false,
+        "is_primary_key": true,
+        "autoincrement": true
+      },
+      {
+        "name": "ACT_NAME",
+        "type": "VARCHAR",
+        "nullable": false,
+        "is_primary_key": false,
+        "autoincrement": false
+      },
+      {
+        "name": "ACT_STATUS",
+        "type": "VARCHAR",
+        "nullable": true,
+        "is_primary_key": false,
+        "autoincrement": false,
+        "enums": ["active", "inactive"]
+      }
+    ]
+  },
+  "tableRowsResponse": {
+    "rows": [
+      {
+        "ACTIVITY_ID": 1,
+        "ACT_NAME": "Sample activity",
+        "ACT_STATUS": "active"
+      }
+    ],
+    "total": 1
+  },
+  "tablesInsertRequest": {
+    "table_name": "activity",
+    "data": {
+      "ACT_NAME": "New row",
+      "ACT_STATUS": "active"
+    }
+  },
+  "tablesPatchRequest": {
+    "primary_key": {
+      "ACTIVITY_ID": 1
+    },
+    "updates": {
+      "ACT_NAME": "Renamed activity"
+    }
+  }
+}

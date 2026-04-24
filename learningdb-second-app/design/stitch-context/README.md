@@ -14,6 +14,14 @@ Bundle này giúp **Google Stitch** (hoặc agent front-end khác) hiểu contra
 
 Visual tokens / export Stitch UI đặt ở [`../stitch/README.md`](../stitch/README.md) (khác thư mục này).
 
+## Google Stitch — giới hạn 6 file upload
+
+Nếu Stitch chỉ cho **6 file**, dùng bản gom sẵn (cùng nội dung, không xóa thư mục này):
+
+- **[`../stitch-google-6files/`](../stitch-google-6files/)** — đúng 6 file: `API_CONTEXT.md`, `openapi.snapshot.json`, `EXAMPLES.json`, `postman.collection.json`, `TYPESCRIPT_REFERENCE.md`, `STITCH_SEED_PROMPT.md`.
+
+Sau khi refresh OpenAPI trong `stitch-context`, copy `openapi.snapshot.json` (và chỉnh `EXAMPLES.json` / Postman nếu cần) vào `stitch-google-6files/` để hai bundle khớp.
+
 ## Làm mới `openapi.snapshot.json`
 
 **Yêu cầu:** API đang chạy (ví dụ `docker compose up api` hoặc `learningdb serve`).
