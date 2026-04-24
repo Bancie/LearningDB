@@ -1,0 +1,37 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "763dd549b590",
+  "session_id": "63d8568c-d0d5-453a-864d-be5f4560ff0c",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-24T19:02:12.021008Z",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 1,
+  "files_touched": [
+    "learningdb-second-app/design/stitch-google-6files/API_CONTEXT.md",
+    "learningdb-second-app/design/stitch-google-6files/EXAMPLES.json",
+    "learningdb-second-app/design/stitch-google-6files/STITCH_SEED_PROMPT.md",
+    "learningdb-second-app/design/stitch-google-6files/TYPESCRIPT_REFERENCE.md",
+    "learningdb-second-app/design/stitch-google-6files/openapi.snapshot.json",
+    "learningdb-second-app/design/stitch-google-6files/postman.collection.json"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "7ec4cf01a950",
+  "checkpoint_transcript_start": 94,
+  "transcript_lines_at_start": 94,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-24T19:02:10.641875Z",
+    "agent_lines": 299,
+    "human_added": 10,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 309,
+    "agent_percentage": 96.76375404530745
+  }
+}
