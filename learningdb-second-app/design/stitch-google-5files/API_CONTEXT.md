@@ -1,8 +1,8 @@
-# API context — `learningdb-second-app` (Google Stitch 6-file bundle)
+# API context — `learningdb-second-app` (Google Stitch 5-file bundle)
 
-This file merges the **bundle index** and **API brief** from `design/stitch-context/`. Full multi-file context stays there for repo use; **upload these 6 files together** to Google Stitch.
+This file merges the **bundle index**, **API brief**, and **Stitch seed prompt** from `design/stitch-context/`. Full multi-file context stays in `design/stitch-context/` for repo use; **upload these 5 files together** to Google Stitch.
 
-## What each companion file is
+## Companion files (4 + this doc = 5)
 
 | File | Role |
 | --- | --- |
@@ -10,13 +10,13 @@ This file merges the **bundle index** and **API brief** from `design/stitch-cont
 | `EXAMPLES.json` | All sample JSON payloads in one object (keys by scenario). |
 | `postman.collection.json` | Postman v2.1 — same requests as the client smoke tests. |
 | `TYPESCRIPT_REFERENCE.md` | TS interfaces aligned with `app/services/api.ts`. |
-| `STITCH_SEED_PROMPT.md` | Paste-first prompt + rules for the design agent. |
+| `API_CONTEXT.md` | This file — endpoints, ports, UX, **and** seed prompt / rules below. |
 
-Refresh `openapi.snapshot.json` from a running API: `./scripts/fetch-openapi.sh` (writes `design/stitch-context/`), then copy into this folder again.
+Refresh `openapi.snapshot.json` from a running API: `./scripts/fetch-openapi.sh` (writes `design/stitch-context/`), then copy into `design/stitch-google-5files/` again.
 
 ---
 
-# API brief (same as stitch-context/API_BRIEF.md)
+# API brief
 
 ## Runtime
 
@@ -76,3 +76,23 @@ Base path relative tới **`/api`** (axios `baseURL` đã gồm `/api`).
 - `learningdb-second-app/app/services/resolveApiBaseUrl.ts`
 
 Bản đầy đủ nhiều file (để dev / tương lai): `learningdb-second-app/design/stitch-context/`.
+
+---
+
+# Seed prompt for Google Stitch (same upload — rules + scope)
+
+You are designing a **data-entry / CRUD** front end for **`learningdb-second-app`**: React 19, React Router 7, Vite, SSR, MUI + Tailwind, same visual language as a modern admin app.
+
+## Hard constraints
+
+1. **No orchestrator / no chat to port 8100.** Only **FastAPI** on **port 8000**, base path **`/api`**. In the browser, API URL is `{pageProtocol}//{pageHostname}:8000/api` (the dev UI runs on **port 3001**).
+2. Prefer **MUI** components (forms, tables, dialogs, snackbar errors). Use **axios**-style semantics: JSON body, standard HTTP verbs.
+3. Primary flows: **generic table CRUD** (pick table → columns → paginated rows → insert / patch / delete) plus optional **learning** flows from the API brief above (activities, update, bayes, user profile).
+4. Use **`openapi.snapshot.json`** for exact request/response schemas and status codes. Use **`EXAMPLES.json`** for realistic payload shapes. Use **`TYPESCRIPT_REFERENCE.md`** for field names and nested types. Use **`postman.collection.json`** to sanity-check paths mirror the client.
+5. Respect **CORS**: app is served from another port than API; do not assume same-origin without port.
+
+## Deliverable
+
+Screens and components for a **“Data entry”** hub: table picker, dynamic form from `Column[]`, data grid with pagination/sort, row edit/delete confirmations, clear API error states. Optional secondary nav for activities / Bayes if space allows.
+
+When in doubt, **`openapi.snapshot.json`** wins for schema; **this document (API brief above)** wins for which endpoints this app actually calls first.

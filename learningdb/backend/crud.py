@@ -245,15 +245,41 @@ def get_activity_ids(status: str = None) -> list:
 
 
 def insert_record(table_name: str, data: dict):
-    """Insert a record into a table."""
+    """Insert a record into a table.
+
+    Returns ``primary_key`` when the engine reports inserted keys or a single
+    MySQL AUTO_INCREMENT column (via LAST_INSERT_ID) so clients can chain FKs
+    without a separate SELECT.
+    """
+    resolved = resolve_browser_table_name(table_name)
     metadata = MetaData()
-    metadata.reflect(bind=engine, only=[table_name])
-    table = metadata.tables[table_name]
-    
+    metadata.reflect(bind=engine, only=[resolved])
+    table = metadata.tables[resolved]
+    pk_columns = list(table.primary_key.columns)
+
+    pk_dict: dict[str, object] = {}
     with engine.begin() as conn:
-        conn.execute(table.insert(), data)
-    
-    return {"success": True, "message": f"Record inserted into {table_name}"}
+        result = conn.execute(table.insert(), data)
+        inserted = getattr(result, "inserted_primary_key", None)
+        if inserted is not None:
+            vals = tuple(inserted)
+            for i, col in enumerate(pk_columns):
+                if i < len(vals) and vals[i] is not None:
+                    pk_dict[col.name] = vals[i]
+        if not pk_dict and len(pk_columns) == 1:
+            col0 = pk_columns[0]
+            if getattr(col0, "autoincrement", False):
+                rid = conn.execute(text("SELECT LAST_INSERT_ID() AS id")).scalar()
+                if rid is not None:
+                    pk_dict[col0.name] = int(rid)
+
+    out: dict = {
+        "success": True,
+        "message": f"Record inserted into {resolved}",
+    }
+    if pk_dict:
+        out["primary_key"] = pk_dict
+    return out
 
 
 TABLE_ROWS_MAX_LIMIT = 600

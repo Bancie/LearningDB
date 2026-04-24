@@ -59,8 +59,19 @@ export const getTables = () => api.get<{ tables: string[] }>("/tables");
 export const getTableColumns = (tableName: string) =>
   api.get<{ columns: Column[] }>(`/tables/${tableName}/columns`);
 
+export interface InsertRecordResponse {
+  success: boolean;
+  message: string;
+  /** Present when the DB returns keys for the inserted row (e.g. auto-increment PK). */
+  primary_key?: Record<string, unknown>;
+}
+
 export const insertRecord = (tableName: string, data: Record<string, unknown>) =>
-  api.post("/tables/insert", { table_name: tableName, data });
+  api.post<InsertRecordResponse>("/tables/insert", {
+    /** MySQL `lower_case_table_names=1`: reflect/insert must use lowercase names (matches `GET /tables`). */
+    table_name: tableName.trim().toLowerCase(),
+    data,
+  });
 
 export interface TableRowsResponse {
   rows: Record<string, unknown>[];

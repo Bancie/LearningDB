@@ -31,6 +31,9 @@ export default function AppShell() {
           <Button component={Link} to="/data-entry" color="inherit" size="small">
             Data entry
           </Button>
+          <Button component={Link} to="/import-wizard" color="inherit" size="small">
+            Import wizard
+          </Button>
           <IconButton
             size="small"
             aria-label="toggle color mode"

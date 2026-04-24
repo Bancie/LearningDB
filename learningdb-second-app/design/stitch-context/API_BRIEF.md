@@ -27,7 +27,7 @@ Base path dưới đây là relative tới **`/api`** (axios `baseURL` đã gồ
 | GET | `/health` | `getHealth` | `{ status: "healthy" }` |
 | GET | `/tables` | `getTables` | `{ tables: string[] }` |
 | GET | `/tables/{table}/columns` | `getTableColumns` | `{ columns: Column[] }` |
-| POST | `/tables/insert` | `insertRecord` | Body: `{ table_name, data }` |
+| POST | `/tables/insert` | `insertRecord` | Body: `{ table_name, data }`. Response: `{ success, message, primary_key? }` — `primary_key` gồm tên cột PK (vd. `ACTI_LOG_ID`, `AO_ID`) sau insert auto-increment; dùng cho wizard import (`/import-wizard`) để nối bước 2–3 không cần nhập FK tay. |
 | GET | `/tables/{table}/rows` | `listTableRows` | Query: `limit`, `offset`, `sort_by`, `sort_dir`, `filters` (JSON string) |
 | PATCH | `/tables/{table}/rows` | `updateTableRow` | Body: `{ primary_key, updates }` |
 | DELETE | `/tables/{table}/rows` | `deleteTableRow` | Body: `{ primary_key }` |
@@ -45,6 +45,11 @@ Base path dưới đây là relative tới **`/api`** (axios `baseURL` đã gồ
 | GET | `/users/{userId}/profile` | `getUserProfile` | `{ data: UserProfile }` |
 
 **OpenAPI đầy đủ** (gồm cả route chat DB trên cùng app FastAPI): xem `openapi.snapshot.json`. Second app **hiện** chỉ bundle các hàm trên trong `api.ts`; khi thêm endpoint mới, cập nhật `api.ts` + bảng này + examples.
+
+## Import wizard (second app)
+
+- Route: **`/import-wizard`** — luồng 3 bước: `ACTIVITY_LOG` → `ACTIVITY_OUTPUT` → `KIT_COUNT`, draft trong `sessionStorage`, FK ẩn lấy từ `primary_key` của response insert bước trước.
+- Tham chiếu UI Stitch (desktop/mobile + DESIGN): `learningdb-second-app/design/import-wizard-reference/`.
 
 ## Gợi ý UX — màn “Data entry”
 

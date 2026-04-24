@@ -30,7 +30,7 @@ Ensure the API is reachable (e.g. `docker compose up api` or your usual backend)
 
 ## Design / Stitch
 
-- **API context for Stitch / agents** (OpenAPI snapshot, `API_BRIEF.md`, JSON examples, Postman): [`design/stitch-context/README.md`](design/stitch-context/README.md). **Google Stitch (max 6 uploads):** same context flattened to [`design/stitch-google-6files/`](design/stitch-google-6files/) (upload all 6 files together).
+- **API context for Stitch / agents** (OpenAPI snapshot, `API_BRIEF.md`, JSON examples, Postman): [`design/stitch-context/README.md`](design/stitch-context/README.md). **Google Stitch (max 5 uploads):** same context flattened to [`design/stitch-google-5files/`](design/stitch-google-5files/) (upload all 5 files together).
 - **Visual / tokens** from Stitch: `design/stitch/` — see [`design/stitch/README.md`](design/stitch/README.md); wire through `app/design-tokens.ts` and `app/theme.ts` as needed.
 
 Refresh OpenAPI after backend changes: `./scripts/fetch-openapi.sh` (API must be on port 8000).
