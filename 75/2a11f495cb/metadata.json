@@ -1,0 +1,40 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "752a11f495cb",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 10,
+  "files_touched": [
+    "learningdb-second-app/app/import-wizard/WizardFields.tsx",
+    "learningdb-second-app/app/import-wizard/draft-storage.ts",
+    "learningdb-second-app/app/import-wizard/table-utils.ts",
+    "learningdb-second-app/app/import-wizard/types.ts",
+    "learningdb-second-app/app/routes/import-wizard.tsx",
+    "learningdb-second-app/app/utils/formatApiError.ts",
+    "learningdb-second-app/design/import-wizard-reference/DESIGN.md",
+    "learningdb-second-app/design/import-wizard-reference/desktop.html",
+    "learningdb-second-app/design/import-wizard-reference/mobile.html",
+    "learningdb-second-app/design/stitch-google-5files/API_CONTEXT.md",
+    "learningdb-second-app/design/stitch-google-5files/EXAMPLES.json",
+    "learningdb-second-app/design/stitch-google-5files/TYPESCRIPT_REFERENCE.md",
+    "learningdb-second-app/design/stitch-google-5files/openapi.snapshot.json",
+    "learningdb-second-app/design/stitch-google-5files/postman.collection.json",
+    "learningdb-second-app/design/stitch-google-6files/STITCH_SEED_PROMPT.md"
+  ],
+  "sessions": [
+    {
+      "metadata": "/75/2a11f495cb/0/metadata.json",
+      "transcript": "/75/2a11f495cb/0/full.jsonl",
+      "context": "",
+      "content_hash": "/75/2a11f495cb/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
