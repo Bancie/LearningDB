@@ -2,9 +2,10 @@
 FastAPI Backend for LearningDB
 """
 import json
+import os
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from sqlalchemy import inspect, text
@@ -20,6 +21,10 @@ app = FastAPI(
     description="Backend API for LearningDB tracking application",
     version="1.0.0"
 )
+
+AUTH_COOKIE_NAME = "ldb_session"
+AUTH_COOKIE_MAX_AGE_SECONDS = int(os.getenv("AUTH_COOKIE_MAX_AGE_SECONDS", str(72 * 3600)))
+AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "0") in {"1", "true", "TRUE", "yes"}
 
 # CORS middleware
 app.add_middleware(
@@ -85,7 +90,72 @@ class AppendConversationMessageRequest(BaseModel):
     request_id: Optional[str] = Field(default=None, max_length=128)
 
 
+class AuthRegisterRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=120)
+    email: str = Field(min_length=5, max_length=255)
+    password: str = Field(min_length=6, max_length=128)
+    fullname: Optional[str] = Field(default=None, max_length=100)
+    birth: Optional[str] = Field(default="2000-01-01", max_length=10)
+    gender: Optional[str] = Field(default="other", max_length=10)
+    major: Optional[str] = Field(default="General", max_length=100)
+    user_location: Optional[str] = Field(default="Asia/Ho_Chi_Minh", max_length=100)
+
+
+class AuthLoginRequest(BaseModel):
+    login: str = Field(min_length=1, max_length=255)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class AuthAccountUpdateRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=120)
+    email: str = Field(min_length=5, max_length=255)
+    fullname: str = Field(default="", max_length=100)
+    birth: str = Field(default="2000-01-01", max_length=10)
+    gender: str = Field(default="other", max_length=10)
+    major: str = Field(default="General", max_length=100)
+    user_location: str = Field(default="Asia/Ho_Chi_Minh", max_length=100)
+
+
+class AuthPasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=6, max_length=128)
+
+
+def _set_auth_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite="lax",
+        secure=AUTH_COOKIE_SECURE,
+        max_age=AUTH_COOKIE_MAX_AGE_SECONDS,
+        path="/",
+    )
+
+
+def _clear_auth_cookie(response: Response) -> None:
+    response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
+
+
+def _resolve_session_user(session_token: str | None) -> dict:
+    if not session_token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user_id = crud.get_user_id_from_session_token(session_token)
+    if user_id is None:
+        raise HTTPException(status_code=401, detail="Session expired or invalid")
+    user = crud.get_auth_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found for session")
+    return user
+
+
 # API Endpoints
+
+@app.on_event("startup")
+def startup_tasks():
+    crud.ensure_auth_tables()
+    crud.delete_expired_auth_sessions()
+    crud.ensure_seed_user_account()
 
 @app.get("/")
 def root():
@@ -95,6 +165,128 @@ def root():
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.post("/api/auth/register")
+def register(request: AuthRegisterRequest, response: Response):
+    try:
+        user = crud.register_auth_user(
+            username=request.username,
+            email=request.email,
+            password=request.password,
+            fullname=request.fullname,
+            birth=request.birth or "2000-01-01",
+            gender=request.gender or "other",
+            major=request.major or "General",
+            user_location=request.user_location or "Asia/Ho_Chi_Minh",
+        )
+        token = crud.create_auth_session(int(user["user_id"]))
+        _set_auth_cookie(response, token)
+        return {"data": user}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/auth/login")
+def login(request: AuthLoginRequest, response: Response):
+    try:
+        user = crud.authenticate_user(request.login, request.password)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid login or password")
+        token = crud.create_auth_session(int(user["user_id"]))
+        _set_auth_cookie(response, token)
+        return {"data": user}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/auth/logout")
+def logout(response: Response, session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME)):
+    try:
+        if session_token:
+            crud.delete_auth_session(session_token)
+        _clear_auth_cookie(response)
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/auth/me")
+def me(session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME)):
+    try:
+        user = _resolve_session_user(session_token)
+        return {"data": user}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/auth/account")
+def get_account(session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME)):
+    try:
+        user = _resolve_session_user(session_token)
+        account = crud.get_account_settings(int(user["user_id"]))
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found")
+        return {"data": account}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/auth/account")
+def update_account(
+    request: AuthAccountUpdateRequest,
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        updated = crud.update_account_settings(
+            user_id=int(user["user_id"]),
+            username=request.username,
+            email=request.email,
+            fullname=request.fullname,
+            birth=request.birth,
+            gender=request.gender,
+            major=request.major,
+            user_location=request.user_location,
+        )
+        return {"data": updated}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/auth/account/password")
+def update_account_password(
+    request: AuthPasswordChangeRequest,
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        crud.change_account_password(
+            user_id=int(user["user_id"]),
+            current_password=request.current_password,
+            new_password=request.new_password,
+        )
+        return {"success": True}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/users/{user_id}/profile")

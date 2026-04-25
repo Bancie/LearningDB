@@ -7,5 +7,5 @@ export interface ImportDraftV1 {
   aoId: number | null;
   logValues: Record<string, unknown>;
   outputValues: Record<string, unknown>;
-  kitValues: Record<string, unknown>;
+  kitRows: Array<Record<string, unknown>>;
 }

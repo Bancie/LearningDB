@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif,
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+:root {
+  --color-primary: #005dac;
+  --color-primary-container: #1976d2;
+  --color-secondary-container: #bad3fd;
+  --color-surface: #f9f9f9;
+  --color-surface-low: #f3f3f3;
+  --color-surface-container: #eeeeee;
+  --color-surface-high: #e8e8e8;
+  --color-surface-highest: #e2e2e2;
+  --color-surface-lowest: #ffffff;
+  --color-outline-variant: #c1c6d4;
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #414752;
+  --color-error: #ba1a1a;
+  --shadow-ambient: 0px 8px 24px rgba(26, 28, 28, 0.06);
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-full: 9999px;
 }
 
 html,
@@ -13,11 +33,13 @@ body {
 
 html[data-theme="light"] body,
 html:not([data-theme]) body {
-  background: radial-gradient(circle at top, #f8fbff 0%, #f3f6fb 55%, #edf2fa 100%);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
 }
 
 html[data-theme="dark"] body {
-  background: radial-gradient(circle at top, #1a2332 0%, #0f1419 55%, #0a0e14 100%);
+  background: #111820;
+  color: #edf1f7;
 }
 
 * {
@@ -30,4 +52,108 @@ a {
 
 #root {
   min-height: 100vh;
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 400,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+.stitch-page-bg {
+  background: var(--color-surface);
+}
+
+.stitch-shell {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.stitch-card {
+  background: var(--color-surface-lowest);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 22%, transparent);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-ambient);
+}
+
+.stitch-input {
+  background: var(--color-surface-low);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 22%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-on-surface);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.stitch-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+select.stitch-input {
+  background-image: none;
+}
+
+select.stitch-input option {
+  background: var(--color-surface-lowest);
+  color: var(--color-on-surface);
+}
+
+.stitch-button-primary {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-container));
+  border-radius: var(--radius-md);
+  color: #fff;
+  font-weight: 600;
+}
+
+.stitch-button-secondary {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 35%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.text-display-sm {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  font-weight: 300;
+}
+
+.text-headline-sm {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 500;
+}
+
+.text-title-md {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+
+.text-body-md {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.text-label-md {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
 }

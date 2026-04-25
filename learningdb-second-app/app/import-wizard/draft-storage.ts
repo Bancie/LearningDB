@@ -11,9 +11,15 @@ export function loadDraft(): ImportDraftV1 | null {
     if (!raw) {
       return null;
     }
-    const parsed = JSON.parse(raw) as ImportDraftV1;
+    const parsed = JSON.parse(raw) as ImportDraftV1 & { kitValues?: Record<string, unknown> };
     if (parsed?.version !== 1) {
       return null;
+    }
+    if (!Array.isArray(parsed.kitRows)) {
+      return {
+        ...parsed,
+        kitRows: parsed.kitValues ? [parsed.kitValues] : [{}],
+      };
     }
     return parsed;
   } catch {

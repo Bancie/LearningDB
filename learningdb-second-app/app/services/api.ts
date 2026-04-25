@@ -5,6 +5,7 @@ const API_BASE_URL = resolveBackendApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -154,5 +155,72 @@ export interface UserProfile {
 
 export const getUserProfile = (userId: number) =>
   api.get<{ data: UserProfile }>(`/users/${userId}/profile`);
+
+export interface AuthUser {
+  user_id: number;
+  username: string;
+  email: string;
+  user_location: string;
+}
+
+export interface AuthRegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  fullname?: string;
+  birth?: string;
+  gender?: "male" | "female" | "other";
+  major?: string;
+  user_location?: string;
+}
+
+export interface AuthLoginRequest {
+  login: string;
+  password: string;
+}
+
+export interface AuthAccount {
+  user_id: number;
+  username: string;
+  email: string;
+  fullname: string;
+  birth: string;
+  gender: "male" | "female" | "other";
+  major: string;
+  user_location: string;
+}
+
+export interface AuthAccountUpdateRequest {
+  username: string;
+  email: string;
+  fullname: string;
+  birth: string;
+  gender: "male" | "female" | "other";
+  major: string;
+  user_location: string;
+}
+
+export interface AuthPasswordChangeRequest {
+  current_password: string;
+  new_password: string;
+}
+
+export const registerAuth = (payload: AuthRegisterRequest) =>
+  api.post<{ data: AuthUser }>("/auth/register", payload);
+
+export const loginAuth = (payload: AuthLoginRequest) =>
+  api.post<{ data: AuthUser }>("/auth/login", payload);
+
+export const logoutAuth = () => api.post<{ success: boolean }>("/auth/logout");
+
+export const getAuthMe = () => api.get<{ data: AuthUser }>("/auth/me");
+
+export const getAuthAccount = () => api.get<{ data: AuthAccount }>("/auth/account");
+
+export const updateAuthAccount = (payload: AuthAccountUpdateRequest) =>
+  api.put<{ data: AuthAccount }>("/auth/account", payload);
+
+export const updateAuthPassword = (payload: AuthPasswordChangeRequest) =>
+  api.put<{ success: boolean }>("/auth/account/password", payload);
 
 export default api;

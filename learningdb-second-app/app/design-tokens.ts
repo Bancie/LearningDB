@@ -1,12 +1,40 @@
 /**
- * Bridge for a future Google Stitch / design-system export.
- * Replace or extend `stitchPlaceholderTokens` when token files land in `design/stitch/`.
+ * Canonical mapping for Stitch export `design/stitch_learningdb (2)`.
+ * UI code should use these semantic keys (or CSS vars in `app.css`) as source of truth.
  */
-export const stitchDesignReadmePath = "design/stitch/README.md";
+export const stitchDesignReadmePath = "design/stitch_learningdb (2)/DESIGN.md";
 
-/** Sample keys to align MUI theme later; values mirror app 1 primary until Stitch overrides. */
-export const stitchPlaceholderTokens = {
-  primary: "#0b6ee6",
-  surface: "#ffffff",
-  radiusMd: "14px",
+export const stitchTokens = {
+  color: {
+    primary: "#005dac",
+    primaryContainer: "#1976d2",
+    secondaryContainer: "#bad3fd",
+    surface: "#f9f9f9",
+    surfaceLow: "#f3f3f3",
+    surfaceContainer: "#eeeeee",
+    surfaceLowest: "#ffffff",
+    outlineVariant: "#c1c6d4",
+    onSurface: "#1a1c1c",
+    onSurfaceVariant: "#414752",
+    error: "#ba1a1a",
+  },
+  typography: {
+    displaySm: "2.25rem",
+    headlineSm: "1.5rem",
+    titleMd: "1.125rem",
+    bodyMd: "0.875rem",
+    labelMd: "0.75rem",
+  },
+  radius: {
+    md: "0.375rem",
+    lg: "0.5rem",
+    full: "9999px",
+  },
+  shadow: {
+    ambient: "0px 8px 24px rgba(26, 28, 28, 0.06)",
+  },
+  spacing: {
+    navItemY: "12px",
+    sectionGap: "16px",
+  },
 } as const;

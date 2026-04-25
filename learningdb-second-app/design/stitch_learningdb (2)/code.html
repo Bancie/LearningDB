@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Unified Entry - LearningDB</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f3f3f3",
+                        "on-primary-container": "#fffdff",
+                        "inverse-primary": "#a5c8ff",
+                        "tertiary-fixed-dim": "#ffb688",
+                        "surface-container": "#eeeeee",
+                        "surface-tint": "#005faf",
+                        "secondary-container": "#bad3fd",
+                        "on-secondary-fixed": "#001c3a",
+                        "outline": "#717783",
+                        "on-tertiary-fixed-variant": "#733600",
+                        "secondary": "#475f84",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d4e3ff",
+                        "surface-variant": "#e2e2e2",
+                        "primary-fixed": "#d4e3ff",
+                        "surface-bright": "#f9f9f9",
+                        "on-surface": "#1a1c1c",
+                        "outline-variant": "#c1c6d4",
+                        "background": "#f9f9f9",
+                        "on-error-container": "#93000a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#2f486a",
+                        "on-primary-fixed-variant": "#004786",
+                        "on-secondary-container": "#425b7f",
+                        "error": "#ba1a1a",
+                        "tertiary": "#944700",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed": "#001c3a",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e2e2e2",
+                        "on-surface-variant": "#414752",
+                        "inverse-on-surface": "#f1f1f1",
+                        "surface-container-high": "#e8e8e8",
+                        "tertiary-fixed": "#ffdbc7",
+                        "on-tertiary-fixed": "#311300",
+                        "primary-fixed-dim": "#a5c8ff",
+                        "primary-container": "#1976d2",
+                        "inverse-surface": "#2f3131",
+                        "tertiary-container": "#ba5b00",
+                        "surface-dim": "#dadada",
+                        "surface": "#f9f9f9",
+                        "secondary-fixed-dim": "#afc8f1",
+                        "error-container": "#ffdad6",
+                        "primary": "#005dac",
+                        "on-tertiary-container": "#fffeff",
+                        "on-background": "#1a1c1c",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "display": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 left-0 right-0 h-16 bg-[#f9f9f9] flex justify-between items-center w-full px-6 max-w-full z-50 font-['Inter'] antialiased text-sm shadow-none no-border">
+<div class="flex items-center gap-8">
+<span class="text-xl font-light tracking-tight text-[#1a1c1c]">LearningDB</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-[#005dac] font-bold border-b-2 border-[#005dac] pb-1" href="#">New Entry</a>
+<a class="text-[#1a1c1c]/70 font-medium hover:bg-[#eeeeee] transition-colors px-2 py-1 rounded" href="#">Dashboard</a>
+<a class="text-[#1a1c1c]/70 font-medium hover:bg-[#eeeeee] transition-colors px-2 py-1 rounded" href="#">Data Explorer</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#1a1c1c]/70 hover:bg-[#eeeeee] p-2 rounded-full transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-[#1a1c1c]/70 hover:bg-[#eeeeee] p-2 rounded-full transition-colors" data-icon="help_outline">help_outline</button>
+<div class="h-8 w-[1px] bg-outline-variant/30 mx-2"></div>
+<button class="text-[#1a1c1c]/70 font-medium px-4 py-2 hover:bg-[#eeeeee] transition-colors rounded">Export</button>
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-medium shadow-sm hover:opacity-90 transition-all">New Entry</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full ml-2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnqYGO6d_OPAO4g5vc5AY0SOtT0_PC6ngEVByPjzwMo3eI6OfXgWezzkpHzS2-W76wEMeeozJ5bnnH3btyCLVRQ707Ra9rCP1qiDmQsytdSV6882gQOKbSMrazkYwtOc6W8Er8KWVwDZtVI_0h4ZiXBd8Uq2Uv42te2Tbls9VM2vKrfgx72pWPNBdX5RjKdHnsnY-O6BZENBnRe_1CvPxcAN4MuKfPVuhHoBkv3-HCQuVgJ6eQTau-dfbchmE1DLKxpxzkRHj0blpK"/>
+</div>
+</header>
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-[#eeeeee] flex flex-col z-40 py-6 font-['Inter'] text-[0.75rem] font-medium tracking-wide uppercase">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-[#1a1c1c] normal-case tracking-tight">LearningDB</h1>
+<p class="text-[0.65rem] opacity-60">Management Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-grow space-y-1">
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all scale-95 hover:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all scale-95 hover:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span>Data Explorer</span>
+</a>
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all scale-95 hover:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Student Records</span>
+</a>
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all scale-95 hover:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Curriculum</span>
+</a>
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all scale-95 hover:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span>Analytics</span>
+</a>
+</nav>
+<div class="px-4 mb-6">
+<button class="w-full py-3 bg-white/50 border border-outline-variant/20 rounded-lg text-primary font-bold tracking-widest hover:bg-white transition-all">IMPORT</button>
+</div>
+<div class="mt-auto pt-6 border-t border-outline-variant/10">
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="text-[#1a1c1c]/60 px-4 py-3 mx-2 flex items-center gap-3 hover:bg-[#f3f3f3] rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-16 min-h-screen">
+<div class="max-w-6xl mx-auto p-8">
+<!-- Page Header -->
+<header class="mb-12">
+<nav class="flex items-center gap-2 text-label-md text-on-surface-variant mb-4">
+<span>Console</span>
+<span class="material-symbols-outlined text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span>Activities</span>
+<span class="material-symbols-outlined text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-medium">Unified Entry</span>
+</nav>
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-display-sm font-light text-on-surface mb-1">Unified Data Entry</h2>
+<p class="text-body-md text-on-surface-variant">Log ActivityResults and map task-specific granular metrics.</p>
+</div>
+<div class="flex gap-3">
+<div class="px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-label-md font-medium flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                            Session: Active (ID_7721)
+                        </div>
+</div>
+</div>
+</header>
+<!-- Progressive Flow Container -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Step Navigation (Progressive Map) -->
+<div class="col-span-3 space-y-6">
+<div class="sticky top-24">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-4 group">
+<div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">1</div>
+<div>
+<p class="text-label-md font-bold text-primary">ActivityLog</p>
+<p class="text-[0.7rem] text-on-surface-variant">Metadata &amp; Context</p>
+</div>
+</div>
+<div class="ml-[19px] w-[2px] h-8 bg-primary"></div>
+<div class="flex items-center gap-4 group opacity-50">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface flex items-center justify-center font-bold">2</div>
+<div>
+<p class="text-label-md font-bold">ActivityOutput</p>
+<p class="text-[0.7rem] text-on-surface-variant">Core Results</p>
+</div>
+</div>
+<div class="ml-[19px] w-[2px] h-8 bg-surface-container"></div>
+<div class="flex items-center gap-4 group opacity-50">
+<div class="w-10 h-10 rounded-full bg-surface-container text-on-surface flex items-center justify-center font-bold">3</div>
+<div>
+<p class="text-label-md font-bold">Kit count</p>
+<p class="text-[0.7rem] text-on-surface-variant">Task-Specific Data</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Form Area -->
+<div class="col-span-9">
+<!-- Section 0: Task Selection (New) -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_8px_24px_rgba(26,28,28,0.06)] border border-outline-variant/10 mb-8">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary" data-icon="assignment">assignment</span>
+<h3 class="text-title-md font-semibold text-on-surface">Task Selection</h3>
+</div>
+<div class="space-y-2">
+<label class="text-label-md font-medium text-on-surface-variant block">Select a task to populate ActivityLog Metadata</label>
+<div class="relative group">
+<input class="w-full bg-surface-container-low border-none rounded-md px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none pr-10" placeholder="Search for a task or select from dropdown..." type="text"/>
+<span class="absolute right-3 top-3 material-symbols-outlined text-outline text-sm pointer-events-none group-focus-within:text-primary" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</section>
+<!-- Section 1: ActivityLog Metadata -->
+<section class="bg-surface-container-lowest rounded-xl p-8 shadow-[0px_8px_24px_rgba(26,28,28,0.06)] border border-outline-variant/10 mb-8">
+<div class="flex items-center gap-3 mb-8">
+<span class="material-symbols-outlined text-primary" data-icon="settings_input_component">settings_input_component</span>
+<h3 class="text-title-md font-semibold text-on-surface">ActivityLog Metadata</h3>
+</div>
+<div class="grid grid-cols-2 gap-x-8 gap-y-6">
+<!-- Field: StudentID -->
+<div class="space-y-2">
+<label class="text-label-md font-medium text-on-surface-variant block">StudentID Reference</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border-none rounded-md px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none" type="text" value="STU-99021-X"/>
+<span class="absolute right-3 top-3 material-symbols-outlined text-outline text-sm" data-icon="search">search</span>
+</div>
+</div>
+<!-- Field: ActivityType -->
+<div class="space-y-2">
+<label class="text-label-md font-medium text-on-surface-variant block">ActivityType</label>
+<select class="w-full bg-surface-container-low border-none rounded-md px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none">
+<option>Summative Assessment</option>
+<option>Interactive Lab</option>
+<option>Reflective Journal</option>
+</select>
+</div>
+<!-- Field: LogTimestamp -->
+<div class="space-y-2">
+<label class="text-label-md font-medium text-on-surface-variant block">LogTimestamp</label>
+<input class="w-full bg-surface-container-low border-none rounded-md px-4 py-3 text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none" type="datetime-local"/>
+</div>
+<!-- Field: CurriculumNode -->
+<div class="space-y-2">
+<label class="text-label-md font-medium text-on-surface-variant block">CurriculumNode</label>
+<div class="flex items-center gap-2 p-3 bg-surface rounded-md border border-outline-variant/20">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="account_tree">account_tree</span>
+<span class="text-body-md">MATH.ALG.2.4 (Quadratic Functions)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: ActivityOutput (Results) - Preview State -->
+<section class="bg-surface rounded-xl p-8 border-2 border-dashed border-outline-variant/30 mb-8 opacity-70">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-outline" data-icon="output">output</span>
+<h3 class="text-title-md font-semibold text-on-surface-variant">ActivityOutput (Results)</h3>
+</div>
+<span class="text-label-md text-on-surface-variant italic">Next step: Complete Metadata first</span>
+</div>
+<div class="h-16 flex items-center justify-center bg-surface-container/50 rounded-lg">
+<p class="text-label-md text-on-surface-variant">Performance metrics and outcome scores will populate here.</p>
+</div>
+</section>
+<!-- Action Bar -->
+<div class="flex justify-between items-center py-6 border-t border-outline-variant/10">
+<button class="px-6 py-2.5 text-primary font-bold text-label-md hover:bg-surface-container transition-all rounded-md">SAVE DRAFT</button>
+<div class="flex gap-4">
+<button class="px-6 py-2.5 text-on-surface-variant font-bold text-label-md hover:bg-surface-container transition-all rounded-md border border-outline-variant/30">CANCEL</button>
+<button class="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-2.5 rounded-md font-bold text-label-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2">
+                                NEXT: OUTPUT DETAILS
+                                <span class="material-symbols-outlined text-[18px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Restricted to Main Entry Screens) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+</button>
+</body></html>

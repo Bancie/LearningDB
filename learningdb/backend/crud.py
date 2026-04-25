@@ -2,6 +2,10 @@
 CRUD operations - ported from bayes.py
 """
 import os
+import base64
+import hashlib
+import hmac
+import secrets
 import uuid
 from decimal import Decimal
 
@@ -284,6 +288,7 @@ def insert_record(table_name: str, data: dict):
 
 TABLE_ROWS_MAX_LIMIT = 600
 TABLE_ROWS_DEFAULT_LIMIT = 150
+AUTH_SESSION_TTL_HOURS = int(os.getenv("AUTH_SESSION_TTL_HOURS", "72"))
 
 
 def _table_browser_denylist() -> set[str]:
@@ -461,6 +466,475 @@ def delete_table_row(table_name: str, primary_key: dict) -> dict:
             raise ValueError("No row matched the given primary key")
 
     return {"success": True, "message": "Row deleted"}
+
+
+def _hash_password(password: str, salt_b64: str | None = None) -> tuple[str, str]:
+    salt = base64.b64decode(salt_b64) if salt_b64 else secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 120_000, dklen=32)
+    return base64.b64encode(salt).decode("utf-8"), base64.b64encode(digest).decode("utf-8")
+
+
+def _verify_password(password: str, salt_b64: str, password_hash_b64: str) -> bool:
+    _, candidate_hash = _hash_password(password, salt_b64=salt_b64)
+    return hmac.compare_digest(candidate_hash, password_hash_b64)
+
+
+def _hash_session_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def ensure_auth_tables() -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS `USER_AUTH` (
+                    `USER_ID` INT NOT NULL PRIMARY KEY,
+                    `USERNAME` VARCHAR(120) NOT NULL UNIQUE,
+                    `EMAIL` VARCHAR(255) NOT NULL UNIQUE,
+                    `PASSWORD_SALT` VARCHAR(255) NOT NULL,
+                    `PASSWORD_HASH` VARCHAR(255) NOT NULL,
+                    `CREATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    `UPDATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        ON UPDATE CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS `AUTH_SESSION` (
+                    `ID` CHAR(36) NOT NULL PRIMARY KEY,
+                    `USER_ID` INT NOT NULL,
+                    `TOKEN_HASH` CHAR(64) NOT NULL UNIQUE,
+                    `EXPIRES_AT` TIMESTAMP NOT NULL,
+                    `CREATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_auth_session_user` (`USER_ID`),
+                    INDEX `idx_auth_session_exp` (`EXPIRES_AT`)
+                )
+                """
+            )
+        )
+
+
+def _next_user_id() -> int:
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT COALESCE(MAX(`USER_ID`), 0) AS n FROM `USERS`")).mappings().first()
+    return int(row["n"]) + 1 if row else 1
+
+
+def _create_user_row(
+    *,
+    user_id: int,
+    fullname: str,
+    birth: str,
+    gender: str,
+    major: str,
+    user_location: str,
+) -> None:
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `USERS` (`USER_ID`, `FULLNAME`, `BIRTH`, `GENDER`, `MAJOR`, `USER_LOCATION`)
+                VALUES (:user_id, :fullname, :birth, :gender, :major, :user_location)
+                """
+            ),
+            {
+                "user_id": user_id,
+                "fullname": fullname,
+                "birth": birth,
+                "gender": gender,
+                "major": major,
+                "user_location": user_location,
+            },
+        )
+
+
+def ensure_seed_user_account() -> None:
+    ensure_auth_tables()
+    seed_password = os.getenv("SEED_USER1_PASSWORD", "learningdb-owner-1")
+
+    seed_username = os.getenv("SEED_USER1_USERNAME", "owner")
+    seed_email = os.getenv("SEED_USER1_EMAIL", "owner@learningdb.local")
+    with engine.connect() as conn:
+        user_row = conn.execute(
+            text("SELECT `USER_ID` FROM `USERS` WHERE `USER_ID` = 1")
+        ).mappings().first()
+    if not user_row:
+        raise RuntimeError("Seed user_id=1 not found in USERS table; cannot auto-seed auth account.")
+
+    salt, pw_hash = _hash_password(seed_password)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `USER_AUTH` (`USER_ID`, `USERNAME`, `EMAIL`, `PASSWORD_SALT`, `PASSWORD_HASH`)
+                VALUES (1, :username, :email, :salt, :pw_hash)
+                ON DUPLICATE KEY UPDATE
+                    `USERNAME` = VALUES(`USERNAME`),
+                    `EMAIL` = VALUES(`EMAIL`),
+                    `PASSWORD_SALT` = VALUES(`PASSWORD_SALT`),
+                    `PASSWORD_HASH` = VALUES(`PASSWORD_HASH`)
+                """
+            ),
+            {
+                "username": seed_username,
+                "email": seed_email,
+                "salt": salt,
+                "pw_hash": pw_hash,
+            },
+        )
+
+
+def get_auth_user_by_login(login: str) -> dict | None:
+    ensure_auth_tables()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT ua.`USER_ID`, ua.`USERNAME`, ua.`EMAIL`, ua.`PASSWORD_SALT`, ua.`PASSWORD_HASH`, u.`USER_LOCATION`
+                FROM `USER_AUTH` ua
+                LEFT JOIN `USERS` u ON u.`USER_ID` = ua.`USER_ID`
+                WHERE ua.`USERNAME` = :login OR ua.`EMAIL` = :login
+                LIMIT 1
+                """
+            ),
+            {"login": login},
+        ).mappings().first()
+    if not row:
+        return None
+    return {
+        "user_id": int(row["USER_ID"]),
+        "username": str(row["USERNAME"]),
+        "email": str(row["EMAIL"]),
+        "password_salt": str(row["PASSWORD_SALT"]),
+        "password_hash": str(row["PASSWORD_HASH"]),
+        "user_location": str(row["USER_LOCATION"]) if row.get("USER_LOCATION") is not None else "Asia/Ho_Chi_Minh",
+    }
+
+
+def get_auth_user_by_id(user_id: int) -> dict | None:
+    ensure_auth_tables()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT ua.`USER_ID`, ua.`USERNAME`, ua.`EMAIL`, u.`USER_LOCATION`
+                FROM `USER_AUTH` ua
+                LEFT JOIN `USERS` u ON u.`USER_ID` = ua.`USER_ID`
+                WHERE ua.`USER_ID` = :user_id
+                LIMIT 1
+                """
+            ),
+            {"user_id": user_id},
+        ).mappings().first()
+    if not row:
+        return None
+    return {
+        "user_id": int(row["USER_ID"]),
+        "username": str(row["USERNAME"]),
+        "email": str(row["EMAIL"]),
+        "user_location": str(row["USER_LOCATION"]) if row.get("USER_LOCATION") is not None else "Asia/Ho_Chi_Minh",
+    }
+
+
+def get_account_settings(user_id: int) -> dict | None:
+    ensure_auth_tables()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT
+                    ua.`USER_ID`,
+                    ua.`USERNAME`,
+                    ua.`EMAIL`,
+                    u.`FULLNAME`,
+                    u.`BIRTH`,
+                    u.`GENDER`,
+                    u.`MAJOR`,
+                    u.`USER_LOCATION`
+                FROM `USER_AUTH` ua
+                LEFT JOIN `USERS` u ON u.`USER_ID` = ua.`USER_ID`
+                WHERE ua.`USER_ID` = :user_id
+                LIMIT 1
+                """
+            ),
+            {"user_id": user_id},
+        ).mappings().first()
+    if not row:
+        return None
+    return {
+        "user_id": int(row["USER_ID"]),
+        "username": str(row["USERNAME"]),
+        "email": str(row["EMAIL"]),
+        "fullname": str(row["FULLNAME"]) if row.get("FULLNAME") is not None else "",
+        "birth": str(row["BIRTH"]) if row.get("BIRTH") is not None else "",
+        "gender": str(row["GENDER"]) if row.get("GENDER") is not None else "other",
+        "major": str(row["MAJOR"]) if row.get("MAJOR") is not None else "General",
+        "user_location": str(row["USER_LOCATION"]) if row.get("USER_LOCATION") is not None else "Asia/Ho_Chi_Minh",
+    }
+
+
+def update_account_settings(
+    *,
+    user_id: int,
+    username: str,
+    email: str,
+    fullname: str,
+    birth: str,
+    gender: str,
+    major: str,
+    user_location: str,
+) -> dict:
+    ensure_auth_tables()
+    username_clean = username.strip()
+    email_clean = email.strip().lower()
+    if len(username_clean) < 3:
+        raise ValueError("username must be at least 3 characters")
+    if len(email_clean) < 5:
+        raise ValueError("email is invalid")
+    if gender not in {"male", "female", "other"}:
+        raise ValueError("gender must be one of: male, female, other")
+
+    with engine.connect() as conn:
+        existing = conn.execute(
+            text("SELECT 1 FROM `USER_AUTH` WHERE `USER_ID` = :user_id LIMIT 1"),
+            {"user_id": user_id},
+        ).first()
+    if not existing:
+        raise ValueError("Account not found")
+
+    with engine.connect() as conn:
+        dup = conn.execute(
+            text(
+                """
+                SELECT 1
+                FROM `USER_AUTH`
+                WHERE (`USERNAME` = :username OR `EMAIL` = :email)
+                  AND `USER_ID` <> :user_id
+                LIMIT 1
+                """
+            ),
+            {"username": username_clean, "email": email_clean, "user_id": user_id},
+        ).first()
+    if dup:
+        raise ValueError("username or email already exists")
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                UPDATE `USER_AUTH`
+                SET `USERNAME` = :username, `EMAIL` = :email
+                WHERE `USER_ID` = :user_id
+                """
+            ),
+            {"username": username_clean, "email": email_clean, "user_id": user_id},
+        )
+        conn.execute(
+            text(
+                """
+                UPDATE `USERS`
+                SET
+                    `FULLNAME` = :fullname,
+                    `BIRTH` = :birth,
+                    `GENDER` = :gender,
+                    `MAJOR` = :major,
+                    `USER_LOCATION` = :user_location
+                WHERE `USER_ID` = :user_id
+                """
+            ),
+            {
+                "fullname": fullname[:100],
+                "birth": birth[:10],
+                "gender": gender,
+                "major": major[:100],
+                "user_location": user_location[:100],
+                "user_id": user_id,
+            },
+        )
+
+    updated = get_account_settings(user_id)
+    if not updated:
+        raise ValueError("Failed to update account settings")
+    return updated
+
+
+def change_account_password(*, user_id: int, current_password: str, new_password: str) -> None:
+    ensure_auth_tables()
+    if len(new_password) < 6:
+        raise ValueError("new password must be at least 6 characters")
+
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT `PASSWORD_SALT`, `PASSWORD_HASH`
+                FROM `USER_AUTH`
+                WHERE `USER_ID` = :user_id
+                LIMIT 1
+                """
+            ),
+            {"user_id": user_id},
+        ).mappings().first()
+    if not row:
+        raise ValueError("Account not found")
+
+    if not _verify_password(current_password, str(row["PASSWORD_SALT"]), str(row["PASSWORD_HASH"])):
+        raise ValueError("current password is incorrect")
+
+    salt, pw_hash = _hash_password(new_password)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                UPDATE `USER_AUTH`
+                SET `PASSWORD_SALT` = :salt, `PASSWORD_HASH` = :pw_hash
+                WHERE `USER_ID` = :user_id
+                """
+            ),
+            {"salt": salt, "pw_hash": pw_hash, "user_id": user_id},
+        )
+
+
+def register_auth_user(
+    *,
+    username: str,
+    email: str,
+    password: str,
+    fullname: str | None = None,
+    birth: str = "2000-01-01",
+    gender: str = "other",
+    major: str = "General",
+    user_location: str = "Asia/Ho_Chi_Minh",
+) -> dict:
+    ensure_auth_tables()
+    login = username.strip()
+    mail = email.strip().lower()
+    if not login:
+        raise ValueError("username is required")
+    if not mail:
+        raise ValueError("email is required")
+    if len(password) < 6:
+        raise ValueError("password must be at least 6 characters")
+    if gender not in {"male", "female", "other"}:
+        raise ValueError("gender must be one of: male, female, other")
+
+    with engine.connect() as conn:
+        dup = conn.execute(
+            text(
+                """
+                SELECT 1
+                FROM `USER_AUTH`
+                WHERE `USERNAME` = :username OR `EMAIL` = :email
+                LIMIT 1
+                """
+            ),
+            {"username": login, "email": mail},
+        ).first()
+    if dup:
+        raise ValueError("username or email already exists")
+
+    user_id = _next_user_id()
+    _create_user_row(
+        user_id=user_id,
+        fullname=(fullname or login)[:100],
+        birth=birth,
+        gender=gender,
+        major=major[:100],
+        user_location=user_location[:100],
+    )
+    salt, pw_hash = _hash_password(password)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `USER_AUTH` (`USER_ID`, `USERNAME`, `EMAIL`, `PASSWORD_SALT`, `PASSWORD_HASH`)
+                VALUES (:user_id, :username, :email, :salt, :pw_hash)
+                """
+            ),
+            {
+                "user_id": user_id,
+                "username": login,
+                "email": mail,
+                "salt": salt,
+                "pw_hash": pw_hash,
+            },
+        )
+    created = get_auth_user_by_id(user_id)
+    if not created:
+        raise ValueError("failed to create user auth record")
+    return created
+
+
+def authenticate_user(login: str, password: str) -> dict | None:
+    row = get_auth_user_by_login(login.strip())
+    if not row:
+        return None
+    if not _verify_password(password, row["password_salt"], row["password_hash"]):
+        return None
+    return get_auth_user_by_id(int(row["user_id"]))
+
+
+def create_auth_session(user_id: int, ttl_hours: int = AUTH_SESSION_TTL_HOURS) -> str:
+    ensure_auth_tables()
+    token = secrets.token_urlsafe(32)
+    token_hash = _hash_session_token(token)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `AUTH_SESSION` (`ID`, `USER_ID`, `TOKEN_HASH`, `EXPIRES_AT`)
+                VALUES (:id, :user_id, :token_hash, DATE_ADD(UTC_TIMESTAMP(), INTERVAL :ttl HOUR))
+                """
+            ),
+            {
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "token_hash": token_hash,
+                "ttl": ttl_hours,
+            },
+        )
+    return token
+
+
+def get_user_id_from_session_token(token: str) -> int | None:
+    ensure_auth_tables()
+    token_hash = _hash_session_token(token)
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT `USER_ID`
+                FROM `AUTH_SESSION`
+                WHERE `TOKEN_HASH` = :token_hash
+                    AND `EXPIRES_AT` > UTC_TIMESTAMP()
+                LIMIT 1
+                """
+            ),
+            {"token_hash": token_hash},
+        ).mappings().first()
+    if not row:
+        return None
+    return int(row["USER_ID"])
+
+
+def delete_auth_session(token: str) -> None:
+    ensure_auth_tables()
+    token_hash = _hash_session_token(token)
+    with engine.begin() as conn:
+        conn.execute(
+            text("DELETE FROM `AUTH_SESSION` WHERE `TOKEN_HASH` = :token_hash"),
+            {"token_hash": token_hash},
+        )
+
+
+def delete_expired_auth_sessions() -> None:
+    ensure_auth_tables()
+    with engine.begin() as conn:
+        conn.execute(text("DELETE FROM `AUTH_SESSION` WHERE `EXPIRES_AT` <= UTC_TIMESTAMP()"))
 
 
 def ensure_chat_preference_table() -> None:

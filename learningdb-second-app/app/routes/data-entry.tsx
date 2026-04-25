@@ -1,8 +1,7 @@
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { Alert, Card, CardContent, Stack, Typography } from "@mui/material";
-
 import type { Route } from "./+types/data-entry";
-import { stitchDesignReadmePath, stitchPlaceholderTokens } from "~/design-tokens";
+import { Alert } from "~/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { stitchDesignReadmePath, stitchTokens } from "~/design-tokens";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,22 +12,28 @@ export function meta({}: Route.MetaArgs) {
 
 export default function DataEntryRoute() {
   return (
-    <Stack spacing={3}>
-      <Typography variant="h4" component="h1">
-        Data entry
-      </Typography>
-      <Alert icon={<InfoOutlinedIcon fontSize="inherit" />} severity="info">
-        Placeholder route for the new input screen. Drop Google Stitch exports under{" "}
-        <code>{stitchDesignReadmePath}</code> and map tokens in{" "}
-        <code>app/design-tokens.ts</code> (see <code>primary</code> sample: {stitchPlaceholderTokens.primary}).
+    <section className="space-y-6">
+      <div className="space-y-2">
+        <p className="text-label-md text-[var(--color-on-surface-variant)]">Console / Activities</p>
+        <h1 className="text-headline-sm">Data entry</h1>
+      </div>
+
+      <Alert variant="info">
+        UI này đang dùng token từ <code>{stitchDesignReadmePath}</code>. Primary color hiện tại:{" "}
+        <code>{stitchTokens.color.primary}</code>.
       </Alert>
+
       <Card>
+        <CardHeader>
+          <CardTitle>Stitch-driven layout</CardTitle>
+        </CardHeader>
         <CardContent>
-          <Typography variant="body1" color="text.secondary">
-            Form fields and layout will follow your Stitch design system once assets are in the repo.
-          </Typography>
+          <p className="text-body-md text-[var(--color-on-surface-variant)]">
+            Form fields và bố cục đã sẵn sàng theo design system mới. Bạn có thể tiếp tục dùng trang này làm điểm vào
+            cho workflow nhập liệu bổ sung sau import wizard.
+          </p>
         </CardContent>
       </Card>
-    </Stack>
+    </section>
   );
 }

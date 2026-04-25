@@ -7,20 +7,15 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import { CssBaseline, ThemeProvider, useMediaQuery } from "@mui/material";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import "@fontsource/roboto/300.css";
-import "@fontsource/roboto/400.css";
-import "@fontsource/roboto/500.css";
-import "@fontsource/roboto/700.css";
 import {
   COLOR_MODE_STORAGE_KEY,
   ColorModeContext,
   type ColorSchemePreference,
 } from "./color-mode";
-import { createAppTheme } from "./theme";
+import { AuthProvider } from "./auth/session";
 
 function resolveColorMode(
   preference: ColorSchemePreference,
@@ -43,7 +38,11 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap",
   },
 ];
 
@@ -68,7 +67,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 function AppThemeShell() {
   const [preference, setPreference] = React.useState<ColorSchemePreference>("light");
   const [storageReady, setStorageReady] = React.useState(false);
-  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)", { noSsr: true });
+  const [prefersDark, setPrefersDark] = React.useState(false);
+
+  React.useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => setPrefersDark(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   React.useEffect(() => {
     try {
@@ -96,8 +103,6 @@ function AppThemeShell() {
     }
   }, [preference, resolvedMode, storageReady]);
 
-  const theme = React.useMemo(() => createAppTheme(resolvedMode), [resolvedMode]);
-
   const colorModeValue = React.useMemo(
     () => ({
       preference,
@@ -109,10 +114,11 @@ function AppThemeShell() {
 
   return (
     <ColorModeContext.Provider value={colorModeValue}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Outlet />
-      </ThemeProvider>
+      <AuthProvider>
+        <div className="stitch-shell min-h-screen">
+          <Outlet />
+        </div>
+      </AuthProvider>
     </ColorModeContext.Provider>
   );
 }
