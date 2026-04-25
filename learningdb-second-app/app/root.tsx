@@ -27,9 +27,13 @@ function resolveColorMode(
   return preference;
 }
 
+const publicUrl = (file: string) => `${import.meta.env.BASE_URL}${file}`.replace(/\/{2,}/g, "/");
+
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", type: "image/png", href: "/learningdblogo.png" },
-  { rel: "apple-touch-icon", href: "/learningdblogo.png" },
+  { rel: "icon", href: publicUrl("favicon.ico"), sizes: "any" },
+  { rel: "icon", type: "image/png", href: publicUrl("learningdblogo.png") },
+  { rel: "shortcut icon", href: publicUrl("favicon.ico") },
+  { rel: "apple-touch-icon", href: publicUrl("learningdblogo.png") },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -52,8 +56,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
         <Links />
+        <Meta />
       </head>
       <body>
         {children}
