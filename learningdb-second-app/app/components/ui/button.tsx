@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "~/lib/cn";
 
-type ButtonVariant = "default" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "default" | "secondary" | "ghost" | "danger" | "success";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -15,6 +15,8 @@ const variantClass: Record<ButtonVariant, string> = {
   secondary: "stitch-button-secondary",
   ghost: "bg-transparent text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]",
   danger: "bg-[var(--color-error)] text-white",
+  success:
+    "bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400",
 };
 
 const sizeClass: Record<ButtonSize, string> = {

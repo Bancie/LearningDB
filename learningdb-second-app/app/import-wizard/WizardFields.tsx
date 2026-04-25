@@ -4,6 +4,7 @@ import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 import type { Column } from "~/services/api";
+import { DateTimePickerField } from "./DateTimeClockDialog";
 import { isBoolTinyint, isMysqlTimeOnlyType, isNumericType, parseSetMembers } from "./table-utils";
 
 type Props = {
@@ -122,48 +123,19 @@ export function WizardFields({ columns, values, onChange, omit, gridClassName }:
 
     if (upperType.includes("DATETIME") || upperType.includes("TIMESTAMP")) {
       const current = typeof value === "string" ? value : "";
-      const nowLocal = () => {
-        const d = new Date();
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        const hh = String(d.getHours()).padStart(2, "0");
-        const mm = String(d.getMinutes()).padStart(2, "0");
-        return `${y}-${m}-${day}T${hh}:${mm}`;
-      };
       return (
         <FieldShell label={label}>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              type="datetime-local"
-              className="min-w-0 flex-1"
-              value={current}
-              onChange={(e) => onChange(col.name, e.target.value)}
-              required={required}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="w-full shrink-0 sm:w-auto"
-              onClick={() => onChange(col.name, nowLocal())}
-            >
-              Now
-            </Button>
-          </div>
+          <DateTimePickerField mode="datetime" value={current} onChange={(v) => onChange(col.name, v)} />
         </FieldShell>
       );
     }
 
     if (isMysqlTimeOnlyType(col.type)) {
+      const t = typeof value === "string" ? value : "";
+      const forPicker = t.length > 5 ? t.slice(0, 5) : t;
       return (
         <FieldShell label={label}>
-          <Input
-            type="time"
-            value={typeof value === "string" ? value : ""}
-            onChange={(e) => onChange(col.name, e.target.value)}
-            required={required}
-          />
+          <DateTimePickerField mode="time" value={forPicker} onChange={(v) => onChange(col.name, v)} />
         </FieldShell>
       );
     }

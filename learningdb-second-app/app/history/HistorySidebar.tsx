@@ -121,9 +121,9 @@ export function HistorySidebar({ open, onClose }: Props) {
                     style={{ backgroundColor: activityColor(item.activity_id) }}
                   />
                   <p className="text-body-md font-semibold">{item.activity_name || `Activity #${item.activity_id ?? "-"}`}</p>
-                  <p className="text-label-md text-[var(--color-on-surface-variant)]">Duration: {formatDurationMins(item.duration_minutes)}</p>
-                  <p className="text-label-md text-[var(--color-on-surface-variant)]">Logged: {relativeTime(item.logged_at)}</p>
-                  <p className="text-label-md text-[var(--color-primary)]">KIT_COUNT: {item.kit_summary || "-"}</p>
+                  <p className="text-label-md text-[var(--color-on-surface-variant)]">{formatDurationMins(item.duration_minutes)}</p>
+                  <p className="text-label-md text-[var(--color-primary)]">{item.kit_summary || "-"}</p>
+                  <p className="text-label-md text-[var(--color-on-surface-variant)]">{relativeTime(item.logged_at)}</p>
                 </button>
               ))}
             </div>
