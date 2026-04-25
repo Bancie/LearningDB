@@ -205,6 +205,32 @@ export interface AuthPasswordChangeRequest {
   new_password: string;
 }
 
+export interface LoggingHistorySummaryItem {
+  acti_log_id: number;
+  activity_id: number | null;
+  activity_name: string | null;
+  start_time: string | null;
+  ao_id: number | null;
+  finish_time: string | null;
+  kit_summary: string;
+  total_count: number;
+  logged_at: string | null;
+  duration_minutes: number | null;
+}
+
+export interface LoggingHistoryDetail {
+  summary: LoggingHistorySummaryItem;
+  activity_log: Record<string, unknown>;
+  activity_output: Record<string, unknown> | null;
+  kit_rows: Array<Record<string, unknown>>;
+}
+
+export interface LoggingHistoryUpdateRequest {
+  activity_log_updates: Record<string, unknown>;
+  activity_output_updates: Record<string, unknown>;
+  kit_rows: Array<Record<string, unknown>>;
+}
+
 export const registerAuth = (payload: AuthRegisterRequest) =>
   api.post<{ data: AuthUser }>("/auth/register", payload);
 
@@ -222,5 +248,17 @@ export const updateAuthAccount = (payload: AuthAccountUpdateRequest) =>
 
 export const updateAuthPassword = (payload: AuthPasswordChangeRequest) =>
   api.put<{ success: boolean }>("/auth/account/password", payload);
+
+export const getLoggingHistory = () =>
+  api.get<{ data: LoggingHistorySummaryItem[] }>("/history/logging");
+
+export const getLoggingHistoryDetail = (actiLogId: number) =>
+  api.get<{ data: LoggingHistoryDetail }>(`/history/logging/${actiLogId}`);
+
+export const updateLoggingHistoryDetail = (actiLogId: number, payload: LoggingHistoryUpdateRequest) =>
+  api.put<{ data: LoggingHistoryDetail }>(`/history/logging/${actiLogId}`, payload);
+
+export const deleteLoggingHistory = (actiLogId: number) =>
+  api.delete<{ data: { success: boolean } }>(`/history/logging/${actiLogId}`);
 
 export default api;

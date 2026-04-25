@@ -90,34 +90,38 @@ export function ActivityPickerDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-3xl rounded-[var(--radius-lg)] bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-title-md">Select activity</h3>
-            <p className="text-body-md text-[var(--color-on-surface-variant)]">Search, filter and choose activity for ACTIVITY_LOG.</p>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[var(--radius-lg)] bg-[var(--color-surface-lowest)] shadow-[var(--shadow-ambient)]">
+        <div className="shrink-0 space-y-4 border-b border-[color:var(--color-outline-variant)]/25 bg-[var(--color-surface-lowest)] p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-title-md">Select activity</h3>
+              <p className="text-body-md text-[var(--color-on-surface-variant)]">Search, filter and choose activity for ACTIVITY_LOG.</p>
+            </div>
+            <Button variant="ghost" onClick={onClose}>Close</Button>
           </div>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
+
+          <div className="grid gap-2 md:grid-cols-3">
+            <Input placeholder="Search by ID or name..." value={query} onChange={(e) => setQuery(e.target.value)} />
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">All status</option>
+              {statuses.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </Select>
+            <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}>
+              <option value="id-desc">Sort: ID desc</option>
+              <option value="id-asc">Sort: ID asc</option>
+              <option value="name-asc">Sort: Name A-Z</option>
+              <option value="name-desc">Sort: Name Z-A</option>
+            </Select>
+          </div>
+
+          {error ? <p className="text-body-md text-[var(--color-error)]">{error}</p> : null}
         </div>
 
-        <div className="mb-4 grid gap-2 md:grid-cols-3">
-          <Input placeholder="Search by ID or name..." value={query} onChange={(e) => setQuery(e.target.value)} />
-          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="all">All status</option>
-            {statuses.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </Select>
-          <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}>
-            <option value="id-desc">Sort: ID desc</option>
-            <option value="id-asc">Sort: ID asc</option>
-            <option value="name-asc">Sort: Name A-Z</option>
-            <option value="name-desc">Sort: Name Z-A</option>
-          </Select>
-        </div>
-
-        {error ? <p className="mb-3 text-body-md text-[var(--color-error)]">{error}</p> : null}
-        <div className="max-h-[360px] overflow-auto rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/40">
+        <div className="min-h-0 flex-1 overflow-y-auto p-5 pt-0">
+        <div className="mt-4 max-h-[min(50vh,360px)] overflow-auto rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/40">
           {loading ? (
             <div className="p-4 text-body-md">Loading activities...</div>
           ) : filtered.length === 0 ? (
@@ -154,6 +158,7 @@ export function ActivityPickerDialog({
               </tbody>
             </table>
           )}
+        </div>
         </div>
       </div>
     </div>

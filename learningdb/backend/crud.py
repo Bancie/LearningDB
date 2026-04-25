@@ -226,6 +226,253 @@ def get_current_activity_output(user_id: int) -> list:
     return df.to_dict(orient='records')
 
 
+def _resolve_history_tables() -> dict[str, str]:
+    return {
+        "log": resolve_browser_table_name("ACTIVITY_LOG"),
+        "output": resolve_browser_table_name("ACTIVITY_OUTPUT"),
+        "kit": resolve_browser_table_name("KIT_COUNT"),
+        "activity": resolve_browser_table_name("ACTIVITY"),
+    }
+
+
+def _get_table_columns_set(table_name: str) -> set[str]:
+    metadata = MetaData()
+    metadata.reflect(bind=engine, only=[table_name])
+    table = metadata.tables[table_name]
+    return {c.name for c in table.columns}
+
+
+def _get_row_by_pk(table_name: str, primary_key: dict) -> dict | None:
+    metadata = MetaData()
+    metadata.reflect(bind=engine, only=[table_name])
+    table = metadata.tables[table_name]
+    where_parts = [table.c[k] == primary_key[k] for k in primary_key]
+    stmt = select(table).where(and_(*where_parts)).limit(1)
+    with engine.connect() as conn:
+        row = conn.execute(stmt).mappings().first()
+    return dict(row) if row else None
+
+
+def _extract_pk_dict_from_row(table_name: str, row: dict) -> dict:
+    pk_cols = _get_pk_columns(table_name)
+    return {k: row[k] for k in pk_cols if k in row}
+
+
+def list_logging_history(user_id: int) -> list[dict]:
+    tables = _resolve_history_tables()
+    q = text(
+        f"""
+        WITH kit_agg AS (
+            SELECT
+                x.`AO_ID`,
+                GROUP_CONCAT(CONCAT(x.`sum_total`, ' ', x.`UNIT_COUNT`) ORDER BY x.`UNIT_COUNT` SEPARATOR ', ') AS kit_summary,
+                SUM(x.`sum_total`) AS total_count
+            FROM (
+                SELECT
+                    k.`AO_ID`,
+                    k.`UNIT_COUNT`,
+                    SUM(k.`TOTAL_COUNT`) AS sum_total
+                FROM `{tables["kit"]}` k
+                GROUP BY k.`AO_ID`, k.`UNIT_COUNT`
+            ) x
+            GROUP BY x.`AO_ID`
+        )
+        SELECT
+            l.`ACTI_LOG_ID` AS acti_log_id,
+            l.`ACTIVITY_ID` AS activity_id,
+            a.`ACT_NAME` AS activity_name,
+            l.`ACTLOG_START` AS start_time,
+            o.`AO_ID` AS ao_id,
+            o.`AO_FINISH` AS finish_time,
+            COALESCE(ka.`kit_summary`, '') AS kit_summary,
+            COALESCE(ka.`total_count`, 0) AS total_count,
+            COALESCE(o.`AO_FINISH`, l.`ACTLOG_START`) AS logged_at,
+            CASE
+                WHEN o.`AO_FINISH` IS NULL OR l.`ACTLOG_START` IS NULL THEN NULL
+                ELSE TIMESTAMPDIFF(MINUTE, l.`ACTLOG_START`, o.`AO_FINISH`)
+            END AS duration_minutes
+        FROM `{tables["log"]}` l
+        LEFT JOIN `{tables["output"]}` o
+          ON o.`ACTI_LOG_ID` = l.`ACTI_LOG_ID`
+        LEFT JOIN kit_agg ka
+          ON ka.`AO_ID` = o.`AO_ID`
+        LEFT JOIN `{tables["activity"]}` a
+          ON a.`ACTIVITY_ID` = l.`ACTIVITY_ID`
+        WHERE l.`USER_ID` = :user_id
+          AND o.`AO_ID` IS NOT NULL
+          AND COALESCE(ka.`total_count`, 0) > 0
+          AND COALESCE(o.`AO_FINISH`, l.`ACTLOG_START`) >= DATE_SUB(UTC_TIMESTAMP(), INTERVAL 7 DAY)
+        GROUP BY
+            l.`ACTI_LOG_ID`,
+            l.`ACTIVITY_ID`,
+            a.`ACT_NAME`,
+            l.`ACTLOG_START`,
+            o.`AO_ID`,
+            o.`AO_FINISH`,
+            ka.`kit_summary`,
+            ka.`total_count`
+        ORDER BY COALESCE(o.`AO_FINISH`, l.`ACTLOG_START`) DESC
+        """
+    )
+    with engine.connect() as conn:
+        rows = conn.execute(q, {"user_id": user_id}).mappings().all()
+
+    out: list[dict] = []
+    for row in rows:
+        out.append(
+            {
+                "acti_log_id": int(row["acti_log_id"]),
+                "activity_id": int(row["activity_id"]) if row["activity_id"] is not None else None,
+                "activity_name": str(row["activity_name"]) if row["activity_name"] is not None else None,
+                "start_time": _serialize_cell(row["start_time"]),
+                "ao_id": int(row["ao_id"]) if row["ao_id"] is not None else None,
+                "finish_time": _serialize_cell(row["finish_time"]),
+                "kit_summary": str(row["kit_summary"] or ""),
+                "total_count": float(row["total_count"] or 0),
+                "logged_at": _serialize_cell(row["logged_at"]),
+                "duration_minutes": int(row["duration_minutes"]) if row["duration_minutes"] is not None else None,
+            }
+        )
+    return out
+
+
+def get_logging_history_detail(user_id: int, acti_log_id: int) -> dict:
+    tables = _resolve_history_tables()
+    history_items = list_logging_history(user_id)
+    summary = next((item for item in history_items if item["acti_log_id"] == acti_log_id), None)
+    if not summary:
+        raise ValueError("Logging history item not found.")
+
+    log_row = _get_row_by_pk(tables["log"], {"ACTI_LOG_ID": acti_log_id})
+    if not log_row or int(log_row.get("USER_ID", -1)) != user_id:
+        raise ValueError("Logging history item not found.")
+
+    output_row = None
+    if summary["ao_id"] is not None:
+        output_row = _get_row_by_pk(tables["output"], {"AO_ID": int(summary["ao_id"])})
+
+    kit_rows: list[dict] = []
+    if summary["ao_id"] is not None:
+        q = text(f"SELECT * FROM `{tables['kit']}` WHERE `AO_ID` = :ao_id")
+        with engine.connect() as conn:
+            rows = conn.execute(q, {"ao_id": int(summary["ao_id"])}).mappings().all()
+            kit_rows = [dict(row) for row in rows]
+
+    return {
+        "summary": summary,
+        "activity_log": _row_mapping_to_dict(log_row),
+        "activity_output": _row_mapping_to_dict(output_row) if output_row else None,
+        "kit_rows": [_row_mapping_to_dict(row) for row in kit_rows],
+    }
+
+
+def update_logging_history_detail(
+    *,
+    user_id: int,
+    acti_log_id: int,
+    activity_log_updates: dict,
+    activity_output_updates: dict,
+    kit_rows: list[dict],
+) -> dict:
+    tables = _resolve_history_tables()
+    detail = get_logging_history_detail(user_id, acti_log_id)
+    summary = detail["summary"]
+    ao_id = summary.get("ao_id")
+
+    log_pk = {"ACTI_LOG_ID": acti_log_id}
+    current_log_row = _get_row_by_pk(tables["log"], log_pk)
+    if not current_log_row:
+        raise ValueError("ACTIVITY_LOG row not found.")
+
+    log_columns = _get_table_columns_set(tables["log"])
+    log_pk_cols = set(_get_pk_columns(tables["log"]))
+    clean_log_updates = {
+        k: v
+        for k, v in (activity_log_updates or {}).items()
+        if k in log_columns and k not in log_pk_cols and k != "USER_ID"
+    }
+    if clean_log_updates:
+        update_table_row(tables["log"], log_pk, clean_log_updates)
+
+    if ao_id is not None:
+        out_pk = {"AO_ID": int(ao_id)}
+        out_columns = _get_table_columns_set(tables["output"])
+        out_pk_cols = set(_get_pk_columns(tables["output"]))
+        clean_out_updates = {
+            k: v
+            for k, v in (activity_output_updates or {}).items()
+            if k in out_columns and k not in out_pk_cols and k != "ACTI_LOG_ID"
+        }
+        if clean_out_updates:
+            update_table_row(tables["output"], out_pk, clean_out_updates)
+
+    if ao_id is not None:
+        kit_table = tables["kit"]
+        kit_columns = _get_table_columns_set(kit_table)
+        kit_pk_cols = _get_pk_columns(kit_table)
+
+        q = text(f"SELECT * FROM `{kit_table}` WHERE `AO_ID` = :ao_id")
+        with engine.connect() as conn:
+            existing_rows = conn.execute(q, {"ao_id": int(ao_id)}).mappings().all()
+
+        def pk_key(pk_dict: dict) -> tuple:
+            return tuple((k, pk_dict.get(k)) for k in kit_pk_cols)
+
+        existing_map: dict[tuple, dict] = {}
+        for row in existing_rows:
+            row_dict = dict(row)
+            existing_map[pk_key(_extract_pk_dict_from_row(kit_table, row_dict))] = row_dict
+
+        incoming_map: dict[tuple, dict] = {}
+        for raw_row in kit_rows or []:
+            row = dict(raw_row)
+            row["AO_ID"] = int(ao_id)
+            pk_dict = {k: row.get(k) for k in kit_pk_cols if k in row}
+            has_full_pk = len(pk_dict) == len(kit_pk_cols) and all(v is not None for v in pk_dict.values())
+            if has_full_pk:
+                incoming_map[pk_key(pk_dict)] = row
+                clean_updates = {
+                    k: v
+                    for k, v in row.items()
+                    if k in kit_columns and k not in kit_pk_cols and k != "AO_ID"
+                }
+                if clean_updates:
+                    update_table_row(kit_table, pk_dict, clean_updates)
+                continue
+            clean_insert = {k: v for k, v in row.items() if k in kit_columns and k not in kit_pk_cols}
+            insert_record(kit_table, clean_insert)
+
+        for key, existing_row in existing_map.items():
+            if key in incoming_map:
+                continue
+            delete_table_row(kit_table, _extract_pk_dict_from_row(kit_table, existing_row))
+
+    return get_logging_history_detail(user_id, acti_log_id)
+
+
+def delete_logging_session(*, user_id: int, acti_log_id: int) -> dict:
+    tables = _resolve_history_tables()
+    detail = get_logging_history_detail(user_id, acti_log_id)
+    ao_id = detail["summary"].get("ao_id")
+
+    with engine.begin() as conn:
+        if ao_id is not None:
+            conn.execute(
+                text(f"DELETE FROM `{tables['kit']}` WHERE `AO_ID` = :ao_id"),
+                {"ao_id": int(ao_id)},
+            )
+            conn.execute(
+                text(f"DELETE FROM `{tables['output']}` WHERE `AO_ID` = :ao_id"),
+                {"ao_id": int(ao_id)},
+            )
+        conn.execute(
+            text(f"DELETE FROM `{tables['log']}` WHERE `ACTI_LOG_ID` = :acti_log_id AND `USER_ID` = :user_id"),
+            {"acti_log_id": acti_log_id, "user_id": user_id},
+        )
+
+    return {"success": True}
+
+
 def get_activity_ids(status: str = None) -> list:
     """Return a list of all ACTIVITY_IDs in the ACTIVITY table."""
     try:

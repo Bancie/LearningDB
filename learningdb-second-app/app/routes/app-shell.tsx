@@ -3,6 +3,9 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "~/auth/session";
 import { useColorMode } from "~/color-mode";
+import { Button } from "~/components/ui/button";
+import { HistoryRefreshProvider } from "~/history/history-refresh-context";
+import { HistorySidebar } from "~/history/HistorySidebar";
 
 export default function AppShell() {
   const { preference, setPreference } = useColorMode();
@@ -11,6 +14,8 @@ export default function AppShell() {
   const navigate = useNavigate();
   const [desktopCollapsed, setDesktopCollapsed] = React.useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = React.useState(false);
+  const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (loading || user) {
@@ -41,6 +46,7 @@ export default function AppShell() {
 
   const drawerWidthClass = desktopCollapsed ? "md:w-20" : "md:w-64";
   const desktopMainOffsetClass = desktopCollapsed ? "md:ml-20" : "md:ml-64";
+  const historyMainOffsetClass = historyOpen ? "lg:mr-[360px]" : "lg:mr-0";
 
   const drawerNavClass = ({ isActive }: { isActive: boolean }) =>
     [
@@ -52,6 +58,7 @@ export default function AppShell() {
     ].join(" ");
 
   return (
+    <HistoryRefreshProvider>
     <div className="stitch-shell min-h-screen">
       <header className="stitch-liquid-header fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-8">
@@ -79,6 +86,14 @@ export default function AppShell() {
           <span className="hidden text-label-md text-[var(--color-on-surface-variant)] md:inline">
             {user.username}
           </span>
+          <button
+            type="button"
+            aria-label="toggle history sidebar"
+            className="rounded-full p-2 text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)]"
+            onClick={() => setHistoryOpen((prev) => !prev)}
+          >
+            <span className="material-symbols-outlined text-[20px]">history</span>
+          </button>
           <button
             type="button"
             aria-label="toggle color mode"
@@ -133,7 +148,7 @@ export default function AppShell() {
             className={drawerNavClass({ isActive: false })}
             onClick={() => {
               setMobileDrawerOpen(false);
-              void logout();
+              setLogoutConfirmOpen(true);
             }}
             title="Logout"
           >
@@ -143,11 +158,43 @@ export default function AppShell() {
         </div>
       </aside>
 
-      <main className={["min-h-screen pt-16 transition-[margin] duration-200", desktopMainOffsetClass].join(" ")}>
+      <main
+        className={[
+          "min-h-screen pt-16 transition-[margin] duration-200",
+          desktopMainOffsetClass,
+          historyMainOffsetClass,
+        ].join(" ")}
+      >
         <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
           <Outlet />
         </div>
       </main>
+      <HistorySidebar open={historyOpen} onClose={() => setHistoryOpen(false)} />
+
+      {logoutConfirmOpen ? (
+        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/35 p-4">
+          <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--color-outline-variant)]/40 bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
+            <h3 className="mb-2 text-title-md">Log out</h3>
+            <p className="mb-5 text-body-md text-[var(--color-on-surface-variant)]">Are you sure you want to sign out?</p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" variant="secondary" onClick={() => setLogoutConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={() => {
+                  setLogoutConfirmOpen(false);
+                  void logout();
+                }}
+              >
+                Log out
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
+    </HistoryRefreshProvider>
   );
 }

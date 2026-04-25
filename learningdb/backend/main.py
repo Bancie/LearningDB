@@ -121,6 +121,12 @@ class AuthPasswordChangeRequest(BaseModel):
     new_password: str = Field(min_length=6, max_length=128)
 
 
+class LoggingHistoryUpdateRequest(BaseModel):
+    activity_log_updates: dict[str, Any] = Field(default_factory=dict)
+    activity_output_updates: dict[str, Any] = Field(default_factory=dict)
+    kit_rows: list[dict[str, Any]] = Field(default_factory=list)
+
+
 def _set_auth_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
@@ -222,6 +228,78 @@ def me(session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME))
         return {"data": user}
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/history/logging")
+def get_logging_history(session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME)):
+    try:
+        user = _resolve_session_user(session_token)
+        data = crud.list_logging_history(int(user["user_id"]))
+        return {"data": data}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/history/logging/{acti_log_id}")
+def get_logging_history_detail(
+    acti_log_id: int,
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        data = crud.get_logging_history_detail(int(user["user_id"]), acti_log_id)
+        return {"data": data}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/history/logging/{acti_log_id}")
+def update_logging_history_detail(
+    acti_log_id: int,
+    request: LoggingHistoryUpdateRequest,
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        data = crud.update_logging_history_detail(
+            user_id=int(user["user_id"]),
+            acti_log_id=acti_log_id,
+            activity_log_updates=request.activity_log_updates,
+            activity_output_updates=request.activity_output_updates,
+            kit_rows=request.kit_rows,
+        )
+        return {"data": data}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/history/logging/{acti_log_id}")
+def delete_logging_history(
+    acti_log_id: int,
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        data = crud.delete_logging_session(user_id=int(user["user_id"]), acti_log_id=acti_log_id)
+        return {"data": data}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -17,6 +17,7 @@ import {
 import type { WizardStep } from "~/import-wizard/types";
 import type { Column } from "~/services/api";
 import { getTableColumns, insertRecord } from "~/services/api";
+import { useHistoryRefresh } from "~/history/history-refresh-context";
 import { formatApiError } from "~/utils/formatApiError";
 
 type StepDef = { id: WizardStep; title: string; subtitle: string };
@@ -41,6 +42,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function ImportWizardRoute() {
   const { user } = useAuth();
+  const { bump: bumpHistory } = useHistoryRefresh();
   const [tables, setTables] = React.useState<ResolvedTables | null>(null);
   const [colsLog, setColsLog] = React.useState<Column[]>([]);
   const [colsOut, setColsOut] = React.useState<Column[]>([]);
@@ -212,6 +214,7 @@ export default function ImportWizardRoute() {
       setOutputValues({});
       setKitRows([{}]);
       setPickedActivityLabel("");
+      bumpHistory();
     } catch (e) {
       setError(formatApiError(e) || "Step 3 failed");
     } finally {
@@ -267,6 +270,26 @@ export default function ImportWizardRoute() {
   const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
   const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
   const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
+
+  const goToStep = (target: WizardStep) => {
+    if (target === 1) {
+      setStep(1);
+      return;
+    }
+    if (target === 2) {
+      if (actiLogId == null) {
+        setError("Complete step 1 and create the ActivityLog before opening step 2.");
+        return;
+      }
+      setStep(2);
+      return;
+    }
+    if (actiLogId == null || aoId == null) {
+      setError("Complete steps 1 and 2 before opening step 3.");
+      return;
+    }
+    setStep(3);
+  };
 
   return (
     <div className="stitch-page-bg min-h-[70vh] rounded-lg p-4 md:p-8">
@@ -337,31 +360,37 @@ export default function ImportWizardRoute() {
       ) : null}
 
       <section className="mx-auto max-w-5xl space-y-6">
-        <div className="rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/30 bg-[var(--color-surface-lowest)] p-4">
+        <div className="stitch-liquid-wizard-stepper sticky top-20 z-20 mb-3 p-4 md:p-5">
           <div className="grid gap-3 md:grid-cols-3">
             {STEPS.map((s, i) => {
               const active = step === s.id;
               const completed = step > s.id;
               return (
-                <div key={s.id} className="flex items-start gap-3">
-                  <div
-                    className={[
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-label-md font-bold",
-                      active
-                        ? "bg-[var(--color-primary)] text-white"
-                        : completed
-                          ? "bg-[var(--color-primary-container)] text-white"
-                          : "bg-[var(--color-surface-container)] text-[var(--color-on-surface-variant)]",
-                    ].join(" ")}
+                <div key={s.id} className="flex min-w-0 items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => goToStep(s.id)}
+                    className="flex w-full min-w-0 max-w-full flex-1 items-start gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
                   >
-                    {s.id}
-                  </div>
-                  <div>
-                    <p className={active ? "text-label-md font-semibold text-[var(--color-primary)]" : "text-label-md font-semibold"}>
-                      {s.title}
-                    </p>
-                    <p className="text-[0.78rem] text-[var(--color-on-surface-variant)]">{s.subtitle}</p>
-                  </div>
+                    <div
+                      className={[
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-label-md font-bold",
+                        active
+                          ? "bg-[var(--color-primary)] text-white"
+                          : completed
+                            ? "bg-[var(--color-primary-container)] text-white"
+                            : "bg-[var(--color-surface-container)] text-[var(--color-on-surface-variant)]",
+                      ].join(" ")}
+                    >
+                      {s.id}
+                    </div>
+                    <div className="min-w-0">
+                      <p className={active ? "text-label-md font-semibold text-[var(--color-primary)]" : "text-label-md font-semibold"}>
+                        {s.title}
+                      </p>
+                      <p className="text-[0.78rem] text-[var(--color-on-surface-variant)]">{s.subtitle}</p>
+                    </div>
+                  </button>
                   {i < STEPS.length - 1 ? (
                     <div className="ml-auto mt-4 hidden h-[2px] flex-1 bg-[var(--color-surface-container)] md:block" />
                   ) : null}
