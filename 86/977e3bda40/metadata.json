@@ -3,7 +3,7 @@
   "checkpoint_id": "86977e3bda40",
   "strategy": "manual-commit",
   "branch": "learning/from-feature-from-main/v1",
-  "checkpoints_count": 0,
+  "checkpoints_count": 5,
   "files_touched": [
     "learningdb-second-app/app/history/HistoryDetailDialog.tsx",
     "learningdb-second-app/app/history/HistorySidebar.tsx",
@@ -22,6 +22,13 @@
       "transcript": "/86/977e3bda40/0/full.jsonl",
       "context": "",
       "content_hash": "/86/977e3bda40/0/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/86/977e3bda40/1/metadata.json",
+      "transcript": "/86/977e3bda40/1/full.jsonl",
+      "context": "",
+      "content_hash": "/86/977e3bda40/1/content_hash.txt",
       "prompt": ""
     }
   ],
