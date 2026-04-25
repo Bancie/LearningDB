@@ -6,16 +6,16 @@ export const stitchDesignReadmePath = "design/stitch_learningdb (2)/DESIGN.md";
 
 export const stitchTokens = {
   color: {
-    primary: "#005dac",
-    primaryContainer: "#1976d2",
-    secondaryContainer: "#bad3fd",
+    primary: "#3d3d3d",
+    primaryContainer: "#6a6a6a",
+    secondaryContainer: "#d6d6d6",
     surface: "#f9f9f9",
     surfaceLow: "#f3f3f3",
     surfaceContainer: "#eeeeee",
     surfaceLowest: "#ffffff",
-    outlineVariant: "#c1c6d4",
-    onSurface: "#1a1c1c",
-    onSurfaceVariant: "#414752",
+    outlineVariant: "#b8b8b8",
+    onSurface: "#1a1a1a",
+    onSurfaceVariant: "#444444",
     error: "#ba1a1a",
   },
   typography: {

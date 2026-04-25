@@ -5,19 +5,20 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+/* Accent: neutral grays from #6a6a6a (deeper = primary, step up = container, soft = secondary areas). */
 :root {
-  --color-primary: #005dac;
-  --color-primary-container: #1976d2;
-  --color-secondary-container: #bad3fd;
+  --color-primary: #3d3d3d;
+  --color-primary-container: #6a6a6a;
+  --color-secondary-container: #d6d6d6;
   --color-surface: #f9f9f9;
   --color-surface-low: #f3f3f3;
   --color-surface-container: #eeeeee;
   --color-surface-high: #e8e8e8;
   --color-surface-highest: #e2e2e2;
   --color-surface-lowest: #ffffff;
-  --color-outline-variant: #c1c6d4;
-  --color-on-surface: #1a1c1c;
-  --color-on-surface-variant: #414752;
+  --color-outline-variant: #b8b8b8;
+  --color-on-surface: #1a1a1a;
+  --color-on-surface-variant: #444444;
   --color-error: #ba1a1a;
   --shadow-ambient: 0px 8px 24px rgba(26, 28, 28, 0.06);
   --radius-md: 0.375rem;
@@ -26,18 +27,18 @@
 }
 
 html[data-theme="dark"] {
-  --color-primary: #78b8ff;
-  --color-primary-container: #2b8cff;
-  --color-secondary-container: #1f3551;
-  --color-surface: #0f151d;
-  --color-surface-low: #151d27;
-  --color-surface-container: #1a2430;
-  --color-surface-high: #202c38;
-  --color-surface-highest: #253240;
-  --color-surface-lowest: #101821;
-  --color-outline-variant: #4f6177;
-  --color-on-surface: #e9f0f8;
-  --color-on-surface-variant: #b6c2d2;
+  --color-primary: #6a6a6a;
+  --color-primary-container: #3d3d3d;
+  --color-secondary-container: #2e2e2e;
+  --color-surface: #121212;
+  --color-surface-low: #181818;
+  --color-surface-container: #1e1e1e;
+  --color-surface-high: #242424;
+  --color-surface-highest: #2a2a2a;
+  --color-surface-lowest: #0e0e0e;
+  --color-outline-variant: #5a5a5a;
+  --color-on-surface: #e8e8e8;
+  --color-on-surface-variant: #9e9e9e;
   --color-error: #ff8e8e;
   --shadow-ambient: 0px 10px 28px rgba(0, 0, 0, 0.35);
 }
@@ -102,22 +103,14 @@ a {
 }
 
 .stitch-liquid-header {
-  background: color-mix(in srgb, var(--color-surface-lowest) 92%, transparent);
+  background: var(--color-surface-lowest);
   border-bottom: 1px solid color-mix(in srgb, var(--color-outline-variant) 45%, transparent);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-on-surface) 8%, transparent);
-  backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
 
-/* Sticky import-wizard stepper: glass surface aligned with app header liquid language */
+/* Sticky import-wizard stepper: flat bar (no glass / halo) */
 .stitch-liquid-wizard-stepper {
-  background: color-mix(in srgb, var(--color-surface-lowest) 90%, transparent);
+  background: var(--color-surface-lowest);
   border: 1px solid color-mix(in srgb, var(--color-outline-variant) 38%, transparent);
-  box-shadow:
-    0 4px 16px color-mix(in srgb, var(--color-on-surface) 6%, transparent),
-    0 12px 40px color-mix(in srgb, var(--color-on-surface) 8%, transparent);
-  backdrop-filter: saturate(200%) blur(16px);
-  -webkit-backdrop-filter: saturate(200%) blur(16px);
   border-radius: var(--radius-lg);
 }
 

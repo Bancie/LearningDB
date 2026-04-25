@@ -42,7 +42,7 @@ function formatDurationMins(value: number | null): string {
 
 function activityColor(activityId: number | null): string {
   const palette = [
-    "#0a84ff",
+    "#6a6a6a",
     "#34c759",
     "#ff9f0a",
     "#af52de",
