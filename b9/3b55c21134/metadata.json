@@ -1,0 +1,26 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "b93b55c21134",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "learningdb-second-app/public/learningdblogo.png"
+  ],
+  "sessions": [
+    {
+      "metadata": "/b9/3b55c21134/0/metadata.json",
+      "transcript": "/b9/3b55c21134/0/full.jsonl",
+      "context": "",
+      "content_hash": "/b9/3b55c21134/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
