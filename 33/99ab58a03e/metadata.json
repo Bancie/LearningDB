@@ -3,7 +3,7 @@
   "checkpoint_id": "3399ab58a03e",
   "strategy": "manual-commit",
   "branch": "learning/from-feature-from-main/v1",
-  "checkpoints_count": 0,
+  "checkpoints_count": 2,
   "files_touched": [
     ".DS_Store",
     "learningdb-second-app/app/app.css",
@@ -17,6 +17,13 @@
       "transcript": "/33/99ab58a03e/0/full.jsonl",
       "context": "",
       "content_hash": "/33/99ab58a03e/0/content_hash.txt",
+      "prompt": ""
+    },
+    {
+      "metadata": "/33/99ab58a03e/1/metadata.json",
+      "transcript": "/33/99ab58a03e/1/full.jsonl",
+      "context": "",
+      "content_hash": "/33/99ab58a03e/1/content_hash.txt",
       "prompt": ""
     }
   ],
