@@ -290,17 +290,11 @@ export default function ImportWizardRoute() {
           <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="font-semibold text-[var(--color-primary)]">Import Wizard</span>
         </nav>
-        <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-          <div>
-            <h1 className="text-headline-sm">Unified Data Entry</h1>
-            <p className="text-body-md text-[var(--color-on-surface-variant)]">
-              Step 1 ActivityLog → Step 2 ActivityOutput → Step 3 KitCount. USER_ID auto-fills from your account.
-            </p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-[var(--color-secondary-container)] px-4 py-1.5 text-label-md">
-            <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
-            {user ? `${user.username} (id=${user.user_id})` : "Session active"}
-          </div>
+        <div>
+          <h1 className="text-headline-sm">Logging your data</h1>
+          <p className="text-body-md text-[var(--color-on-surface-variant)]">
+            Step 1 ActivityLog → Step 2 ActivityOutput → Step 3 KitCount. USER_ID auto-fills from your account.
+          </p>
         </div>
       </header>
 

@@ -53,7 +53,7 @@ export default function AppShell() {
 
   return (
     <div className="stitch-shell min-h-screen">
-      <header className="fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between bg-[var(--color-surface)] px-6">
+      <header className="stitch-liquid-header fixed left-0 right-0 top-0 z-50 flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-8">
           <button
             type="button"
@@ -107,17 +107,6 @@ export default function AppShell() {
           mobileDrawerOpen ? "flex translate-x-0" : "-translate-x-full md:translate-x-0",
         ].join(" ")}
       >
-        <div className="mb-10 px-6">
-          <div className={desktopCollapsed ? "flex items-center justify-center" : "flex items-center gap-3"}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--color-primary-container)] text-white">
-              <span className="material-symbols-outlined">database</span>
-            </div>
-            <div className={desktopCollapsed ? "hidden" : ""}>
-              <h1 className="text-title-md font-bold">LearningDB</h1>
-              <p className="text-label-md opacity-60">Management Console</p>
-            </div>
-          </div>
-        </div>
         <nav className="flex flex-1 flex-col gap-1">
           <NavLink
             to="/import-wizard"
