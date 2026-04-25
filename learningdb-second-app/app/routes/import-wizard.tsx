@@ -6,7 +6,7 @@ import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { ActivityPickerDialog } from "~/import-wizard/ActivityPickerDialog";
-import { clearDraft, loadDraft, saveDraft } from "~/import-wizard/draft-storage";
+import { clearServerDraft, loadServerDraft, saveServerDraft } from "~/import-wizard/draft-storage";
 import { WizardFields } from "~/import-wizard/WizardFields";
 import {
   buildInsertPayload,
@@ -14,7 +14,7 @@ import {
   resolveImportTables,
   type ResolvedTables,
 } from "~/import-wizard/table-utils";
-import type { WizardStep } from "~/import-wizard/types";
+import type { ImportDraftV1, WizardStep } from "~/import-wizard/types";
 import type { Column } from "~/services/api";
 import { getTableColumns, insertRecord } from "~/services/api";
 import { useHistoryRefresh } from "~/history/history-refresh-context";
@@ -89,15 +89,26 @@ export default function ImportWizardRoute() {
   }, []);
 
   React.useEffect(() => {
-    const d = loadDraft();
-    if (!d) return;
-    setStep(d.step);
-    setActiLogId(d.actiLogId);
-    setAoId(d.aoId);
-    setLogValues(d.logValues);
-    setOutputValues(d.outputValues);
-    setKitRows(d.kitRows.length ? d.kitRows : [{}]);
-  }, []);
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const d = await loadServerDraft();
+        if (cancelled || !d) return;
+        setStep(d.step);
+        setActiLogId(d.actiLogId);
+        setAoId(d.aoId);
+        setLogValues(d.logValues);
+        setOutputValues(d.outputValues);
+        setKitRows(d.kitRows.length ? d.kitRows : [{}]);
+      } catch (e) {
+        if (!cancelled) setError(formatApiError(e) || "Failed to load saved draft");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const selectedActivityId =
     typeof logValues.ACTIVITY_ID === "number"
@@ -106,8 +117,13 @@ export default function ImportWizardRoute() {
         ? Number(logValues.ACTIVITY_ID)
         : null;
 
-  const onSaveDraft = React.useCallback(() => {
-    saveDraft({
+  const onSaveDraft = React.useCallback(async () => {
+    if (!user) {
+      setError("Sign in to save your draft to your account.");
+      return;
+    }
+    setError(null);
+    const payload: ImportDraftV1 = {
       version: 1,
       step,
       actiLogId,
@@ -115,14 +131,19 @@ export default function ImportWizardRoute() {
       logValues,
       outputValues,
       kitRows,
-    });
-    if (draftSavedTimerRef.current) clearTimeout(draftSavedTimerRef.current);
-    setDraftSavedFlash(true);
-    draftSavedTimerRef.current = setTimeout(() => {
-      setDraftSavedFlash(false);
-      draftSavedTimerRef.current = null;
-    }, 2800);
-  }, [step, actiLogId, aoId, logValues, outputValues, kitRows]);
+    };
+    try {
+      await saveServerDraft(payload);
+      if (draftSavedTimerRef.current) clearTimeout(draftSavedTimerRef.current);
+      setDraftSavedFlash(true);
+      draftSavedTimerRef.current = setTimeout(() => {
+        setDraftSavedFlash(false);
+        draftSavedTimerRef.current = null;
+      }, 2800);
+    } catch (e) {
+      setError(formatApiError(e) || "Failed to save draft");
+    }
+  }, [user, step, actiLogId, aoId, logValues, outputValues, kitRows]);
 
   React.useEffect(
     () => () => {
@@ -131,8 +152,15 @@ export default function ImportWizardRoute() {
     [],
   );
 
-  const onDiscardDraft = React.useCallback(() => {
-    clearDraft();
+  const onDiscardDraft = React.useCallback(async () => {
+    if (user) {
+      try {
+        await clearServerDraft();
+      } catch (e) {
+        setError(formatApiError(e) || "Failed to clear draft on server");
+        return;
+      }
+    }
     setStep(1);
     setActiLogId(null);
     setAoId(null);
@@ -143,7 +171,7 @@ export default function ImportWizardRoute() {
     setError(null);
     setSuccessMsg("Draft discarded. Wizard reset.");
     setTimeout(() => setSuccessMsg(null), 2200);
-  }, []);
+  }, [user]);
 
   const onDiscardDraftWithConfirm = React.useCallback(() => {
     setConfirmAction("discard");
@@ -172,7 +200,15 @@ export default function ImportWizardRoute() {
       if (id == null) throw new Error("Insert succeeded but API did not return ACTI_LOG_ID.");
       setActiLogId(id);
       setStep(2);
-      saveDraft({ version: 1, step: 2, actiLogId: id, aoId, logValues, outputValues, kitRows });
+      await saveServerDraft({
+        version: 1,
+        step: 2,
+        actiLogId: id,
+        aoId,
+        logValues,
+        outputValues,
+        kitRows,
+      });
     } catch (e) {
       setError(formatApiError(e) || "Step 1 failed");
     } finally {
@@ -181,7 +217,7 @@ export default function ImportWizardRoute() {
   };
 
   const handleStep2Next = async () => {
-    if (!tables || actiLogId == null) return;
+    if (!tables || actiLogId == null || !user) return;
     setError(null);
     setBusy(true);
     try {
@@ -191,7 +227,15 @@ export default function ImportWizardRoute() {
       if (id == null) throw new Error("Insert succeeded but API did not return AO_ID.");
       setAoId(id);
       setStep(3);
-      saveDraft({ version: 1, step: 3, actiLogId, aoId: id, logValues, outputValues, kitRows });
+      await saveServerDraft({
+        version: 1,
+        step: 3,
+        actiLogId,
+        aoId: id,
+        logValues,
+        outputValues,
+        kitRows,
+      });
     } catch (e) {
       setError(formatApiError(e) || "Step 2 failed");
     } finally {
@@ -218,7 +262,13 @@ export default function ImportWizardRoute() {
           throw new Error(`Kit row #${i + 1} failed: ${formatApiError(err)}`);
         }
       }
-      clearDraft();
+      if (user) {
+        try {
+          await clearServerDraft();
+        } catch (e) {
+          setError(formatApiError(e) || "Import saved but failed to clear draft on server");
+        }
+      }
       setSuccessMsg("Import complete. Kit count rows saved.");
       setTimeout(() => setSuccessMsg(null), 5000);
       setStep(1);
@@ -267,7 +317,7 @@ export default function ImportWizardRoute() {
     const action = confirmAction;
     setConfirmAction(null);
     if (action === "discard") {
-      onDiscardDraft();
+      await onDiscardDraft();
       return;
     }
     if (action === "next-step1") {
@@ -350,7 +400,7 @@ export default function ImportWizardRoute() {
           {draftSavedFlash ? (
             <div className="shadow-lg">
               <Alert variant="success" className="mb-0">
-                Draft saved for this browser session.
+                Draft saved to your account.
               </Alert>
             </div>
           ) : null}

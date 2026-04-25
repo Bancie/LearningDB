@@ -43,12 +43,15 @@ Base path dưới đây là relative tới **`/api`** (axios `baseURL` đã gồ
 | GET | `/bayes/check-prior` | `checkPrior` | `{ valid, total, message }` |
 | GET | `/bayes/run` | `runBayes` | Query: `total_minute` optional; `{ data: BayesResult[] }` |
 | GET | `/users/{userId}/profile` | `getUserProfile` | `{ data: UserProfile }` |
+| GET | `/import-wizard/draft` | `getImportWizardDraft` | Cookie session; `{ data: ImportDraftV1 \| null }` — draft import wizard theo user |
+| PUT | `/import-wizard/draft` | `putImportWizardDraft` | Body `ImportDraftV1`; `{ data: ImportDraftV1 }` |
+| DELETE | `/import-wizard/draft` | `deleteImportWizardDraft` | `{ success: true }` |
 
 **OpenAPI đầy đủ** (gồm cả route chat DB trên cùng app FastAPI): xem `openapi.snapshot.json`. Second app **hiện** chỉ bundle các hàm trên trong `api.ts`; khi thêm endpoint mới, cập nhật `api.ts` + bảng này + examples.
 
 ## Import wizard (second app)
 
-- Route: **`/import-wizard`** — luồng 3 bước: `ACTIVITY_LOG` → `ACTIVITY_OUTPUT` → `KIT_COUNT`, draft trong `sessionStorage`, FK ẩn lấy từ `primary_key` của response insert bước trước.
+- Route: **`/import-wizard`** — luồng 3 bước: `ACTIVITY_LOG` → `ACTIVITY_OUTPUT` → `KIT_COUNT`, **draft lưu server** (`GET/PUT/DELETE /import-wizard/draft`, theo session), FK ẩn lấy từ `primary_key` của response insert bước trước.
 - Tham chiếu UI Stitch (desktop/mobile + DESIGN): `learningdb-second-app/design/import-wizard-reference/`.
 
 ## Gợi ý UX — màn “Data entry”

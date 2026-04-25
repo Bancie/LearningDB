@@ -3,11 +3,11 @@ FastAPI Backend for LearningDB
 """
 import json
 import os
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import inspect, text
 try:
     from . import crud
@@ -119,6 +119,23 @@ class AuthAccountUpdateRequest(BaseModel):
 class AuthPasswordChangeRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=128)
     new_password: str = Field(min_length=6, max_length=128)
+
+
+class ImportWizardDraftV1(BaseModel):
+    version: Literal[1]
+    step: int
+    actiLogId: Optional[int] = None
+    aoId: Optional[int] = None
+    logValues: dict[str, Any] = Field(default_factory=dict)
+    outputValues: dict[str, Any] = Field(default_factory=dict)
+    kitRows: list[dict[str, Any]] = Field(default_factory=list)
+
+    @field_validator("step")
+    @classmethod
+    def step_in_range(cls, v: int) -> int:
+        if v not in (1, 2, 3):
+            raise ValueError("step must be 1, 2, or 3")
+        return v
 
 
 class LoggingHistoryUpdateRequest(BaseModel):
@@ -363,6 +380,52 @@ def update_account_password(
         raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/import-wizard/draft")
+def get_import_wizard_draft(
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        data = crud.get_import_wizard_draft(int(user["user_id"]))
+        return {"data": data}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/import-wizard/draft")
+def put_import_wizard_draft(
+    request: ImportWizardDraftV1,
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        payload = request.model_dump()
+        updated = crud.upsert_import_wizard_draft(int(user["user_id"]), payload)
+        return {"data": updated}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/import-wizard/draft")
+def delete_import_wizard_draft(
+    session_token: str | None = Cookie(default=None, alias=AUTH_COOKIE_NAME),
+):
+    try:
+        user = _resolve_session_user(session_token)
+        crud.delete_import_wizard_draft(int(user["user_id"]))
+        return {"success": True}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

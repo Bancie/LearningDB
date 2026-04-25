@@ -1,42 +1,26 @@
 import type { ImportDraftV1 } from "./types";
+import { deleteImportWizardDraft, getImportWizardDraft, putImportWizardDraft } from "~/services/api";
 
-const KEY = "learningdb-second-import-wizard-draft-v1";
-
-export function loadDraft(): ImportDraftV1 | null {
-  if (typeof window === "undefined") {
-    return null;
+/** Load persisted draft for the signed-in user (server). */
+export async function loadServerDraft(): Promise<ImportDraftV1 | null> {
+  const { data } = await getImportWizardDraft();
+  const d = data.data;
+  if (!d || d.version !== 1) return null;
+  if (!Array.isArray(d.kitRows)) {
+    return {
+      ...d,
+      kitRows: [{}],
+    };
   }
-  try {
-    const raw = sessionStorage.getItem(KEY);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as ImportDraftV1 & { kitValues?: Record<string, unknown> };
-    if (parsed?.version !== 1) {
-      return null;
-    }
-    if (!Array.isArray(parsed.kitRows)) {
-      return {
-        ...parsed,
-        kitRows: parsed.kitValues ? [parsed.kitValues] : [{}],
-      };
-    }
-    return parsed;
-  } catch {
-    return null;
-  }
+  return d;
 }
 
-export function saveDraft(draft: ImportDraftV1): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  sessionStorage.setItem(KEY, JSON.stringify(draft));
+/** Save draft to the server (per user). */
+export async function saveServerDraft(draft: ImportDraftV1): Promise<void> {
+  await putImportWizardDraft(draft);
 }
 
-export function clearDraft(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  sessionStorage.removeItem(KEY);
+/** Remove server draft (after discard or successful import). */
+export async function clearServerDraft(): Promise<void> {
+  await deleteImportWizardDraft();
 }

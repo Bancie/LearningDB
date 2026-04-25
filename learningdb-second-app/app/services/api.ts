@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { ImportDraftV1 } from "~/import-wizard/types";
 import { resolveBackendApiBaseUrl } from "./resolveApiBaseUrl";
 
 const API_BASE_URL = resolveBackendApiBaseUrl();
@@ -260,5 +261,13 @@ export const updateLoggingHistoryDetail = (actiLogId: number, payload: LoggingHi
 
 export const deleteLoggingHistory = (actiLogId: number) =>
   api.delete<{ data: { success: boolean } }>(`/history/logging/${actiLogId}`);
+
+export const getImportWizardDraft = () =>
+  api.get<{ data: ImportDraftV1 | null }>("/import-wizard/draft");
+
+export const putImportWizardDraft = (payload: ImportDraftV1) =>
+  api.put<{ data: ImportDraftV1 }>("/import-wizard/draft", payload);
+
+export const deleteImportWizardDraft = () => api.delete<{ success: boolean }>("/import-wizard/draft");
 
 export default api;

@@ -1,6 +1,7 @@
 """
 CRUD operations - ported from bayes.py
 """
+import json
 import os
 import base64
 import hashlib
@@ -763,6 +764,18 @@ def ensure_auth_tables() -> None:
                 """
             )
         )
+        conn.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS `USER_IMPORT_WIZARD_DRAFT` (
+                    `USER_ID` INT NOT NULL PRIMARY KEY,
+                    `DRAFT_JSON` LONGTEXT NOT NULL,
+                    `UPDATED_AT` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        ON UPDATE CURRENT_TIMESTAMP
+                )
+                """
+            )
+        )
 
 
 def _next_user_id() -> int:
@@ -832,6 +845,57 @@ def ensure_seed_user_account() -> None:
                 "salt": salt,
                 "pw_hash": pw_hash,
             },
+        )
+
+
+def get_import_wizard_draft(user_id: int) -> dict | None:
+    ensure_auth_tables()
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                "SELECT `DRAFT_JSON` FROM `USER_IMPORT_WIZARD_DRAFT` WHERE `USER_ID` = :uid LIMIT 1"
+            ),
+            {"uid": user_id},
+        ).mappings().first()
+    if not row or row.get("DRAFT_JSON") is None:
+        return None
+    try:
+        data = json.loads(str(row["DRAFT_JSON"]))
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(data, dict) or data.get("version") != 1:
+        return None
+    return data
+
+
+def upsert_import_wizard_draft(user_id: int, draft: dict) -> dict:
+    ensure_auth_tables()
+    if not isinstance(draft, dict) or draft.get("version") != 1:
+        raise ValueError("draft must be an object with version 1")
+    step = draft.get("step")
+    if step not in (1, 2, 3):
+        raise ValueError("draft.step must be 1, 2, or 3")
+    payload = json.dumps(draft, separators=(",", ":"), default=str)
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO `USER_IMPORT_WIZARD_DRAFT` (`USER_ID`, `DRAFT_JSON`)
+                VALUES (:uid, :js)
+                ON DUPLICATE KEY UPDATE `DRAFT_JSON` = VALUES(`DRAFT_JSON`)
+                """
+            ),
+            {"uid": user_id, "js": payload},
+        )
+    return draft
+
+
+def delete_import_wizard_draft(user_id: int) -> None:
+    ensure_auth_tables()
+    with engine.begin() as conn:
+        conn.execute(
+            text("DELETE FROM `USER_IMPORT_WIZARD_DRAFT` WHERE `USER_ID` = :uid"),
+            {"uid": user_id},
         )
 
 

@@ -38,6 +38,9 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${DB_NAME}
+      SEED_USER1_USERNAME: ${SEED_USER1_USERNAME:-owner}
+      SEED_USER1_EMAIL: ${SEED_USER1_EMAIL:-owner@learningdb.local}
+      SEED_USER1_PASSWORD: ${SEED_USER1_PASSWORD:-learningdb-owner-1}
     ports:
       - "8000:8000"
     healthcheck:
