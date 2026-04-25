@@ -109,6 +109,18 @@ a {
   -webkit-backdrop-filter: saturate(180%) blur(16px);
 }
 
+/* Sticky import-wizard stepper: glass surface aligned with app header liquid language */
+.stitch-liquid-wizard-stepper {
+  background: color-mix(in srgb, var(--color-surface-lowest) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 38%, transparent);
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--color-on-surface) 6%, transparent),
+    0 12px 40px color-mix(in srgb, var(--color-on-surface) 8%, transparent);
+  backdrop-filter: saturate(200%) blur(20px);
+  -webkit-backdrop-filter: saturate(200%) blur(20px);
+  border-radius: var(--radius-lg);
+}
+
 .stitch-card {
   background: var(--color-surface-lowest);
   border: 1px solid color-mix(in srgb, var(--color-outline-variant) 22%, transparent);

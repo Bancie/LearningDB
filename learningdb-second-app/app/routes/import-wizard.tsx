@@ -60,7 +60,8 @@ export default function ImportWizardRoute() {
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [pickedActivityLabel, setPickedActivityLabel] = React.useState<string>("");
   const [confirmAction, setConfirmAction] = React.useState<ConfirmAction | null>(null);
-  const [saveDialogOpen, setSaveDialogOpen] = React.useState(false);
+  const [draftSavedFlash, setDraftSavedFlash] = React.useState(false);
+  const draftSavedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -115,8 +116,20 @@ export default function ImportWizardRoute() {
       outputValues,
       kitRows,
     });
-    setSaveDialogOpen(true);
+    if (draftSavedTimerRef.current) clearTimeout(draftSavedTimerRef.current);
+    setDraftSavedFlash(true);
+    draftSavedTimerRef.current = setTimeout(() => {
+      setDraftSavedFlash(false);
+      draftSavedTimerRef.current = null;
+    }, 2800);
   }, [step, actiLogId, aoId, logValues, outputValues, kitRows]);
+
+  React.useEffect(
+    () => () => {
+      if (draftSavedTimerRef.current) clearTimeout(draftSavedTimerRef.current);
+    },
+    [],
+  );
 
   const onDiscardDraft = React.useCallback(() => {
     clearDraft();
@@ -207,6 +220,7 @@ export default function ImportWizardRoute() {
       }
       clearDraft();
       setSuccessMsg("Import complete. Kit count rows saved.");
+      setTimeout(() => setSuccessMsg(null), 5000);
       setStep(1);
       setActiLogId(null);
       setAoId(null);
@@ -235,7 +249,7 @@ export default function ImportWizardRoute() {
   }, []);
 
   const confirmTitleMap: Record<ConfirmAction, string> = {
-    discard: "Discard Draft",
+    discard: "Discard",
     "next-step1": "Continue to Output Details",
     "next-step2": "Continue to Kit Count",
     finish: "Finish Import",
@@ -321,21 +335,32 @@ export default function ImportWizardRoute() {
         </div>
       </header>
 
-      {error ? <Alert variant="error" className="mb-4">{error}</Alert> : null}
-      {successMsg ? <Alert variant="success" className="mb-4">{successMsg}</Alert> : null}
-      {saveDialogOpen ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 p-4">
-          <div className="w-full max-w-sm rounded-[var(--radius-lg)] border border-[color:var(--color-outline-variant)]/40 bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
-            <h3 className="mb-2 text-title-md">Draft Saved</h3>
-            <p className="mb-5 text-body-md text-[var(--color-on-surface-variant)]">
-              Your draft has been saved in this browser session.
-            </p>
-            <div className="flex justify-end">
-              <Button type="button" variant="secondary" onClick={() => setSaveDialogOpen(false)}>
-                OK
-              </Button>
+      {error || draftSavedFlash || successMsg ? (
+        <div
+          className="pointer-events-auto fixed bottom-4 left-4 z-[90] flex max-w-md flex-col gap-2"
+          role="status"
+        >
+          {error ? (
+            <div className="shadow-lg">
+              <Alert variant="error" className="mb-0">
+                {error}
+              </Alert>
             </div>
-          </div>
+          ) : null}
+          {draftSavedFlash ? (
+            <div className="shadow-lg">
+              <Alert variant="success" className="mb-0">
+                Draft saved for this browser session.
+              </Alert>
+            </div>
+          ) : null}
+          {successMsg ? (
+            <div className="shadow-lg">
+              <Alert variant="success" className="mb-0">
+                {successMsg}
+              </Alert>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {confirmAction ? (
@@ -346,7 +371,13 @@ export default function ImportWizardRoute() {
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
-                variant={confirmAction === "finish" ? "danger" : "secondary"}
+                variant={
+                  confirmAction === "discard"
+                    ? "danger"
+                    : confirmAction === "finish"
+                      ? "success"
+                      : "default"
+                }
                 onClick={() => void onConfirmAction()}
               >
                 Confirm
@@ -360,17 +391,17 @@ export default function ImportWizardRoute() {
       ) : null}
 
       <section className="mx-auto max-w-5xl space-y-6">
-        <div className="stitch-liquid-wizard-stepper sticky top-20 z-20 mb-3 p-4 md:p-5">
+        <div className="stitch-liquid-wizard-stepper sticky top-20 z-20 mx-3 mb-3 p-4 md:mx-5 md:p-5">
           <div className="grid gap-3 md:grid-cols-3">
-            {STEPS.map((s, i) => {
+            {STEPS.map((s) => {
               const active = step === s.id;
               const completed = step > s.id;
               return (
-                <div key={s.id} className="flex min-w-0 items-start gap-3">
+                <div key={s.id} className="min-w-0">
                   <button
                     type="button"
                     onClick={() => goToStep(s.id)}
-                    className="flex w-full min-w-0 max-w-full flex-1 items-start gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
+                    className="flex w-full min-w-0 max-w-full items-start gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
                   >
                     <div
                       className={[
@@ -391,9 +422,6 @@ export default function ImportWizardRoute() {
                       <p className="text-[0.78rem] text-[var(--color-on-surface-variant)]">{s.subtitle}</p>
                     </div>
                   </button>
-                  {i < STEPS.length - 1 ? (
-                    <div className="ml-auto mt-4 hidden h-[2px] flex-1 bg-[var(--color-surface-container)] md:block" />
-                  ) : null}
                 </div>
               );
             })}
@@ -424,9 +452,9 @@ export default function ImportWizardRoute() {
                 gridClassName="grid grid-cols-1 gap-y-6 gap-x-5 md:grid-cols-2"
               />
               <div className="mt-8 flex flex-col justify-end gap-2 sm:flex-row">
-                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard Draft</Button>
+                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard</Button>
                 <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>Save Draft</Button>
-                <Button onClick={onStep1NextWithConfirm} disabled={busy || !tables}>Next: Output Details</Button>
+                <Button onClick={onStep1NextWithConfirm} disabled={busy || !tables}>Next</Button>
               </div>
             </Card>
           ) : null}
@@ -444,9 +472,9 @@ export default function ImportWizardRoute() {
               <div className="mt-8 flex flex-col justify-between gap-2 sm:flex-row">
                 <Button variant="ghost" onClick={() => setStep(1)} disabled={busy}>Back</Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard Draft</Button>
+                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard</Button>
                   <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>Save Draft</Button>
-                  <Button onClick={onStep2NextWithConfirm} disabled={busy}>Next: Kit Count</Button>
+                  <Button onClick={onStep2NextWithConfirm} disabled={busy}>Next</Button>
                 </div>
               </div>
             </Card>
@@ -491,7 +519,7 @@ export default function ImportWizardRoute() {
               <div className="mt-8 flex flex-col justify-between gap-2 sm:flex-row">
                 <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}>Back</Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard Draft</Button>
+                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard</Button>
                   <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>Save Draft</Button>
                   <Button onClick={handleStep3FinishWithConfirm} disabled={busy}>Finish Import</Button>
                 </div>
