@@ -102,22 +102,22 @@ a {
 }
 
 .stitch-liquid-header {
-  background: color-mix(in srgb, var(--color-surface-lowest) 78%, transparent);
+  background: color-mix(in srgb, var(--color-surface-lowest) 92%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--color-outline-variant) 45%, transparent);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--color-on-surface) 8%, transparent);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
 
 /* Sticky import-wizard stepper: glass surface aligned with app header liquid language */
 .stitch-liquid-wizard-stepper {
-  background: color-mix(in srgb, var(--color-surface-lowest) 70%, transparent);
+  background: color-mix(in srgb, var(--color-surface-lowest) 90%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-outline-variant) 38%, transparent);
   box-shadow:
     0 4px 16px color-mix(in srgb, var(--color-on-surface) 6%, transparent),
     0 12px 40px color-mix(in srgb, var(--color-on-surface) 8%, transparent);
-  backdrop-filter: saturate(200%) blur(20px);
-  -webkit-backdrop-filter: saturate(200%) blur(20px);
+  backdrop-filter: saturate(200%) blur(16px);
+  -webkit-backdrop-filter: saturate(200%) blur(16px);
   border-radius: var(--radius-lg);
 }
 

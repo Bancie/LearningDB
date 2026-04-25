@@ -129,9 +129,9 @@ export function DateTimeClockDialog({ open, mode, value, onClose, onApply }: Dia
               type="datetime-local"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              className="!w-0 min-w-0 flex-1 max-w-full"
+              className="w-full min-w-0 max-w-full sm:!w-0 sm:flex-1"
             />
-            <Button type="button" variant="secondary" onClick={setNow} className="h-10 shrink-0 sm:w-[4.5rem]">
+            <Button type="button" variant="secondary" onClick={setNow} className="h-10 w-full shrink-0 sm:w-[4.5rem]">
               Now
             </Button>
           </div>
@@ -141,10 +141,10 @@ export function DateTimeClockDialog({ open, mode, value, onClose, onApply }: Dia
               type="time"
               value={draft ? draft.slice(0, 5) : ""}
               onChange={(e) => setDraft(e.target.value)}
-              className="!w-0 min-w-0 flex-1 max-w-full"
+              className="w-full min-w-0 max-w-full sm:!w-0 sm:flex-1"
               step={60}
             />
-            <Button type="button" variant="secondary" onClick={setNow} className="h-10 shrink-0 sm:w-[4.5rem]">
+            <Button type="button" variant="secondary" onClick={setNow} className="h-10 w-full shrink-0 sm:w-[4.5rem]">
               Now
             </Button>
           </div>

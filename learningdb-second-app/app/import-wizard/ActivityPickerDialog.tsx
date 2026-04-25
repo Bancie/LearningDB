@@ -127,23 +127,21 @@ export function ActivityPickerDialog({
           ) : filtered.length === 0 ? (
             <div className="p-4 text-body-md">No activities match current filters.</div>
           ) : (
-            <table className="w-full border-collapse text-left text-body-md">
-              <thead className="bg-[var(--color-surface-low)]">
-                <tr>
-                  <th className="px-3 py-2">ID</th>
-                  <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2">Status</th>
-                  <th className="px-3 py-2">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((row) => (
-                  <tr key={row.ACTIVITY_ID} className="border-t border-[color:var(--color-outline-variant)]/20">
-                    <td className="px-3 py-2">{row.ACTIVITY_ID}</td>
-                    <td className="px-3 py-2">{String(row.ACT_NAME ?? "") || "—"}</td>
-                    <td className="px-3 py-2">{String(row.ACT_STATUS ?? "") || "—"}</td>
-                    <td className="px-3 py-2">
+            <>
+              <div className="space-y-2 p-2 md:hidden">
+                {filtered.map((row) => {
+                  const name = String(row.ACT_NAME ?? "") || "—";
+                  return (
+                    <div
+                      key={row.ACTIVITY_ID}
+                      className="rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/30 bg-[var(--color-surface-low)]/40 p-3"
+                    >
+                      <p className="line-clamp-2 break-words text-body-md font-semibold text-[var(--color-on-surface)]">
+                        {name}
+                      </p>
+                      <p className="mt-2 text-label-md text-[var(--color-on-surface-variant)]">ID {row.ACTIVITY_ID}</p>
                       <Button
+                        className="mt-3 w-full"
                         size="sm"
                         onClick={() => {
                           onPick(row);
@@ -152,11 +150,43 @@ export function ActivityPickerDialog({
                       >
                         Select
                       </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="hidden max-h-full overflow-auto md:block">
+                <table className="w-full border-collapse text-left text-body-md">
+                  <thead className="bg-[var(--color-surface-low)]">
+                    <tr>
+                      <th className="px-3 py-2">ID</th>
+                      <th className="px-3 py-2">Name</th>
+                      <th className="px-3 py-2">Status</th>
+                      <th className="px-3 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((row) => (
+                      <tr key={row.ACTIVITY_ID} className="border-t border-[color:var(--color-outline-variant)]/20">
+                        <td className="px-3 py-2">{row.ACTIVITY_ID}</td>
+                        <td className="px-3 py-2">{String(row.ACT_NAME ?? "") || "—"}</td>
+                        <td className="px-3 py-2">{String(row.ACT_STATUS ?? "") || "—"}</td>
+                        <td className="px-3 py-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              onPick(row);
+                              onClose();
+                            }}
+                          >
+                            Select
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
         </div>

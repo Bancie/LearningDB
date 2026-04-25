@@ -110,6 +110,12 @@ export default function ImportWizardRoute() {
     };
   }, [user]);
 
+  React.useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 4500);
+    return () => clearTimeout(t);
+  }, [error]);
+
   const selectedActivityId =
     typeof logValues.ACTIVITY_ID === "number"
       ? logValues.ACTIVITY_ID
@@ -442,16 +448,20 @@ export default function ImportWizardRoute() {
 
       <section className="mx-auto max-w-5xl space-y-6">
         <div className="stitch-liquid-wizard-stepper sticky top-20 z-20 mx-3 mb-3 p-4 md:mx-5 md:p-5">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 md:grid md:grid-cols-3 md:gap-3">
             {STEPS.map((s) => {
               const active = step === s.id;
               const completed = step > s.id;
               return (
-                <div key={s.id} className="min-w-0">
+                <div
+                  key={s.id}
+                  className="flex min-w-0 flex-1 justify-center md:block md:max-w-full md:w-full md:flex-none"
+                >
                   <button
                     type="button"
+                    aria-label={`${s.title}. ${s.subtitle}`}
                     onClick={() => goToStep(s.id)}
-                    className="flex w-full min-w-0 max-w-full items-start gap-3 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
+                    className="flex w-full min-w-0 max-w-full items-center justify-center gap-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 md:items-start md:justify-start md:gap-3 md:text-left"
                   >
                     <div
                       className={[
@@ -465,8 +475,14 @@ export default function ImportWizardRoute() {
                     >
                       {s.id}
                     </div>
-                    <div className="min-w-0">
-                      <p className={active ? "text-label-md font-semibold text-[var(--color-primary)]" : "text-label-md font-semibold"}>
+                    <div className="hidden min-w-0 md:block">
+                      <p
+                        className={
+                          active
+                            ? "text-label-md font-semibold text-[var(--color-primary)]"
+                            : "text-label-md font-semibold"
+                        }
+                      >
                         {s.title}
                       </p>
                       <p className="text-[0.78rem] text-[var(--color-on-surface-variant)]">{s.subtitle}</p>
@@ -501,10 +517,16 @@ export default function ImportWizardRoute() {
                 omit={omitLog}
                 gridClassName="grid grid-cols-1 gap-y-6 gap-x-5 md:grid-cols-2"
               />
-              <div className="mt-8 flex flex-col justify-end gap-2 sm:flex-row">
-                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard</Button>
-                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>Save Draft</Button>
-                <Button onClick={onStep1NextWithConfirm} disabled={busy || !tables}>Next</Button>
+              <div className="mt-8 flex flex-col-reverse justify-end gap-2 sm:flex-row sm:justify-end">
+                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                  Discard
+                </Button>
+                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                  Save Draft
+                </Button>
+                <Button onClick={onStep1NextWithConfirm} disabled={busy || !tables}>
+                  Next
+                </Button>
               </div>
             </Card>
           ) : null}
@@ -519,12 +541,34 @@ export default function ImportWizardRoute() {
                 Linked to ActivityLog from step 1. You do not need to enter <code>ACTI_LOG_ID</code>.
               </Alert>
               <WizardFields columns={colsOut} values={outputValues} onChange={changeOut} omit={omitOut} />
-              <div className="mt-8 flex flex-col justify-between gap-2 sm:flex-row">
-                <Button variant="ghost" onClick={() => setStep(1)} disabled={busy}>Back</Button>
+              <div className="mt-8 flex flex-col gap-2 md:hidden">
+                <Button onClick={onStep2NextWithConfirm} disabled={busy}>
+                  Next
+                </Button>
+                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                  Save Draft
+                </Button>
+                <Button variant="ghost" onClick={() => setStep(1)} disabled={busy}>
+                  Back
+                </Button>
+                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                  Discard
+                </Button>
+              </div>
+              <div className="mt-8 hidden flex-col justify-between gap-2 sm:flex-row md:flex">
+                <Button variant="ghost" onClick={() => setStep(1)} disabled={busy}>
+                  Back
+                </Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard</Button>
-                  <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>Save Draft</Button>
-                  <Button onClick={onStep2NextWithConfirm} disabled={busy}>Next</Button>
+                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                    Discard
+                  </Button>
+                  <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                    Save Draft
+                  </Button>
+                  <Button onClick={onStep2NextWithConfirm} disabled={busy}>
+                    Next
+                  </Button>
                 </div>
               </div>
             </Card>
@@ -566,12 +610,34 @@ export default function ImportWizardRoute() {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-col justify-between gap-2 sm:flex-row">
-                <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}>Back</Button>
+              <div className="mt-8 flex flex-col gap-2 md:hidden">
+                <Button onClick={handleStep3FinishWithConfirm} disabled={busy}>
+                  Finish Import
+                </Button>
+                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                  Save Draft
+                </Button>
+                <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}>
+                  Back
+                </Button>
+                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                  Discard
+                </Button>
+              </div>
+              <div className="mt-8 hidden flex-col justify-between gap-2 sm:flex-row md:flex">
+                <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}>
+                  Back
+                </Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>Discard</Button>
-                  <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>Save Draft</Button>
-                  <Button onClick={handleStep3FinishWithConfirm} disabled={busy}>Finish Import</Button>
+                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                    Discard
+                  </Button>
+                  <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                    Save Draft
+                  </Button>
+                  <Button onClick={handleStep3FinishWithConfirm} disabled={busy}>
+                    Finish Import
+                  </Button>
                 </div>
               </div>
             </Card>
