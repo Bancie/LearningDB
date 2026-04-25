@@ -19,6 +19,26 @@ import type { Column } from "~/services/api";
 import { getTableColumns, insertRecord } from "~/services/api";
 import { useHistoryRefresh } from "~/history/history-refresh-context";
 import { formatApiError } from "~/utils/formatApiError";
+import { cn } from "~/lib/cn";
+
+/** Wizard card footers: shared hover / press affordances (all breakpoints). */
+const wizardFooterPrimary = cn(
+  "border-2 border-transparent shadow-md transition-all duration-200 ease-out [transition-property:transform,box-shadow]",
+  "hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-white/25",
+  "active:translate-y-0 active:scale-[0.98]",
+  "disabled:hover:translate-y-0 disabled:hover:shadow-md",
+);
+const wizardFooterSecondary = cn(
+  "!border-2 !border-[var(--color-primary)]/40 !bg-[var(--color-surface-lowest)]",
+  "shadow-sm transition-all duration-200 ease-out",
+  "hover:-translate-y-0.5 hover:shadow-md hover:!border-[var(--color-primary)]",
+  "hover:!bg-[color-mix(in_srgb,var(--color-primary)_8%,var(--color-surface-lowest))] active:scale-[0.98] disabled:hover:translate-y-0",
+);
+const wizardFooterGhost = cn(
+  "transition-all duration-200",
+  "hover:-translate-y-0.5 hover:bg-[var(--color-surface-container)]/90",
+  "active:translate-y-0 active:scale-[0.98]",
+);
 
 type StepDef = { id: WizardStep; title: string; subtitle: string };
 type ConfirmAction = "discard" | "next-step1" | "next-step2" | "finish";
@@ -383,7 +403,7 @@ export default function ImportWizardRoute() {
           <span className="material-symbols-outlined text-[14px]">chevron_right</span>
           <span className="font-semibold text-[var(--color-primary)]">Import Wizard</span>
         </nav>
-        <div>
+        <div className="space-y-2">
           <h1 className="text-headline-sm">Logging your data</h1>
           <p className="text-body-md text-[var(--color-on-surface-variant)]">
             Step 1 ActivityLog → Step 2 ActivityOutput → Step 3 KitCount. USER_ID auto-fills from your account.
@@ -461,16 +481,18 @@ export default function ImportWizardRoute() {
                     type="button"
                     aria-label={`${s.title}. ${s.subtitle}`}
                     onClick={() => goToStep(s.id)}
-                    className="flex w-full min-w-0 max-w-full items-center justify-center gap-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 md:items-start md:justify-start md:gap-3 md:text-left"
+                    className="group flex w-full min-w-0 max-w-full items-center justify-center gap-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 md:items-start md:justify-start md:gap-3 md:text-left"
                   >
                     <div
                       className={[
                         "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-label-md font-bold",
+                        "transition-[transform,box-shadow] duration-200 ease-out will-change-transform",
+                        "group-hover:scale-105 group-hover:shadow-md group-active:scale-95 group-active:duration-100",
                         active
                           ? "bg-[var(--color-primary)] text-white"
                           : completed
                             ? "bg-[var(--color-primary-container)] text-white"
-                            : "bg-[var(--color-surface-container)] text-[var(--color-on-surface-variant)]",
+                            : "bg-[var(--color-surface-container)] text-[var(--color-on-surface-variant)] group-hover:ring-2 group-hover:ring-[var(--color-outline-variant)]/60",
                       ].join(" ")}
                     >
                       {s.id}
@@ -505,7 +527,12 @@ export default function ImportWizardRoute() {
               <div className="mb-6 rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/30 bg-[var(--color-surface-low)] p-4">
                 <p className="mb-2 text-label-md text-[var(--color-on-surface-variant)]">Selected activity</p>
                 <p className="mb-3 text-body-md">{pickedActivityLabel || (selectedActivityId != null ? `Activity ID ${selectedActivityId}` : "No activity selected")}</p>
-                <Button type="button" variant="secondary" onClick={() => setPickerOpen(true)}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setPickerOpen(true)}
+                  className="min-w-[9.5rem] border-2 !border-[var(--color-primary)]/50 !bg-[var(--color-surface-lowest)] !text-[var(--color-primary)] shadow-sm transition-all duration-200 ease-out [transition-property:transform,box-shadow,background-color,border-color] hover:-translate-y-0.5 hover:!border-[var(--color-primary)] hover:!bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-surface-lowest))] hover:shadow-md active:translate-y-0 active:scale-[0.98]"
+                >
                   Choose activity
                 </Button>
               </div>
@@ -518,13 +545,13 @@ export default function ImportWizardRoute() {
                 gridClassName="grid grid-cols-1 gap-y-6 gap-x-5 md:grid-cols-2"
               />
               <div className="mt-8 flex flex-col-reverse justify-end gap-2 sm:flex-row sm:justify-end">
-                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
                   Discard
                 </Button>
-                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                   Save Draft
                 </Button>
-                <Button onClick={onStep1NextWithConfirm} disabled={busy || !tables}>
+                <Button className={wizardFooterPrimary} onClick={onStep1NextWithConfirm} disabled={busy || !tables}>
                   Next
                 </Button>
               </div>
@@ -542,31 +569,31 @@ export default function ImportWizardRoute() {
               </Alert>
               <WizardFields columns={colsOut} values={outputValues} onChange={changeOut} omit={omitOut} />
               <div className="mt-8 flex flex-col gap-2 md:hidden">
-                <Button onClick={onStep2NextWithConfirm} disabled={busy}>
+                <Button className={wizardFooterPrimary} onClick={onStep2NextWithConfirm} disabled={busy}>
                   Next
                 </Button>
-                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                   Save Draft
                 </Button>
-                <Button variant="ghost" onClick={() => setStep(1)} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={() => setStep(1)} disabled={busy}>
                   Back
                 </Button>
-                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
                   Discard
                 </Button>
               </div>
               <div className="mt-8 hidden flex-col justify-between gap-2 sm:flex-row md:flex">
-                <Button variant="ghost" onClick={() => setStep(1)} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={() => setStep(1)} disabled={busy}>
                   Back
                 </Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                  <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
                     Discard
                   </Button>
-                  <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                  <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                     Save Draft
                   </Button>
-                  <Button onClick={onStep2NextWithConfirm} disabled={busy}>
+                  <Button className={wizardFooterPrimary} onClick={onStep2NextWithConfirm} disabled={busy}>
                     Next
                   </Button>
                 </div>
@@ -611,31 +638,31 @@ export default function ImportWizardRoute() {
               </div>
 
               <div className="mt-8 flex flex-col gap-2 md:hidden">
-                <Button onClick={handleStep3FinishWithConfirm} disabled={busy}>
+                <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy}>
                   Finish Import
                 </Button>
-                <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                   Save Draft
                 </Button>
-                <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={() => setStep(2)} disabled={busy}>
                   Back
                 </Button>
-                <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
                   Discard
                 </Button>
               </div>
               <div className="mt-8 hidden flex-col justify-between gap-2 sm:flex-row md:flex">
-                <Button variant="ghost" onClick={() => setStep(2)} disabled={busy}>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={() => setStep(2)} disabled={busy}>
                   Back
                 </Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                  <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
                     Discard
                   </Button>
-                  <Button variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                  <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                     Save Draft
                   </Button>
-                  <Button onClick={handleStep3FinishWithConfirm} disabled={busy}>
+                  <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy}>
                     Finish Import
                   </Button>
                 </div>

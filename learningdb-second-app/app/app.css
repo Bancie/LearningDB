@@ -111,7 +111,8 @@ a {
 .stitch-liquid-wizard-stepper {
   background: var(--color-surface-lowest);
   border: 1px solid color-mix(in srgb, var(--color-outline-variant) 38%, transparent);
-  border-radius: var(--radius-lg);
+  border-radius: 1rem;
+  overflow: hidden;
 }
 
 .stitch-card {

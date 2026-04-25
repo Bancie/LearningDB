@@ -1,5 +1,5 @@
 import * as React from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "~/auth/session";
 import { useColorMode } from "~/color-mode";
@@ -80,7 +80,12 @@ export default function AppShell() {
               {desktopCollapsed ? "right_panel_open" : "left_panel_close"}
             </span>
           </button>
-          <span className="text-headline-sm font-light">LearningDB</span>
+          <Link
+            to="/"
+            className="text-headline-sm font-light text-[var(--color-on-surface)] no-underline outline-none hover:opacity-80 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface-lowest)]"
+          >
+            LearningDB
+          </Link>
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden text-label-md text-[var(--color-on-surface-variant)] md:inline">
