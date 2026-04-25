@@ -1,0 +1,30 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "3399ab58a03e",
+  "strategy": "manual-commit",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 0,
+  "files_touched": [
+    ".DS_Store",
+    "learningdb-second-app/app/app.css",
+    "learningdb-second-app/app/design-tokens.ts",
+    "learningdb-second-app/app/history/HistorySidebar.tsx",
+    "learningdb-second-app/public/favicon.ico"
+  ],
+  "sessions": [
+    {
+      "metadata": "/33/99ab58a03e/0/metadata.json",
+      "transcript": "/33/99ab58a03e/0/full.jsonl",
+      "context": "",
+      "content_hash": "/33/99ab58a03e/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}

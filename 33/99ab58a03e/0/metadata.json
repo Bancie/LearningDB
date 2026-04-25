@@ -1,0 +1,36 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "3399ab58a03e",
+  "session_id": "278a3b07-a146-4530-a11d-cea767a75cbd",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-25T16:54:23.511538Z",
+  "branch": "learning/from-feature-from-main/v1",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "learningdb-second-app/public/favicon.ico",
+    ".DS_Store",
+    "learningdb-second-app/app/app.css",
+    "learningdb-second-app/app/design-tokens.ts",
+    "learningdb-second-app/app/history/HistorySidebar.tsx"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "4c5a57eb433d",
+  "checkpoint_transcript_start": 11,
+  "transcript_lines_at_start": 11,
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-25T16:54:23.309706Z",
+    "agent_lines": 15,
+    "human_added": 0,
+    "human_modified": 3,
+    "human_removed": 8,
+    "total_committed": 18,
+    "agent_percentage": 83.33333333333334
+  }
+}
