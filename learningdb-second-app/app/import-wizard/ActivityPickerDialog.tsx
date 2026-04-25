@@ -4,7 +4,12 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
 import { listTableRows } from "~/services/api";
+import { cn } from "~/lib/cn";
 import { formatApiError } from "~/utils/formatApiError";
+
+/** Primary “Select” in activity cards / table: clearer affordance + hover / press motion. */
+const activitySelectButtonClassName =
+  "border-2 border-transparent shadow-md transition-all duration-200 ease-out [transition-property:transform,box-shadow] hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 hover:ring-white/30 active:translate-y-0 active:scale-[0.98]";
 
 type ActivityRow = {
   ACTIVITY_ID: number;
@@ -141,7 +146,7 @@ export function ActivityPickerDialog({
                       </p>
                       <p className="mt-2 text-label-md text-[var(--color-on-surface-variant)]">ID {row.ACTIVITY_ID}</p>
                       <Button
-                        className="mt-3 w-full"
+                        className={cn("mt-3 w-full", activitySelectButtonClassName)}
                         size="sm"
                         onClick={() => {
                           onPick(row);
@@ -172,6 +177,7 @@ export function ActivityPickerDialog({
                         <td className="px-3 py-2">{String(row.ACT_STATUS ?? "") || "—"}</td>
                         <td className="px-3 py-2">
                           <Button
+                            className={activitySelectButtonClassName}
                             size="sm"
                             onClick={() => {
                               onPick(row);
