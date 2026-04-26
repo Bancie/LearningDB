@@ -441,6 +441,10 @@ export default function ImportWizardRoute() {
       return;
     }
     if (step === 1) {
+      if (target === 3) {
+        setError("Open step 2 (Activity output) first; you cannot skip to kit count from here.");
+        return;
+      }
       if (target === 2) {
         if (actiLogId == null) {
           if (!canProceedStep1) {
@@ -449,22 +453,6 @@ export default function ImportWizardRoute() {
           }
           onStep1NextWithConfirm();
         } else setStep(2);
-        return;
-      }
-      if (target === 3) {
-        if (actiLogId == null) {
-          if (!canProceedStep1) {
-            setError("Please complete all activity log fields and choose an activity before continuing.");
-            return;
-          }
-          onStep1NextWithConfirm();
-        } else if (aoId == null) {
-          if (!canProceedStep2) {
-            setError("Please complete all activity output fields before continuing.");
-            return;
-          }
-          onStep2NextWithConfirm();
-        } else setStep(3);
         return;
       }
     }
@@ -580,6 +568,7 @@ export default function ImportWizardRoute() {
                     aria-label={`${s.title}. ${s.subtitle}`}
                     disabled={
                       busy ||
+                      (step === 1 && s.id === 3) ||
                       (step === 1 && !canProceedStep1 && s.id > step) ||
                       (step === 2 && aoId == null && !canProceedStep2 && s.id > step)
                     }

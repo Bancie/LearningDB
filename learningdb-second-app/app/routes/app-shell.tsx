@@ -48,6 +48,13 @@ export default function AppShell() {
   const desktopMainOffsetClass = desktopCollapsed ? "md:ml-20" : "md:ml-64";
   const historyMainOffsetClass = historyOpen ? "lg:mr-[360px]" : "lg:mr-0";
 
+  /** Below Tailwind `lg` (1024px): used so header actions match mobile history sidebar only. */
+  const closeHistoryIfMobile = React.useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      setHistoryOpen(false);
+    }
+  }, []);
+
   const drawerNavClass = ({ isActive }: { isActive: boolean }) =>
     [
       "mx-2 flex items-center rounded-lg px-4 py-3 text-label-md normal-case tracking-normal transition-all",
@@ -82,8 +89,16 @@ export default function AppShell() {
           </button>
           <Link
             to="/"
-            className="text-headline-sm font-light text-[var(--color-on-surface)] no-underline outline-none hover:opacity-80 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface-lowest)]"
+            onClick={closeHistoryIfMobile}
+            className="flex items-center gap-2 text-headline-sm font-light text-[var(--color-on-surface)] no-underline outline-none hover:opacity-80 focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-surface-lowest)]"
           >
+            <img
+              src="/favicon.ico"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 object-contain"
+            />
             LearningDB
           </Link>
         </div>
@@ -147,10 +162,14 @@ export default function AppShell() {
             <span className={desktopCollapsed ? "hidden" : ""}>Account Settings</span>
           </NavLink>
         </nav>
-        <div className={desktopCollapsed ? "mt-auto px-2" : "mt-auto px-3"}>
+        <div className="mt-auto w-full min-w-0">
           <button
             type="button"
-            className={drawerNavClass({ isActive: false })}
+            className={[
+              drawerNavClass({ isActive: false }),
+              // Match `NavLink` width in the `nav` above: full row minus `mx-2` (0.5rem each side)
+              "w-[calc(100%-1rem)]",
+            ].join(" ")}
             onClick={() => {
               setMobileDrawerOpen(false);
               setLogoutConfirmOpen(true);
