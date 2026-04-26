@@ -24,6 +24,13 @@ export default function AppShell() {
     navigate("/login", { replace: true, state: { from: location.pathname } });
   }, [loading, user, navigate, location.pathname]);
 
+  /** Below Tailwind `lg` (1024px): used so header actions match mobile history sidebar only. */
+  const closeHistoryIfMobile = React.useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      setHistoryOpen(false);
+    }
+  }, []);
+
   if (loading) {
     return <div className="p-6 text-body-md">Checking session…</div>;
   }
@@ -47,13 +54,6 @@ export default function AppShell() {
   const drawerWidthClass = desktopCollapsed ? "md:w-20" : "md:w-64";
   const desktopMainOffsetClass = desktopCollapsed ? "md:ml-20" : "md:ml-64";
   const historyMainOffsetClass = historyOpen ? "lg:mr-[360px]" : "lg:mr-0";
-
-  /** Below Tailwind `lg` (1024px): used so header actions match mobile history sidebar only. */
-  const closeHistoryIfMobile = React.useCallback(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
-      setHistoryOpen(false);
-    }
-  }, []);
 
   const drawerNavClass = ({ isActive }: { isActive: boolean }) =>
     [
