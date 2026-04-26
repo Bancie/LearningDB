@@ -91,6 +91,104 @@ export function normalizeSqlDatetimeString(s: string): string {
   return s;
 }
 
+/**
+ * True when every column shown in `WizardFields` (except omitted + auto-increment PK) has a non-empty value.
+ * Used for ActivityLog, ActivityOutput, and KitCount rows; mirrors field render/omit rules in `WizardFields`.
+ */
+export function isWizardMetadataComplete(
+  columns: Column[],
+  values: Record<string, unknown>,
+  omit: Set<string>,
+): boolean {
+  for (const col of columns) {
+    if (omit.has(col.name)) {
+      continue;
+    }
+    if (col.is_primary_key && col.autoincrement) {
+      continue;
+    }
+    const raw = values[col.name];
+    const upperType = col.type.toUpperCase();
+
+    if (col.enums?.length) {
+      if (typeof raw !== "string" || raw === "") {
+        return false;
+      }
+      continue;
+    }
+
+    const setMembers = parseSetMembers(col.type);
+    if (setMembers) {
+      if (Array.isArray(raw)) {
+        if (raw.length === 0) {
+          return false;
+        }
+      } else if (typeof raw === "string" && raw.length > 0) {
+        /* ok */
+      } else {
+        return false;
+      }
+      continue;
+    }
+
+    if (isBoolTinyint(col.type, col.name)) {
+      if (raw === undefined || raw === null) {
+        return false;
+      }
+      continue;
+    }
+
+    if (upperType.includes("DATETIME") || upperType.includes("TIMESTAMP")) {
+      if (typeof raw !== "string" || raw.trim() === "") {
+        return false;
+      }
+      continue;
+    }
+
+    if (isMysqlTimeOnlyType(col.type)) {
+      if (typeof raw !== "string" || raw.trim() === "") {
+        return false;
+      }
+      continue;
+    }
+
+    if (/\bDATE\b/.test(upperType) && !isSqlDatetimeLike(col.type)) {
+      if (typeof raw !== "string" || raw.trim() === "") {
+        return false;
+      }
+      continue;
+    }
+
+    if (isNumericType(col.type)) {
+      if (raw === undefined || raw === null || raw === "") {
+        return false;
+      }
+      if (typeof raw === "number" && !Number.isFinite(raw)) {
+        return false;
+      }
+      if (typeof raw === "string" && raw.trim() === "") {
+        return false;
+      }
+      continue;
+    }
+
+    if (upperType.includes("TEXT")) {
+      if (typeof raw !== "string" || raw.trim() === "") {
+        return false;
+      }
+      continue;
+    }
+
+    if (raw === undefined || raw === null) {
+      return false;
+    }
+    if (typeof raw === "string" && raw.trim() === "") {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function buildInsertPayload(
   columns: Column[],
   values: Record<string, unknown>,

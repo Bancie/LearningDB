@@ -11,6 +11,7 @@ import { WizardFields } from "~/import-wizard/WizardFields";
 import {
   buildInsertPayload,
   extractPkInt,
+  isWizardMetadataComplete,
   resolveImportTables,
   type ResolvedTables,
 } from "~/import-wizard/table-utils";
@@ -48,10 +49,6 @@ const STEPS: StepDef[] = [
   { id: 2, title: "ActivityOutput", subtitle: "Core Results" },
   { id: 3, title: "KitCount", subtitle: "Task-specific Data" },
 ];
-
-function isRowMeaningful(row: Record<string, unknown>): boolean {
-  return Object.values(row).some((v) => v !== undefined && v !== null && v !== "" && (!Array.isArray(v) || v.length > 0));
-}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -143,6 +140,38 @@ export default function ImportWizardRoute() {
         ? Number(logValues.ACTIVITY_ID)
         : null;
 
+  const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
+  const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
+  const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
+
+  const canProceedStep1 = React.useMemo(
+    () =>
+      tables != null &&
+      colsLog.length > 0 &&
+      selectedActivityId != null &&
+      isWizardMetadataComplete(colsLog, logValues, omitLog),
+    [tables, colsLog, logValues, omitLog, selectedActivityId],
+  );
+
+  const canProceedStep2 = React.useMemo(
+    () =>
+      tables != null &&
+      actiLogId != null &&
+      colsOut.length > 0 &&
+      isWizardMetadataComplete(colsOut, outputValues, omitOut),
+    [tables, actiLogId, colsOut, outputValues, omitOut],
+  );
+
+  const canProceedStep3 = React.useMemo(
+    () =>
+      tables != null &&
+      aoId != null &&
+      colsKit.length > 0 &&
+      kitRows.length > 0 &&
+      kitRows.every((row) => isWizardMetadataComplete(colsKit, row, omitKit)),
+    [tables, aoId, colsKit, kitRows, omitKit],
+  );
+
   const onSaveDraft = React.useCallback(async () => {
     if (!user) {
       setError("Sign in to save your draft to your account.");
@@ -214,6 +243,10 @@ export default function ImportWizardRoute() {
       setError("Please choose an activity before continuing.");
       return;
     }
+    if (!isWizardMetadataComplete(colsLog, logValues, omitLog)) {
+      setError("Please complete all activity log fields before continuing.");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
@@ -244,6 +277,10 @@ export default function ImportWizardRoute() {
 
   const handleStep2Next = async () => {
     if (!tables || actiLogId == null || !user) return;
+    if (!isWizardMetadataComplete(colsOut, outputValues, omitOut)) {
+      setError("Please complete all activity output fields before continuing.");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
@@ -271,16 +308,19 @@ export default function ImportWizardRoute() {
 
   const handleStep3Finish = async () => {
     if (!tables || aoId == null) return;
-    const meaningfulRows = kitRows.filter(isRowMeaningful);
-    if (meaningfulRows.length === 0) {
+    if (kitRows.length === 0) {
       setError("Please add at least one kit count row.");
+      return;
+    }
+    if (!kitRows.every((row) => isWizardMetadataComplete(colsKit, row, omitKit))) {
+      setError("Please complete all fields in every kit count row before finishing.");
       return;
     }
     setError(null);
     setBusy(true);
     try {
-      for (let i = 0; i < meaningfulRows.length; i += 1) {
-        const row = meaningfulRows[i];
+      for (let i = 0; i < kitRows.length; i += 1) {
+        const row = kitRows[i];
         try {
           const payload = buildInsertPayload(colsKit, row, { AO_ID: aoId });
           await insertRecord(tables.kit, payload);
@@ -312,17 +352,33 @@ export default function ImportWizardRoute() {
     }
   };
 
-  const handleStep3FinishWithConfirm = async () => {
+  const handleStep3FinishWithConfirm = () => {
+    if (!canProceedStep3) {
+      setError("Please complete all fields in every kit count row before finishing.");
+      return;
+    }
     setConfirmAction("finish");
   };
 
   const onStep1NextWithConfirm = React.useCallback(() => {
+    if (selectedActivityId == null) {
+      setError("Please choose an activity before continuing.");
+      return;
+    }
+    if (!isWizardMetadataComplete(colsLog, logValues, omitLog)) {
+      setError("Please complete all activity log fields before continuing.");
+      return;
+    }
     setConfirmAction("next-step1");
-  }, []);
+  }, [colsLog, logValues, omitLog, selectedActivityId]);
 
   const onStep2NextWithConfirm = React.useCallback(() => {
+    if (!isWizardMetadataComplete(colsOut, outputValues, omitOut)) {
+      setError("Please complete all activity output fields before continuing.");
+      return;
+    }
     setConfirmAction("next-step2");
-  }, []);
+  }, [colsOut, outputValues, omitOut]);
 
   const confirmTitleMap: Record<ConfirmAction, string> = {
     discard: "Discard",
@@ -357,10 +413,6 @@ export default function ImportWizardRoute() {
     await handleStep3Finish();
   };
 
-  const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
-  const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
-  const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
-
   const goToStep = (target: WizardStep) => {
     if (target === 1) {
       setStep(1);
@@ -379,6 +431,52 @@ export default function ImportWizardRoute() {
       return;
     }
     setStep(3);
+  };
+
+  const navigateStepper = (target: WizardStep) => {
+    if (busy) return;
+    if (target === step) return;
+    if (target < step) {
+      goToStep(target);
+      return;
+    }
+    if (step === 1) {
+      if (target === 2) {
+        if (actiLogId == null) {
+          if (!canProceedStep1) {
+            setError("Please complete all activity log fields and choose an activity before continuing.");
+            return;
+          }
+          onStep1NextWithConfirm();
+        } else setStep(2);
+        return;
+      }
+      if (target === 3) {
+        if (actiLogId == null) {
+          if (!canProceedStep1) {
+            setError("Please complete all activity log fields and choose an activity before continuing.");
+            return;
+          }
+          onStep1NextWithConfirm();
+        } else if (aoId == null) {
+          if (!canProceedStep2) {
+            setError("Please complete all activity output fields before continuing.");
+            return;
+          }
+          onStep2NextWithConfirm();
+        } else setStep(3);
+        return;
+      }
+    }
+    if (step === 2 && target === 3) {
+      if (aoId == null) {
+        if (!canProceedStep2) {
+          setError("Please complete all activity output fields before continuing.");
+          return;
+        }
+        onStep2NextWithConfirm();
+      } else setStep(3);
+    }
   };
 
   return (
@@ -480,8 +578,13 @@ export default function ImportWizardRoute() {
                   <button
                     type="button"
                     aria-label={`${s.title}. ${s.subtitle}`}
-                    onClick={() => goToStep(s.id)}
-                    className="group flex w-full min-w-0 max-w-full items-center justify-center gap-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 md:items-start md:justify-start md:gap-3 md:text-left"
+                    disabled={
+                      busy ||
+                      (step === 1 && !canProceedStep1 && s.id > step) ||
+                      (step === 2 && aoId == null && !canProceedStep2 && s.id > step)
+                    }
+                    onClick={() => navigateStepper(s.id)}
+                    className="group flex w-full min-w-0 max-w-full items-center justify-center gap-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 enabled:cursor-pointer disabled:pointer-events-none disabled:opacity-50 md:items-start md:justify-start md:gap-3 md:text-left"
                   >
                     <div
                       className={[
@@ -533,7 +636,7 @@ export default function ImportWizardRoute() {
                   onClick={() => setPickerOpen(true)}
                   className="min-w-[9.5rem] border-2 !border-[var(--color-primary)]/50 !bg-[var(--color-surface-lowest)] !text-[var(--color-primary)] shadow-sm transition-all duration-200 ease-out [transition-property:transform,box-shadow,background-color,border-color] hover:-translate-y-0.5 hover:!border-[var(--color-primary)] hover:!bg-[color-mix(in_srgb,var(--color-primary)_10%,var(--color-surface-lowest))] hover:shadow-md active:translate-y-0 active:scale-[0.98]"
                 >
-                  Choose activity
+                  {selectedActivityId != null ? "Change activity" : "Choose activity"}
                 </Button>
               </div>
 
@@ -551,7 +654,7 @@ export default function ImportWizardRoute() {
                 <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                   Save Draft
                 </Button>
-                <Button className={wizardFooterPrimary} onClick={onStep1NextWithConfirm} disabled={busy || !tables}>
+                <Button className={wizardFooterPrimary} onClick={onStep1NextWithConfirm} disabled={busy || !canProceedStep1}>
                   Next
                 </Button>
               </div>
@@ -569,7 +672,7 @@ export default function ImportWizardRoute() {
               </Alert>
               <WizardFields columns={colsOut} values={outputValues} onChange={changeOut} omit={omitOut} />
               <div className="mt-8 flex flex-col gap-2 md:hidden">
-                <Button className={wizardFooterPrimary} onClick={onStep2NextWithConfirm} disabled={busy}>
+                <Button className={wizardFooterPrimary} onClick={onStep2NextWithConfirm} disabled={busy || !canProceedStep2}>
                   Next
                 </Button>
                 <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
@@ -593,7 +696,7 @@ export default function ImportWizardRoute() {
                   <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                     Save Draft
                   </Button>
-                  <Button className={wizardFooterPrimary} onClick={onStep2NextWithConfirm} disabled={busy}>
+                  <Button className={wizardFooterPrimary} onClick={onStep2NextWithConfirm} disabled={busy || !canProceedStep2}>
                     Next
                   </Button>
                 </div>
@@ -638,7 +741,7 @@ export default function ImportWizardRoute() {
               </div>
 
               <div className="mt-8 flex flex-col gap-2 md:hidden">
-                <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy}>
+                <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy || !canProceedStep3}>
                   Finish Import
                 </Button>
                 <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
@@ -662,7 +765,7 @@ export default function ImportWizardRoute() {
                   <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                     Save Draft
                   </Button>
-                  <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy}>
+                  <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy || !canProceedStep3}>
                     Finish Import
                   </Button>
                 </div>
