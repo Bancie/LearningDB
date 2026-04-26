@@ -1,0 +1,23 @@
+{
+    "mcpServers": {
+      "pandas-mcp": {
+        "command": "uv",
+        "args": [
+          "run",
+          "--directory",
+          "${workspaceFolder}/tools/mcp/pandas-mcp-server",
+          "pandas-mcp-server"
+        ]
+      },
+      "mcp-server-ds": {
+        "command": "uv",
+        "args": [
+          "run",
+          "--directory",
+          "${workspaceFolder}/tools/mcp/mcp-server-data-exploration",
+          "mcp-server-ds"
+        ]
+      }
+    }
+  }
+  
