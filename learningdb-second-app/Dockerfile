@@ -1,26 +1,26 @@
-# bookworm-slim (glibc): @tailwindcss/vite → lightningcss ships reliable prebuilds for linux/arm64-gnu.
+# Debian-based Bun image (glibc): @tailwindcss/vite → lightningcss ships reliable prebuilds for linux/arm64-gnu.
 # node:20-alpine (musl) often fails at build with: Cannot find module '../lightningcss.linux-arm64-musl.node'
-FROM node:20-bookworm-slim AS development-dependencies-env
+FROM oven/bun:1.3 AS development-dependencies-env
 COPY . /app
 WORKDIR /app
-RUN npm ci
+RUN bun install --frozen-lockfile
 
-FROM node:20-bookworm-slim AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
+FROM oven/bun:1.3 AS production-dependencies-env
+COPY ./package.json ./bun.lock /app/
 WORKDIR /app
-RUN npm ci --omit=dev
+RUN bun install --frozen-lockfile --production
 
-FROM node:20-bookworm-slim AS build-env
+FROM oven/bun:1.3 AS build-env
 COPY . /app/
 COPY --from=development-dependencies-env /app/node_modules /app/node_modules
 WORKDIR /app
 ARG VITE_API_BASE_URL=http://localhost:8000/api
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-RUN npm run build
+RUN bun run build
 
-FROM node:20-bookworm-slim
-COPY ./package.json package-lock.json /app/
+FROM oven/bun:1.3
+COPY ./package.json ./bun.lock /app/
 COPY --from=production-dependencies-env /app/node_modules /app/node_modules
 COPY --from=build-env /app/build /app/build
 WORKDIR /app
-CMD ["npm", "run", "start"]
+CMD ["bun", "run", "start"]
