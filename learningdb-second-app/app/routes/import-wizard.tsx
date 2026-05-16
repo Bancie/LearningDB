@@ -5,6 +5,7 @@ import { useAuth } from "~/auth/session";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
 import { ActivityPickerDialog } from "~/import-wizard/ActivityPickerDialog";
 import { clearServerDraft, loadServerDraft, saveServerDraft } from "~/import-wizard/draft-storage";
 import { WizardFields } from "~/import-wizard/WizardFields";
@@ -42,18 +43,22 @@ const wizardFooterGhost = cn(
 );
 
 type StepDef = { id: WizardStep; title: string; subtitle: string };
-type ConfirmAction = "discard" | "next-step1" | "next-step2" | "finish";
-
-const STEPS: StepDef[] = [
-  { id: 1, title: "ActivityLog", subtitle: "Metadata & Context" },
-  { id: 2, title: "ActivityOutput", subtitle: "Core Results" },
-  { id: 3, title: "KitCount", subtitle: "Task-specific Data" },
-];
+type ConfirmAction =
+  | "discard"
+  | "next-step1"
+  | "next-step2"
+  | "finish"
+  | "advance-to-reading"
+  | "finish-reading";
 
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Import wizard — LearningDB" },
-    { name: "description", content: "Multi-step ACTIVITY_LOG → ACTIVITY_OUTPUT → KIT_COUNT" },
+    {
+      name: "description",
+      content:
+        "ACTIVITY_LOG → ACTIVITY_OUTPUT → KIT_COUNT, optional KIT_READING when Reading is enabled in step 1.",
+    },
   ];
 }
 
@@ -64,6 +69,10 @@ export default function ImportWizardRoute() {
   const [colsLog, setColsLog] = React.useState<Column[]>([]);
   const [colsOut, setColsOut] = React.useState<Column[]>([]);
   const [colsKit, setColsKit] = React.useState<Column[]>([]);
+  const [colsReading, setColsReading] = React.useState<Column[]>([]);
+
+  const [includeReading, setIncludeReading] = React.useState(false);
+  const [readingRows, setReadingRows] = React.useState<Array<Record<string, unknown>>>([{}]);
 
   const [step, setStep] = React.useState<WizardStep>(1);
   const [actiLogId, setActiLogId] = React.useState<number | null>(null);
@@ -80,6 +89,19 @@ export default function ImportWizardRoute() {
   const [draftSavedFlash, setDraftSavedFlash] = React.useState(false);
   const draftSavedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const STEPS = React.useMemo<StepDef[]>(() => {
+    const base: StepDef[] = [
+      { id: 1, title: "ActivityLog", subtitle: "Metadata & Context" },
+      { id: 2, title: "ActivityOutput", subtitle: "Core Results" },
+      { id: 3, title: "KitCount", subtitle: "Task-specific Data" },
+    ];
+    return includeReading
+      ? [...base, { id: 4, title: "KitReading", subtitle: "Reading metrics (KIT_READING)" }]
+      : base;
+  }, [includeReading]);
+
+  const stepperGridClass = STEPS.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3";
+
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -87,15 +109,17 @@ export default function ImportWizardRoute() {
         const t = await resolveImportTables();
         if (cancelled) return;
         setTables(t);
-        const [log, out, kit] = await Promise.all([
+        const [log, out, kit, reading] = await Promise.all([
           getTableColumns(t.log),
           getTableColumns(t.output),
           getTableColumns(t.kit),
+          getTableColumns(t.reading),
         ]);
         if (cancelled) return;
         setColsLog(log.data.columns);
         setColsOut(out.data.columns);
         setColsKit(kit.data.columns);
+        setColsReading(reading.data.columns);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load schema");
       }
@@ -112,7 +136,10 @@ export default function ImportWizardRoute() {
       try {
         const d = await loadServerDraft();
         if (cancelled || !d) return;
-        setStep(d.step);
+        setIncludeReading(d.includeReading);
+        setReadingRows(d.readingRows.length ? d.readingRows : [{}]);
+        const stepToUse = d.step === 4 && !d.includeReading ? 3 : d.step;
+        setStep(stepToUse);
         setActiLogId(d.actiLogId);
         setAoId(d.aoId);
         setLogValues(d.logValues);
@@ -126,6 +153,12 @@ export default function ImportWizardRoute() {
       cancelled = true;
     };
   }, [user]);
+
+  React.useEffect(() => {
+    if (!includeReading && step === 4) {
+      setStep(3);
+    }
+  }, [includeReading, step]);
 
   React.useEffect(() => {
     if (!error) return;
@@ -143,6 +176,7 @@ export default function ImportWizardRoute() {
   const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
   const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
   const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
+  const omitReading = React.useMemo(() => new Set<string>(["AO_ID"]), []);
 
   const canProceedStep1 = React.useMemo(
     () =>
@@ -172,6 +206,16 @@ export default function ImportWizardRoute() {
     [tables, aoId, colsKit, kitRows, omitKit],
   );
 
+  const canProceedStep4 = React.useMemo(
+    () =>
+      tables != null &&
+      aoId != null &&
+      colsReading.length > 0 &&
+      readingRows.length > 0 &&
+      readingRows.every((row) => isWizardMetadataComplete(colsReading, row, omitReading)),
+    [tables, aoId, colsReading, readingRows, omitReading],
+  );
+
   const onSaveDraft = React.useCallback(async () => {
     if (!user) {
       setError("Sign in to save your draft to your account.");
@@ -186,6 +230,8 @@ export default function ImportWizardRoute() {
       logValues,
       outputValues,
       kitRows,
+      includeReading,
+      readingRows,
     };
     try {
       await saveServerDraft(payload);
@@ -198,7 +244,17 @@ export default function ImportWizardRoute() {
     } catch (e) {
       setError(formatApiError(e) || "Failed to save draft");
     }
-  }, [user, step, actiLogId, aoId, logValues, outputValues, kitRows]);
+  }, [
+    user,
+    step,
+    actiLogId,
+    aoId,
+    logValues,
+    outputValues,
+    kitRows,
+    includeReading,
+    readingRows,
+  ]);
 
   React.useEffect(
     () => () => {
@@ -222,6 +278,8 @@ export default function ImportWizardRoute() {
     setLogValues({});
     setOutputValues({});
     setKitRows([{}]);
+    setIncludeReading(false);
+    setReadingRows([{}]);
     setPickedActivityLabel("");
     setError(null);
     setSuccessMsg("Draft discarded. Wizard reset.");
@@ -236,6 +294,11 @@ export default function ImportWizardRoute() {
   const changeOut = (name: string, value: unknown) => setOutputValues((prev) => ({ ...prev, [name]: value }));
   const changeKitRow = (idx: number, name: string, value: unknown) =>
     setKitRows((prev) => prev.map((row, i) => (i === idx ? { ...row, [name]: value } : row)));
+
+  const changeReadingRow = (idx: number, name: string, value: unknown) =>
+    setReadingRows((prev) =>
+      prev.map((row, i) => (i === idx ? { ...row, [name]: value } : row)),
+    );
 
   const handleStep1Next = async () => {
     if (!tables || !user) return;
@@ -267,6 +330,8 @@ export default function ImportWizardRoute() {
         logValues,
         outputValues,
         kitRows,
+        includeReading,
+        readingRows,
       });
     } catch (e) {
       setError(formatApiError(e) || "Step 1 failed");
@@ -298,6 +363,8 @@ export default function ImportWizardRoute() {
         logValues,
         outputValues,
         kitRows,
+        includeReading,
+        readingRows,
       });
     } catch (e) {
       setError(formatApiError(e) || "Step 2 failed");
@@ -343,6 +410,8 @@ export default function ImportWizardRoute() {
       setLogValues({});
       setOutputValues({});
       setKitRows([{}]);
+      setIncludeReading(false);
+      setReadingRows([{}]);
       setPickedActivityLabel("");
       bumpHistory();
     } catch (e) {
@@ -352,12 +421,110 @@ export default function ImportWizardRoute() {
     }
   };
 
-  const handleStep3FinishWithConfirm = () => {
-    if (!canProceedStep3) {
-      setError("Please complete all fields in every kit count row before finishing.");
+  /** Inserts KitCount rows after step 3, then opens KitReading (step 4). */
+  const handleStep3AdvanceToReading = async () => {
+    if (!tables || aoId == null || !user) return;
+    if (kitRows.length === 0) {
+      setError("Please add at least one kit count row.");
       return;
     }
-    setConfirmAction("finish");
+    if (!kitRows.every((row) => isWizardMetadataComplete(colsKit, row, omitKit))) {
+      setError("Please complete all fields in every kit count row.");
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      for (let i = 0; i < kitRows.length; i += 1) {
+        const row = kitRows[i];
+        try {
+          const payload = buildInsertPayload(colsKit, row, { AO_ID: aoId });
+          await insertRecord(tables.kit, payload);
+        } catch (err) {
+          throw new Error(`Kit row #${i + 1} failed: ${formatApiError(err)}`);
+        }
+      }
+      setStep(4);
+      await saveServerDraft({
+        version: 1,
+        step: 4,
+        actiLogId,
+        aoId,
+        logValues,
+        outputValues,
+        kitRows,
+        includeReading,
+        readingRows,
+      });
+    } catch (e) {
+      setError(formatApiError(e) || "Saving kit count rows failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleStep4Finish = async () => {
+    if (!tables || aoId == null) return;
+    if (readingRows.length === 0) {
+      setError("Please add at least one kit reading row.");
+      return;
+    }
+    if (!readingRows.every((row) => isWizardMetadataComplete(colsReading, row, omitReading))) {
+      setError("Please complete all fields in every kit reading row.");
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      for (let i = 0; i < readingRows.length; i += 1) {
+        const row = readingRows[i];
+        try {
+          const payload = buildInsertPayload(colsReading, row, { AO_ID: aoId });
+          await insertRecord(tables.reading, payload);
+        } catch (err) {
+          throw new Error(`Reading row #${i + 1} failed: ${formatApiError(err)}`);
+        }
+      }
+      if (user) {
+        try {
+          await clearServerDraft();
+        } catch (e) {
+          setError(formatApiError(e) || "Import saved but failed to clear draft on server");
+        }
+      }
+      setSuccessMsg("Import complete. Kit count and Kit reading rows saved.");
+      setTimeout(() => setSuccessMsg(null), 5000);
+      setStep(1);
+      setActiLogId(null);
+      setAoId(null);
+      setLogValues({});
+      setOutputValues({});
+      setKitRows([{}]);
+      setIncludeReading(false);
+      setReadingRows([{}]);
+      setPickedActivityLabel("");
+      bumpHistory();
+    } catch (e) {
+      setError(formatApiError(e) || "Step 4 failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleStep3KitPrimaryWithConfirm = () => {
+    if (!canProceedStep3) {
+      setError("Please complete all fields in every kit count row before continuing.");
+      return;
+    }
+    setConfirmAction(includeReading ? "advance-to-reading" : "finish");
+  };
+
+  const handleStep4FinishWithConfirm = () => {
+    if (!canProceedStep4) {
+      setError("Please complete all fields in every kit reading row before finishing.");
+      return;
+    }
+    setConfirmAction("finish-reading");
   };
 
   const onStep1NextWithConfirm = React.useCallback(() => {
@@ -385,6 +552,8 @@ export default function ImportWizardRoute() {
     "next-step1": "Continue to Output Details",
     "next-step2": "Continue to Kit Count",
     finish: "Finish Import",
+    "advance-to-reading": "Continue to Kit Reading",
+    "finish-reading": "Finish Import",
   };
 
   const confirmMessageMap: Record<ConfirmAction, string> = {
@@ -392,6 +561,9 @@ export default function ImportWizardRoute() {
     "next-step1": "Proceed to Step 2 and submit ActivityLog data?",
     "next-step2": "Proceed to Step 3 and submit ActivityOutput data?",
     finish: "Finish import and submit all kit count rows?",
+    "advance-to-reading":
+      "Save all kit count rows to the database, then proceed to Kit Reading (KIT_READING)? You cannot navigate back afterward.",
+    "finish-reading": "Finish import and submit all KIT_READING rows?",
   };
 
   const onConfirmAction = async () => {
@@ -410,10 +582,24 @@ export default function ImportWizardRoute() {
       await handleStep2Next();
       return;
     }
+    if (action === "advance-to-reading") {
+      await handleStep3AdvanceToReading();
+      return;
+    }
+    if (action === "finish-reading") {
+      await handleStep4Finish();
+      return;
+    }
     await handleStep3Finish();
   };
 
   const goToStep = (target: WizardStep) => {
+    if (step === 4 && includeReading && target !== 4) {
+      setError(
+        "Finish Kit Reading or discard the import—you cannot navigate back from this step.",
+      );
+      return;
+    }
     if (target === 1) {
       setStep(1);
       return;
@@ -426,11 +612,25 @@ export default function ImportWizardRoute() {
       setStep(2);
       return;
     }
-    if (actiLogId == null || aoId == null) {
-      setError("Complete steps 1 and 2 before opening step 3.");
+    if (target === 3) {
+      if (actiLogId == null || aoId == null) {
+        setError("Complete steps 1 and 2 before opening step 3.");
+        return;
+      }
+      setStep(3);
       return;
     }
-    setStep(3);
+    if (target === 4) {
+      if (!includeReading) {
+        setError("Reading step is disabled. Turn on Reading in Step 1 to use Kit Reading.");
+        return;
+      }
+      if (actiLogId == null || aoId == null) {
+        setError("Complete steps 1 and 2 before opening Kit Reading.");
+        return;
+      }
+      setStep(4);
+    }
   };
 
   const navigateStepper = (target: WizardStep) => {
@@ -441,8 +641,8 @@ export default function ImportWizardRoute() {
       return;
     }
     if (step === 1) {
-      if (target === 3) {
-        setError("Open step 2 (Activity output) first; you cannot skip to kit count from here.");
+      if (target >= 3) {
+        setError("Open Step 2 (Activity output) first; you cannot skip ahead from here.");
         return;
       }
       if (target === 2) {
@@ -456,6 +656,10 @@ export default function ImportWizardRoute() {
         return;
       }
     }
+    if (step === 2 && target >= 4) {
+      setError("Open Step 3 (Kit count) first.");
+      return;
+    }
     if (step === 2 && target === 3) {
       if (aoId == null) {
         if (!canProceedStep2) {
@@ -464,6 +668,15 @@ export default function ImportWizardRoute() {
         }
         onStep2NextWithConfirm();
       } else setStep(3);
+      return;
+    }
+    if (step === 3 && target === 4 && includeReading) {
+      if (!canProceedStep3) {
+        setError("Please complete all fields in every kit count row before continuing.");
+        return;
+      }
+      handleStep3KitPrimaryWithConfirm();
+      return;
     }
   };
 
@@ -492,7 +705,8 @@ export default function ImportWizardRoute() {
         <div className="space-y-2">
           <h1 className="text-headline-sm">Logging your data</h1>
           <p className="text-body-md text-[var(--color-on-surface-variant)]">
-            Step 1 ActivityLog → Step 2 ActivityOutput → Step 3 KitCount. USER_ID auto-fills from your account.
+            Steps: ActivityLog → ActivityOutput → KitCount, and optionally KitReading (KIT_READING) when you enable reading
+            in Step 1. USER_ID auto-fills from your account.
           </p>
         </div>
       </header>
@@ -536,7 +750,9 @@ export default function ImportWizardRoute() {
                 variant={
                   confirmAction === "discard"
                     ? "danger"
-                    : confirmAction === "finish"
+                    : confirmAction === "finish" ||
+                        confirmAction === "finish-reading" ||
+                        confirmAction === "advance-to-reading"
                       ? "success"
                       : "default"
                 }
@@ -554,7 +770,7 @@ export default function ImportWizardRoute() {
 
       <section className="mx-auto max-w-5xl space-y-6">
         <div className="stitch-liquid-wizard-stepper sticky top-20 z-20 mx-3 mb-3 p-4 md:mx-5 md:p-5">
-          <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 md:grid md:grid-cols-3 md:gap-3">
+          <div className={`flex flex-row items-center justify-center gap-2 sm:gap-3 md:grid ${stepperGridClass} md:gap-3`}>
             {STEPS.map((s) => {
               const active = step === s.id;
               const completed = step > s.id;
@@ -568,7 +784,10 @@ export default function ImportWizardRoute() {
                     aria-label={`${s.title}. ${s.subtitle}`}
                     disabled={
                       busy ||
-                      (step === 1 && s.id === 3) ||
+                      (step === 4 && includeReading && s.id !== 4) ||
+                      (step === 1 && s.id >= 3) ||
+                      (step === 2 && includeReading && s.id === 4) ||
+                      (step === 3 && includeReading && s.id === 4 && !canProceedStep3) ||
                       (step === 1 && !canProceedStep1 && s.id > step) ||
                       (step === 2 && aoId == null && !canProceedStep2 && s.id > step)
                     }
@@ -627,6 +846,24 @@ export default function ImportWizardRoute() {
                 >
                   {selectedActivityId != null ? "Change activity" : "Choose activity"}
                 </Button>
+              </div>
+
+              <div className="mb-6 flex flex-col gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/30 bg-[var(--color-surface-low)] p-4">
+                <p className="text-label-md font-semibold text-[var(--color-on-surface)]">
+                  Include reading data (KIT_READING)?
+                </p>
+                <p className="text-body-sm text-[var(--color-on-surface-variant)]">
+                  Stored only for this wizard session and draft—not saved to ACTIVITY_LOG. Choose Yes for an extra Kit
+                  Reading step after Kit count (you cannot navigate back from that step except by discarding).
+                </p>
+                <label className="flex cursor-pointer items-center gap-2 text-body-md">
+                  <Checkbox
+                    checked={includeReading}
+                    onChange={(ev) => setIncludeReading(ev.target.checked)}
+                    disabled={busy}
+                  />
+                  <span>{includeReading ? "Yes — add KitReading step" : "No — finish after Kit count"}</span>
+                </label>
               </div>
 
               <WizardFields
@@ -730,8 +967,12 @@ export default function ImportWizardRoute() {
               </div>
 
               <div className="mt-8 flex flex-col gap-2 md:hidden">
-                <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy || !canProceedStep3}>
-                  Finish Import
+                <Button
+                  className={wizardFooterPrimary}
+                  onClick={handleStep3KitPrimaryWithConfirm}
+                  disabled={busy || !canProceedStep3}
+                >
+                  {includeReading ? "Next" : "Finish Import"}
                 </Button>
                 <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                   Save Draft
@@ -754,7 +995,97 @@ export default function ImportWizardRoute() {
                   <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                     Save Draft
                   </Button>
-                  <Button className={wizardFooterPrimary} onClick={handleStep3FinishWithConfirm} disabled={busy || !canProceedStep3}>
+                  <Button
+                    className={wizardFooterPrimary}
+                    onClick={handleStep3KitPrimaryWithConfirm}
+                    disabled={busy || !canProceedStep3}
+                  >
+                    {includeReading ? "Next" : "Finish Import"}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ) : null}
+
+          {step === 4 ? (
+            <Card className="p-6 md:p-8">
+              <div className="mb-6 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[var(--color-primary)]">menu_book</span>
+                  <h2 className="text-title-md">KitReading</h2>
+                </div>
+                <Button type="button" variant="secondary" onClick={() => setReadingRows((prev) => [...prev, {}])}>
+                  + Add kit reading row
+                </Button>
+              </div>
+              <Alert
+                variant="info"
+                className="mb-4 border-amber-200/70 bg-[color-mix(in_srgb,var(--color-primary-container)_12%,white)] dark:bg-amber-950/25"
+              >
+                Kit count rows were already saved. Finish or Discard from here—you cannot navigate back to earlier steps
+                from this stage.
+              </Alert>
+              <Alert className="mb-4">
+                Linked to ActivityOutput in this session. You do not need to enter <code>AO_ID</code>.
+              </Alert>
+
+              <div className="space-y-4">
+                {readingRows.map((row, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/25 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-label-md text-[var(--color-on-surface-variant)]">Reading row #{idx + 1}</p>
+                      {readingRows.length > 1 ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setReadingRows((prev) => prev.filter((_, i) => i !== idx))}
+                        >
+                          Remove
+                        </Button>
+                      ) : null}
+                    </div>
+                    <WizardFields
+                      columns={colsReading}
+                      values={row}
+                      onChange={(name, value) => changeReadingRow(idx, name, value)}
+                      omit={omitReading}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-col gap-2 md:hidden">
+                <Button
+                  className={wizardFooterPrimary}
+                  onClick={handleStep4FinishWithConfirm}
+                  disabled={busy || !canProceedStep4}
+                >
+                  Finish Import
+                </Button>
+                <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                  Save Draft
+                </Button>
+                <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                  Discard
+                </Button>
+              </div>
+              <div className="mt-8 hidden flex-col justify-end gap-2 sm:flex-row md:flex">
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+                  <Button className={wizardFooterGhost} variant="ghost" onClick={onDiscardDraftWithConfirm} disabled={busy}>
+                    Discard
+                  </Button>
+                  <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
+                    Save Draft
+                  </Button>
+                  <Button
+                    className={wizardFooterPrimary}
+                    onClick={handleStep4FinishWithConfirm}
+                    disabled={busy || !canProceedStep4}
+                  >
                     Finish Import
                   </Button>
                 </div>

@@ -129,12 +129,14 @@ class ImportWizardDraftV1(BaseModel):
     logValues: dict[str, Any] = Field(default_factory=dict)
     outputValues: dict[str, Any] = Field(default_factory=dict)
     kitRows: list[dict[str, Any]] = Field(default_factory=list)
+    includeReading: bool = False
+    readingRows: list[dict[str, Any]] = Field(default_factory=list)
 
     @field_validator("step")
     @classmethod
     def step_in_range(cls, v: int) -> int:
-        if v not in (1, 2, 3):
-            raise ValueError("step must be 1, 2, or 3")
+        if v not in (1, 2, 3, 4):
+            raise ValueError("step must be 1, 2, 3, or 4")
         return v
 
 

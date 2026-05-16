@@ -6,13 +6,16 @@ export async function loadServerDraft(): Promise<ImportDraftV1 | null> {
   const { data } = await getImportWizardDraft();
   const d = data.data;
   if (!d || d.version !== 1) return null;
-  if (!Array.isArray(d.kitRows)) {
-    return {
-      ...d,
-      kitRows: [{}],
-    };
-  }
-  return d;
+  const kitRows = Array.isArray(d.kitRows) && d.kitRows.length ? d.kitRows : [{}];
+  const includeReading = typeof d.includeReading === "boolean" ? d.includeReading : false;
+  const readingRows =
+    Array.isArray(d.readingRows) && d.readingRows.length ? d.readingRows : [{}];
+  return {
+    ...d,
+    kitRows,
+    includeReading,
+    readingRows,
+  };
 }
 
 /** Save draft to the server (per user). */

@@ -5,9 +5,10 @@ const LOGICAL = {
   log: "ACTIVITY_LOG",
   output: "ACTIVITY_OUTPUT",
   kit: "KIT_COUNT",
+  reading: "KIT_READING",
 } as const;
 
-export type ResolvedTables = { log: string; output: string; kit: string };
+export type ResolvedTables = { log: string; output: string; kit: string; reading: string };
 
 export async function resolveImportTables(): Promise<ResolvedTables> {
   const { data } = await getTables();
@@ -23,6 +24,7 @@ export async function resolveImportTables(): Promise<ResolvedTables> {
     log: pick(LOGICAL.log),
     output: pick(LOGICAL.output),
     kit: pick(LOGICAL.kit),
+    reading: pick(LOGICAL.reading),
   };
 }
 

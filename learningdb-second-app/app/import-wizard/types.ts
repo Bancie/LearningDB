@@ -1,4 +1,4 @@
-export type WizardStep = 1 | 2 | 3;
+export type WizardStep = 1 | 2 | 3 | 4;
 
 export interface ImportDraftV1 {
   version: 1;
@@ -8,4 +8,7 @@ export interface ImportDraftV1 {
   logValues: Record<string, unknown>;
   outputValues: Record<string, unknown>;
   kitRows: Array<Record<string, unknown>>;
+  /** Wizard-only toggle; never written to ACTIVITY_LOG. */
+  includeReading: boolean;
+  readingRows: Array<Record<string, unknown>>;
 }

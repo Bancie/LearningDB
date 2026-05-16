@@ -873,8 +873,8 @@ def upsert_import_wizard_draft(user_id: int, draft: dict) -> dict:
     if not isinstance(draft, dict) or draft.get("version") != 1:
         raise ValueError("draft must be an object with version 1")
     step = draft.get("step")
-    if step not in (1, 2, 3):
-        raise ValueError("draft.step must be 1, 2, or 3")
+    if step not in (1, 2, 3, 4):
+        raise ValueError("draft.step must be 1, 2, 3, or 4")
     payload = json.dumps(draft, separators=(",", ":"), default=str)
     with engine.begin() as conn:
         conn.execute(
