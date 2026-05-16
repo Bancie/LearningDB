@@ -1,0 +1,27 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "67d7bf1e0d4d",
+  "strategy": "manual-commit",
+  "branch": "bancie/per-4779-add-kit_reading-for-the-web-app-logging",
+  "checkpoints_count": 2,
+  "files_touched": [
+    "learningdb-second-app/bun.lock",
+    "learningdb-second-app/package-lock.json"
+  ],
+  "sessions": [
+    {
+      "metadata": "/67/d7bf1e0d4d/0/metadata.json",
+      "transcript": "/67/d7bf1e0d4d/0/full.jsonl",
+      "context": "",
+      "content_hash": "/67/d7bf1e0d4d/0/content_hash.txt",
+      "prompt": ""
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  }
+}
