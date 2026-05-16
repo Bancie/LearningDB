@@ -88,3 +88,6 @@ langchain-anthropic
 langchain-ollama
 openai
 anthropic
+
+# MLFlow
+mlflow>=3.1
