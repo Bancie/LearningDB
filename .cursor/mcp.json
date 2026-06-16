@@ -17,6 +17,12 @@
           "${workspaceFolder}/tools/mcp/mcp-server-data-exploration",
           "mcp-server-ds"
         ]
+      },
+      "excalidraw": {
+        "url": "https://api.excalidraw.com/api/v1/mcp",
+        "headers": {
+          "Authorization": "Bearer ${env:EXCALIDRAW_API_KEY}"
+        }
       }
     }
   }
