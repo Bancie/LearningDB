@@ -3,14 +3,18 @@ import * as React from "react";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { WizardFields } from "~/import-wizard/WizardFields";
-import { resolveImportTables, type ResolvedTables } from "~/import-wizard/table-utils";
+import {
+  OMIT_ACTIVITY_LOG,
+  OMIT_ACTIVITY_OUTPUT,
+  OMIT_KIT_COUNT,
+} from "~/import-wizard/constants";
+import { useImportSchema } from "~/import-wizard/useImportSchema";
 import {
   deleteLoggingHistory,
   getLoggingHistoryDetail,
-  getTableColumns,
   updateLoggingHistoryDetail,
-  type Column,
   type LoggingHistoryDetail,
 } from "~/services/api";
 import { formatApiError } from "~/utils/formatApiError";
@@ -35,10 +39,14 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [detail, setDetail] = React.useState<LoggingHistoryDetail | null>(null);
-  const [tables, setTables] = React.useState<ResolvedTables | null>(null);
-  const [colsLog, setColsLog] = React.useState<Column[]>([]);
-  const [colsOut, setColsOut] = React.useState<Column[]>([]);
-  const [colsKit, setColsKit] = React.useState<Column[]>([]);
+  const {
+    tables,
+    colsLog,
+    colsOut,
+    colsKit,
+    loading: schemaLoading,
+    error: schemaError,
+  } = useImportSchema(open && actiLogId != null, { includeReading: false });
   const [activityLog, setActivityLog] = React.useState<Record<string, unknown>>({});
   const [activityOutput, setActivityOutput] = React.useState<Record<string, unknown>>({});
   const [kitRows, setKitRows] = React.useState<Array<Record<string, unknown>>>([]);
@@ -48,9 +56,9 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
   const [saveToast, setSaveToast] = React.useState(false);
   const toastTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
-  const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
-  const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
+  const omitLog = OMIT_ACTIVITY_LOG;
+  const omitOut = OMIT_ACTIVITY_OUTPUT;
+  const omitKit = OMIT_KIT_COUNT;
 
   React.useEffect(() => {
     return () => {
@@ -65,19 +73,6 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
     setError(null);
     (async () => {
       try {
-        const t = await resolveImportTables();
-        if (cancelled) return;
-        setTables(t);
-        const [log, out, kit] = await Promise.all([
-          getTableColumns(t.log),
-          getTableColumns(t.output),
-          getTableColumns(t.kit),
-        ]);
-        if (cancelled) return;
-        setColsLog(log.data.columns);
-        setColsOut(out.data.columns);
-        setColsKit(kit.data.columns);
-
         const { data } = await getLoggingHistoryDetail(actiLogId);
         if (cancelled) return;
         setDetail(data.data);
@@ -98,6 +93,12 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
       cancelled = true;
     };
   }, [open, actiLogId]);
+
+  React.useEffect(() => {
+    if (schemaError) {
+      setError(schemaError);
+    }
+  }, [schemaError]);
 
   if (!open || actiLogId == null) return null;
 
@@ -176,8 +177,8 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
           </div>
           <div className="max-h-[calc(90vh-4.25rem)] overflow-y-auto p-5">
             {error ? <Alert variant="error" className="mb-3">{error}</Alert> : null}
-            {loading ? <p className="text-body-md">Loading detail…</p> : null}
-            {!loading && detail && tables ? (
+            {loading || schemaLoading ? <p className="text-body-md">Loading detail…</p> : null}
+            {!loading && !schemaLoading && detail && tables ? (
               <div className="space-y-6">
                 <section>
                   <h4 className="mb-3 text-label-md text-[var(--color-on-surface-variant)]">ACTIVITY_LOG</h4>
@@ -289,22 +290,17 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
         </div>
       ) : null}
 
-      {deleteConfirmOpen ? (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/35 p-4">
-          <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--color-outline-variant)]/40 bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
-            <h4 className="text-title-md">Delete session</h4>
-            <p className="mt-2 text-body-md text-[var(--color-on-surface-variant)]">
-              Delete this logging session and all related output and kit count records? This cannot be undone.
-            </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button type="button" variant="secondary" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-              <Button type="button" variant="danger" onClick={() => void onDeleteConfirmed()} disabled={saving}>
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        title="Delete session"
+        message="Delete this logging session and all related output and kit count records? This cannot be undone."
+        confirmLabel="Delete"
+        confirmVariant="danger"
+        onConfirm={() => void onDeleteConfirmed()}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        busy={saving}
+        zIndexClass="z-[150]"
+      />
 
       {saveToast ? (
         <div className="pointer-events-none fixed bottom-4 left-4 z-[200] max-w-sm rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/35 bg-[var(--color-surface-container)] px-4 py-3 text-body-md text-[var(--color-on-surface)] shadow-[var(--shadow-ambient)]">

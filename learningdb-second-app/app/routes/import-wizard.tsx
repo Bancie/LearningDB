@@ -6,19 +6,24 @@ import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { ActivityPickerDialog } from "~/import-wizard/ActivityPickerDialog";
+import {
+  OMIT_ACTIVITY_LOG,
+  OMIT_ACTIVITY_OUTPUT,
+  OMIT_KIT_COUNT,
+  OMIT_KIT_READING,
+} from "~/import-wizard/constants";
 import { clearServerDraft, loadServerDraft, saveServerDraft } from "~/import-wizard/draft-storage";
 import { WizardFields } from "~/import-wizard/WizardFields";
 import {
   buildInsertPayload,
   extractPkInt,
   isWizardMetadataComplete,
-  resolveImportTables,
-  type ResolvedTables,
 } from "~/import-wizard/table-utils";
+import { useImportSchema } from "~/import-wizard/useImportSchema";
 import type { ImportDraftV1, WizardStep } from "~/import-wizard/types";
-import type { Column } from "~/services/api";
-import { getTableColumns, insertRecord } from "~/services/api";
+import { insertRecord } from "~/services/api";
 import { useHistoryRefresh } from "~/history/history-refresh-context";
 import { formatApiError } from "~/utils/formatApiError";
 import { cn } from "~/lib/cn";
@@ -65,11 +70,14 @@ export function meta({}: Route.MetaArgs) {
 export default function ImportWizardRoute() {
   const { user } = useAuth();
   const { bump: bumpHistory } = useHistoryRefresh();
-  const [tables, setTables] = React.useState<ResolvedTables | null>(null);
-  const [colsLog, setColsLog] = React.useState<Column[]>([]);
-  const [colsOut, setColsOut] = React.useState<Column[]>([]);
-  const [colsKit, setColsKit] = React.useState<Column[]>([]);
-  const [colsReading, setColsReading] = React.useState<Column[]>([]);
+  const {
+    tables,
+    colsLog,
+    colsOut,
+    colsKit,
+    colsReading,
+    error: schemaError,
+  } = useImportSchema(true);
 
   const [includeReading, setIncludeReading] = React.useState(false);
   const [readingRows, setReadingRows] = React.useState<Array<Record<string, unknown>>>([{}]);
@@ -103,31 +111,10 @@ export default function ImportWizardRoute() {
   const stepperGridClass = STEPS.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3";
 
   React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const t = await resolveImportTables();
-        if (cancelled) return;
-        setTables(t);
-        const [log, out, kit, reading] = await Promise.all([
-          getTableColumns(t.log),
-          getTableColumns(t.output),
-          getTableColumns(t.kit),
-          getTableColumns(t.reading),
-        ]);
-        if (cancelled) return;
-        setColsLog(log.data.columns);
-        setColsOut(out.data.columns);
-        setColsKit(kit.data.columns);
-        setColsReading(reading.data.columns);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load schema");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (schemaError) {
+      setError(schemaError);
+    }
+  }, [schemaError]);
 
   React.useEffect(() => {
     if (!user) return;
@@ -173,10 +160,10 @@ export default function ImportWizardRoute() {
         ? Number(logValues.ACTIVITY_ID)
         : null;
 
-  const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
-  const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
-  const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
-  const omitReading = React.useMemo(() => new Set<string>(["AO_ID"]), []);
+  const omitLog = OMIT_ACTIVITY_LOG;
+  const omitOut = OMIT_ACTIVITY_OUTPUT;
+  const omitKit = OMIT_KIT_COUNT;
+  const omitReading = OMIT_KIT_READING;
 
   const canProceedStep1 = React.useMemo(
     () =>
@@ -739,34 +726,23 @@ export default function ImportWizardRoute() {
           ) : null}
         </div>
       ) : null}
-      {confirmAction ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 p-4">
-          <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--color-outline-variant)]/40 bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
-            <h3 className="mb-2 text-title-md">{confirmTitleMap[confirmAction]}</h3>
-            <p className="mb-5 text-body-md text-[var(--color-on-surface-variant)]">{confirmMessageMap[confirmAction]}</p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant={
-                  confirmAction === "discard"
-                    ? "danger"
-                    : confirmAction === "finish" ||
-                        confirmAction === "finish-reading" ||
-                        confirmAction === "advance-to-reading"
-                      ? "success"
-                      : "default"
-                }
-                onClick={() => void onConfirmAction()}
-              >
-                Confirm
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => setConfirmAction(null)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={confirmAction != null}
+        title={confirmAction ? confirmTitleMap[confirmAction] : ""}
+        message={confirmAction ? confirmMessageMap[confirmAction] : ""}
+        confirmVariant={
+          confirmAction === "discard"
+            ? "danger"
+            : confirmAction === "finish" ||
+                confirmAction === "finish-reading" ||
+                confirmAction === "advance-to-reading"
+              ? "success"
+              : "default"
+        }
+        onConfirm={() => void onConfirmAction()}
+        onCancel={() => setConfirmAction(null)}
+        busy={busy}
+      />
 
       <section className="mx-auto max-w-5xl space-y-6">
         <div className="stitch-liquid-wizard-stepper sticky top-20 z-20 mx-3 mb-3 p-4 md:mx-5 md:p-5">

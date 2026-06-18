@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 import { useAuth } from "~/auth/session";
 import { useColorMode } from "~/color-mode";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { Button } from "~/components/ui/button";
 import { HistoryRefreshProvider } from "~/history/history-refresh-context";
 import { HistorySidebar } from "~/history/HistorySidebar";
@@ -195,29 +196,19 @@ export default function AppShell() {
       </main>
       <HistorySidebar open={historyOpen} onClose={() => setHistoryOpen(false)} />
 
-      {logoutConfirmOpen ? (
-        <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/35 p-4">
-          <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--color-outline-variant)]/40 bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
-            <h3 className="mb-2 text-title-md">Log out</h3>
-            <p className="mb-5 text-body-md text-[var(--color-on-surface-variant)]">Are you sure you want to sign out?</p>
-            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button type="button" variant="secondary" onClick={() => setLogoutConfirmOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="danger"
-                onClick={() => {
-                  setLogoutConfirmOpen(false);
-                  void logout();
-                }}
-              >
-                Log out
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        title="Log out"
+        message="Are you sure you want to sign out?"
+        confirmLabel="Log out"
+        confirmVariant="danger"
+        onConfirm={() => {
+          setLogoutConfirmOpen(false);
+          void logout();
+        }}
+        onCancel={() => setLogoutConfirmOpen(false)}
+        zIndexClass="z-[160]"
+      />
     </div>
     </HistoryRefreshProvider>
   );
