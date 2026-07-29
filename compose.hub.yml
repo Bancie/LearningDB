@@ -1,0 +1,160 @@
+# Public Compose stack — pulls prebuilt images from Docker Hub (bancie/*).
+# Usage:
+#   cp .env.example .env   # set DB_PASS and API keys
+#   docker compose -f compose.hub.yml up -d
+#
+# For local source builds, use compose.yml instead.
+
+services:
+  db:
+    image: mysql:9.3
+    command: ["mysqld", "--lower_case_table_names=1"]
+    container_name: bancie-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASS}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3308:3306"
+    volumes:
+      - bancie_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "127.0.0.1",
+          "-uroot",
+          "-p${DB_PASS}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    image: bancie/learningdb-api:latest
+    restart: unless-stopped
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      SEED_USER1_USERNAME: ${SEED_USER1_USERNAME:-owner}
+      SEED_USER1_EMAIL: ${SEED_USER1_EMAIL:-owner@learningdb.local}
+      SEED_USER1_PASSWORD: ${SEED_USER1_PASSWORD:-learningdb-owner-1}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      db:
+        condition: service_healthy
+
+  orchestrator:
+    image: bancie/learningdb-orchestrator:latest
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      ORCH_BACKEND_BASE_URL: http://api:8000/api
+      ORCH_DEFAULT_PROVIDER: ${ORCH_DEFAULT_PROVIDER:-openai}
+      ORCH_DEFAULT_MODEL: ${ORCH_DEFAULT_MODEL:-gpt-4.1-mini}
+      ORCH_REQUEST_TIMEOUT_SECONDS: ${ORCH_REQUEST_TIMEOUT_SECONDS:-45}
+      ORCH_WRITE_TABLE_ALLOWLIST: ${ORCH_WRITE_TABLE_ALLOWLIST:-activity,activity_log,activity_output}
+      ORCH_WRITE_CONFIRMATION_TTL_SECONDS: ${ORCH_WRITE_CONFIRMATION_TTL_SECONDS:-300}
+      ORCH_WRITE_CONFIRMATION_SECRET: ${ORCH_WRITE_CONFIRMATION_SECRET:-learningdb-local-confirmation-secret}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      ORCH_OLLAMA_API_KEY: ${ORCH_OLLAMA_API_KEY:-}
+      ORCH_OLLAMA_BASE_URL: ${ORCH_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      ORCH_OLLAMA_ENABLE_LOCAL: ${ORCH_OLLAMA_ENABLE_LOCAL:-}
+      ORCH_OLLAMA_FALLBACK_BASE_URL: ${ORCH_OLLAMA_FALLBACK_BASE_URL:-http://host.docker.internal:11434}
+      ORCH_OLLAMA_FALLBACK_MODEL: ${ORCH_OLLAMA_FALLBACK_MODEL:-}
+      ORCH_APP_HOST: 0.0.0.0
+      ORCH_APP_PORT: 8100
+    ports:
+      - "8100:8100"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # Open on laptop: http://localhost:3000
+  web:
+    image: bancie/learningdb-web:latest
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    depends_on:
+      api:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
+
+  # CRUD-only UI: http://localhost:3001
+  web-second:
+    image: bancie/learningdb-web-second:latest
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+    ports:
+      - "3001:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  bancie_mysql_data:
+    name: bancie-mysql-data

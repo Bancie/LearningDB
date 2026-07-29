@@ -2,9 +2,42 @@
 .github
 .cursor
 .vscode
+.idea
+.entire
+.agents
+.claude
+.continue
+.factory
+.junie
+.kiro
+.pi
+.windsurf
+.pytest_cache
 **/.DS_Store
 **/__pycache__
 **/*.pyc
+
+# Secrets and local env (keep .env.example out of ignore via negation below)
+.env
+.env.*
+!.env.example
+
+# Personal / private workspace
+personal/
+
+# Local venvs and caches
+.venv
+**/.venv
+**/venv
+
+# Heavy local artifacts not needed in images
+bancie-backup.sql
+mlflow.db
+*.sql
+output.dbml
+dbml-error.log
+study.txt
+test.sql
 
 learningdb/node_modules
 learningdb/build
@@ -12,6 +45,9 @@ learningdb/.react-router
 learningdb/backend/.venv
 learningdb/backend/venv
 learningdb/backend/learningdb_cli.egg-info
+
+learningdb-second-app/node_modules
+learningdb-second-app/build
 
 agent-transcripts
 mcps

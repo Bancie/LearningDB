@@ -1,5 +1,30 @@
 # LearningDB
 
+## Run from Docker Hub
+
+Prebuilt images are published under [`bancie`](https://hub.docker.com/u/bancie) (`learningdb-api`, `learningdb-orchestrator`, `learningdb-web`, `learningdb-web-second`).
+
+```bash
+cp .env.example .env   # set DB_PASS and API keys
+docker compose -f compose.hub.yml up -d
+```
+
+| Service | URL |
+|---------|-----|
+| Web | http://localhost:3000 |
+| Web (CRUD) | http://localhost:3001 |
+| API | http://localhost:8000 |
+| Orchestrator | http://localhost:8100 |
+| MySQL | localhost:3308 |
+
+To rebuild and push images (maintainers; requires `docker login` as `bancie`):
+
+```bash
+./scripts/docker-hub-push.sh
+```
+
+For local source builds, use `compose.yml` instead of `compose.hub.yml`.
+
 ## Second web app (CRUD)
 
 The experimental CRUD-only UI lives in [`learningdb-second-app/`](learningdb-second-app/) (dev on **port 3001**, Docker Compose service `web-second` on **3001**). Local dev and installs use **Bun** — see that folder’s README for commands.
