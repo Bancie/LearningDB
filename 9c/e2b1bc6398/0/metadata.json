@@ -1,0 +1,31 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "9ce2b1bc6398",
+  "session_id": "73517530-b503-423a-b8a7-11b87038017d",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-29T10:22:15.801915Z",
+  "branch": "bancie/per-5653-packaging-and-publish",
+  "checkpoints_count": 8,
+  "files_touched": [
+    "compose.hub.yml",
+    "scripts/docker-hub-push.sh"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "4b728fd665ae",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 0
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-07-29T10:22:15.76113Z",
+    "agent_lines": 246,
+    "human_added": 305,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 551,
+    "agent_percentage": 44.64609800362977
+  }
+}
