@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="publics/learningdb_demo.gif" alt="LearningDB demo" width="800" />
+  <img src="publics/learningdb_demo.gif" alt="LearningDB demo" width="350" />
 </p>
 
 **LearningDB** is a personal learning workspace: track activities, manage data through a FastAPI backend, chat with an AI orchestrator that can query and update your records, and explore Bayesian analysis views — all from the browser.
@@ -34,13 +34,13 @@ cp .env.example .env   # set DB_PASS and at least one LLM API key
 docker compose -f compose.hub.yml up -d
 ```
 
-| Service | URL |
-|---------|-----|
-| Web | http://localhost:3000 |
+| Service             | URL                   |
+| ------------------- | --------------------- |
+| Web                 | http://localhost:3000 |
 | Web (CRUD / Import) | http://localhost:3001 |
-| API | http://localhost:8000 |
-| Orchestrator | http://localhost:8100 |
-| MySQL | localhost:3308 |
+| API                 | http://localhost:8000 |
+| Orchestrator        | http://localhost:8100 |
+| MySQL               | localhost:3308        |
 
 Default seed user (override via env): `owner` / `learningdb-owner-1`.
 
