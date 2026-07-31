@@ -1,59 +1,71 @@
-# LearningDB
+<p align="center">
+  <img src="learningdb-second-app/public/learningdblogo.png" alt="LearningDB" width="140" />
+</p>
 
-## Run from Docker Hub
+<h1 align="center">LearningDB</h1>
+
+<p align="center">
+  AI-first learning tracker with Bayesian analysis.
+</p>
+
+<p align="center">
+  <img src="publics/learningdb_demo.gif" alt="LearningDB demo" width="800" />
+</p>
+
+**LearningDB** is a personal learning workspace: track activities, manage data through a FastAPI backend, chat with an AI orchestrator that can query and update your records, and explore Bayesian analysis views — all from the browser.
+
+Writes go through a two-step confirmation flow (preview → confirm token) with a table allowlist. Deletes are not allowed.
+
+## Highlights
+
+- **Activity tracking** — log and review learning activities per user
+- **AI workspace** — LangChain orchestrator with tool-calling for reads and safe writes
+- **Write-safe by design** — two-step confirmation, allowlisted tables, no deletes
+- **Bayesian analysis** — priors, posteriors, and status updates in the UI
+- **Import wizard** — CRUD-focused second UI for structured data import
+- **Docker-first** — React, FastAPI, and MySQL stack via Compose from Docker Hub
+
+## Quickstart
 
 Prebuilt images are published under [`bancie`](https://hub.docker.com/u/bancie) (`learningdb-api`, `learningdb-orchestrator`, `learningdb-web`, `learningdb-web-second`).
 
 ```bash
-cp .env.example .env   # set DB_PASS and API keys
+cp .env.example .env   # set DB_PASS and at least one LLM API key
 docker compose -f compose.hub.yml up -d
 ```
 
 | Service | URL |
 |---------|-----|
 | Web | http://localhost:3000 |
-| Web (CRUD) | http://localhost:3001 |
+| Web (CRUD / Import) | http://localhost:3001 |
 | API | http://localhost:8000 |
 | Orchestrator | http://localhost:8100 |
 | MySQL | localhost:3308 |
 
-To rebuild and push images (maintainers; requires `docker login` as `bancie`):
+Default seed user (override via env): `owner` / `learningdb-owner-1`.
 
-```bash
-./scripts/docker-hub-push.sh
+## Architecture
+
+```mermaid
+flowchart LR
+  browser[Browser]
+  web[Web :3000]
+  webSecond[Web CRUD :3001]
+  orch[Orchestrator :8100]
+  api[API :8000]
+  db[(MySQL)]
+
+  browser --> web
+  browser --> webSecond
+  web --> orch
+  web --> api
+  webSecond --> api
+  orch --> api
+  api --> db
 ```
 
-For local source builds, use `compose.yml` instead of `compose.hub.yml`.
+The main web app talks to both the API and the orchestrator. The CRUD / import UI talks only to the API. The orchestrator calls the API for tool execution; the API owns MySQL.
 
-## Second web app (CRUD)
+## License
 
-The experimental CRUD-only UI lives in [`learningdb-second-app/`](learningdb-second-app/) (dev on **port 3001**, Docker Compose service `web-second` on **3001**). Local dev and installs use **Bun** — see that folder’s README for commands.
-
-## Committing submodule changes
-
-When the `learningdb` submodule has modified or untracked changes, commit them **inside the submodule first**, then update the parent repo.
-
-### 1. Commit inside the submodule
-
-```bash
-cd learningdb
-git add -A
-git status                    # optional: review what's staged
-git commit -m "Your message"
-```
-
-### 2. Commit the submodule update in the parent repo
-
-```bash
-cd ..   # or cd /path/to/LearningDB
-git add learningdb
-git commit -m "Update learningdb submodule: <short description>"
-```
-
-### One-liner (from parent repo root)
-
-```bash
-(cd learningdb && git add -A && git commit -m "Your submodule message") && git add learningdb && git commit -m "Update learningdb submodule"
-```
-
-Replace `learningdb` with your submodule path if different; adjust commit messages as needed.
+[MIT](LICENSE)
