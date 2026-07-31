@@ -1,0 +1,24 @@
+{
+  "cli_version": "0.4.7",
+  "checkpoint_id": "3b88bc0a0367",
+  "session_id": "0852fd9c-22f7-49de-97c6-58e4a4a99132",
+  "strategy": "manual-commit",
+  "created_at": "2026-07-31T18:01:40.954604Z",
+  "branch": "bancie/per-6049-properly-update-the-readmes-for-the-projects",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "README.md",
+    "publics/learningdb_demo.gif"
+  ],
+  "agent": "Claude Code",
+  "turn_id": "28bcfedefa9c",
+  "initial_attribution": {
+    "calculated_at": "2026-07-31T18:01:40.93114Z",
+    "agent_lines": 0,
+    "human_added": 0,
+    "human_modified": 8,
+    "human_removed": 0,
+    "total_committed": 3,
+    "agent_percentage": 0
+  }
+}
