@@ -161,10 +161,17 @@ class ImportWizardDraftV1(BaseModel):
         return self
 
 
+class LoggingHistorySpecialtyKitUpdate(BaseModel):
+    table: Optional[str] = None
+    logical: Optional[str] = None
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class LoggingHistoryUpdateRequest(BaseModel):
     activity_log_updates: dict[str, Any] = Field(default_factory=dict)
     activity_output_updates: dict[str, Any] = Field(default_factory=dict)
     kit_rows: list[dict[str, Any]] = Field(default_factory=list)
+    specialty_kits: list[LoggingHistorySpecialtyKitUpdate] = Field(default_factory=list)
 
 
 def _set_auth_cookie(response: Response, token: str) -> None:
@@ -317,6 +324,7 @@ def update_logging_history_detail(
             activity_log_updates=request.activity_log_updates,
             activity_output_updates=request.activity_output_updates,
             kit_rows=request.kit_rows,
+            specialty_kits=[entry.model_dump() for entry in request.specialty_kits],
         )
         return {"data": data}
     except HTTPException:

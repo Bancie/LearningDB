@@ -236,6 +236,78 @@ def _resolve_history_tables() -> dict[str, str]:
     }
 
 
+def _is_specialty_kit_table_name(name: str) -> bool:
+    upper = str(name).upper()
+    return upper.startswith("KIT_") and upper != "KIT_COUNT"
+
+
+def _list_specialty_kit_tables() -> list[dict[str, str]]:
+    """Return physical specialty KIT_* tables (excluding KIT_COUNT), sorted by logical name."""
+    options: list[dict[str, str]] = []
+    for physical in get_table_names():
+        if not _is_specialty_kit_table_name(physical):
+            continue
+        logical = physical.upper()
+        options.append({"table": physical, "logical": logical})
+    options.sort(key=lambda item: item["logical"])
+    return options
+
+
+def _specialty_kit_table_whitelist() -> dict[str, str]:
+    """Map lowercased physical/logical names → physical table name."""
+    mapping: dict[str, str] = {}
+    for item in _list_specialty_kit_tables():
+        physical = item["table"]
+        mapping[physical.lower()] = physical
+        mapping[item["logical"].lower()] = physical
+    return mapping
+
+
+def _fetch_kit_rows_for_ao(table_name: str, ao_id: int) -> list[dict]:
+    q = text(f"SELECT * FROM `{table_name}` WHERE `AO_ID` = :ao_id")
+    with engine.connect() as conn:
+        rows = conn.execute(q, {"ao_id": int(ao_id)}).mappings().all()
+    return [dict(row) for row in rows]
+
+
+def _sync_kit_table_rows(*, table_name: str, ao_id: int, kit_rows: list[dict]) -> None:
+    """Upsert incoming rows and delete existing rows missing from the payload."""
+    kit_columns = _get_table_columns_set(table_name)
+    kit_pk_cols = _get_pk_columns(table_name)
+    existing_rows = _fetch_kit_rows_for_ao(table_name, ao_id)
+
+    def pk_key(pk_dict: dict) -> tuple:
+        return tuple((k, pk_dict.get(k)) for k in kit_pk_cols)
+
+    existing_map: dict[tuple, dict] = {}
+    for row_dict in existing_rows:
+        existing_map[pk_key(_extract_pk_dict_from_row(table_name, row_dict))] = row_dict
+
+    incoming_map: dict[tuple, dict] = {}
+    for raw_row in kit_rows or []:
+        row = dict(raw_row)
+        row["AO_ID"] = int(ao_id)
+        pk_dict = {k: row.get(k) for k in kit_pk_cols if k in row}
+        has_full_pk = len(pk_dict) == len(kit_pk_cols) and all(v is not None for v in pk_dict.values())
+        if has_full_pk:
+            incoming_map[pk_key(pk_dict)] = row
+            clean_updates = {
+                k: v
+                for k, v in row.items()
+                if k in kit_columns and k not in kit_pk_cols and k != "AO_ID"
+            }
+            if clean_updates:
+                update_table_row(table_name, pk_dict, clean_updates)
+            continue
+        clean_insert = {k: v for k, v in row.items() if k in kit_columns and k not in kit_pk_cols}
+        insert_record(table_name, clean_insert)
+
+    for key, existing_row in existing_map.items():
+        if key in incoming_map:
+            continue
+        delete_table_row(table_name, _extract_pk_dict_from_row(table_name, existing_row))
+
+
 def _get_table_columns_set(table_name: str) -> set[str]:
     metadata = MetaData()
     metadata.reflect(bind=engine, only=[table_name])
@@ -353,17 +425,28 @@ def get_logging_history_detail(user_id: int, acti_log_id: int) -> dict:
         output_row = _get_row_by_pk(tables["output"], {"AO_ID": int(summary["ao_id"])})
 
     kit_rows: list[dict] = []
+    specialty_kits: list[dict] = []
     if summary["ao_id"] is not None:
-        q = text(f"SELECT * FROM `{tables['kit']}` WHERE `AO_ID` = :ao_id")
-        with engine.connect() as conn:
-            rows = conn.execute(q, {"ao_id": int(summary["ao_id"])}).mappings().all()
-            kit_rows = [dict(row) for row in rows]
+        ao_id = int(summary["ao_id"])
+        kit_rows = _fetch_kit_rows_for_ao(tables["kit"], ao_id)
+        for specialty in _list_specialty_kit_tables():
+            rows = _fetch_kit_rows_for_ao(specialty["table"], ao_id)
+            if not rows:
+                continue
+            specialty_kits.append(
+                {
+                    "table": specialty["table"],
+                    "logical": specialty["logical"],
+                    "rows": [_row_mapping_to_dict(row) for row in rows],
+                }
+            )
 
     return {
         "summary": summary,
         "activity_log": _row_mapping_to_dict(log_row),
         "activity_output": _row_mapping_to_dict(output_row) if output_row else None,
         "kit_rows": [_row_mapping_to_dict(row) for row in kit_rows],
+        "specialty_kits": specialty_kits,
     }
 
 
@@ -374,6 +457,7 @@ def update_logging_history_detail(
     activity_log_updates: dict,
     activity_output_updates: dict,
     kit_rows: list[dict],
+    specialty_kits: list[dict] | None = None,
 ) -> dict:
     tables = _resolve_history_tables()
     detail = get_logging_history_detail(user_id, acti_log_id)
@@ -407,46 +491,22 @@ def update_logging_history_detail(
         if clean_out_updates:
             update_table_row(tables["output"], out_pk, clean_out_updates)
 
-    if ao_id is not None:
-        kit_table = tables["kit"]
-        kit_columns = _get_table_columns_set(kit_table)
-        kit_pk_cols = _get_pk_columns(kit_table)
+        _sync_kit_table_rows(table_name=tables["kit"], ao_id=int(ao_id), kit_rows=kit_rows or [])
 
-        q = text(f"SELECT * FROM `{kit_table}` WHERE `AO_ID` = :ao_id")
-        with engine.connect() as conn:
-            existing_rows = conn.execute(q, {"ao_id": int(ao_id)}).mappings().all()
-
-        def pk_key(pk_dict: dict) -> tuple:
-            return tuple((k, pk_dict.get(k)) for k in kit_pk_cols)
-
-        existing_map: dict[tuple, dict] = {}
-        for row in existing_rows:
-            row_dict = dict(row)
-            existing_map[pk_key(_extract_pk_dict_from_row(kit_table, row_dict))] = row_dict
-
-        incoming_map: dict[tuple, dict] = {}
-        for raw_row in kit_rows or []:
-            row = dict(raw_row)
-            row["AO_ID"] = int(ao_id)
-            pk_dict = {k: row.get(k) for k in kit_pk_cols if k in row}
-            has_full_pk = len(pk_dict) == len(kit_pk_cols) and all(v is not None for v in pk_dict.values())
-            if has_full_pk:
-                incoming_map[pk_key(pk_dict)] = row
-                clean_updates = {
-                    k: v
-                    for k, v in row.items()
-                    if k in kit_columns and k not in kit_pk_cols and k != "AO_ID"
-                }
-                if clean_updates:
-                    update_table_row(kit_table, pk_dict, clean_updates)
-                continue
-            clean_insert = {k: v for k, v in row.items() if k in kit_columns and k not in kit_pk_cols}
-            insert_record(kit_table, clean_insert)
-
-        for key, existing_row in existing_map.items():
-            if key in incoming_map:
-                continue
-            delete_table_row(kit_table, _extract_pk_dict_from_row(kit_table, existing_row))
+        whitelist = _specialty_kit_table_whitelist()
+        for entry in specialty_kits or []:
+            if not isinstance(entry, dict):
+                raise ValueError("specialty_kits entries must be objects")
+            requested = str(entry.get("table") or entry.get("logical") or "").strip()
+            if not requested:
+                raise ValueError("specialty_kits entry requires table or logical")
+            physical = whitelist.get(requested.lower())
+            if not physical:
+                raise ValueError(f"Unknown specialty kit table: {requested}")
+            rows = entry.get("rows") or []
+            if not isinstance(rows, list):
+                raise ValueError(f"specialty_kits rows for {physical} must be a list")
+            _sync_kit_table_rows(table_name=physical, ao_id=int(ao_id), kit_rows=rows)
 
     return get_logging_history_detail(user_id, acti_log_id)
 
@@ -458,6 +518,11 @@ def delete_logging_session(*, user_id: int, acti_log_id: int) -> dict:
 
     with engine.begin() as conn:
         if ao_id is not None:
+            for specialty in _list_specialty_kit_tables():
+                conn.execute(
+                    text(f"DELETE FROM `{specialty['table']}` WHERE `AO_ID` = :ao_id"),
+                    {"ao_id": int(ao_id)},
+                )
             conn.execute(
                 text(f"DELETE FROM `{tables['kit']}` WHERE `AO_ID` = :ao_id"),
                 {"ao_id": int(ao_id)},
