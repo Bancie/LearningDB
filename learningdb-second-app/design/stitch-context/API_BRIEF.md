@@ -51,7 +51,7 @@ Base path dưới đây là relative tới **`/api`** (axios `baseURL` đã gồ
 
 ## Import wizard (second app)
 
-- Route: **`/import-wizard`** — luồng 3 bước: `ACTIVITY_LOG` → `ACTIVITY_OUTPUT` → `KIT_COUNT`, **draft lưu server** (`GET/PUT/DELETE /import-wizard/draft`, theo session), FK ẩn lấy từ `primary_key` của response insert bước trước.
+- Route: **`/import-wizard`** — luồng: `ACTIVITY_LOG` → `ACTIVITY_OUTPUT` → `KIT_COUNT` → optional specialty `KIT_*` (work type chọn ở bước 1), **draft lưu server** (`GET/PUT/DELETE /import-wizard/draft`, theo session), FK ẩn lấy từ `primary_key` của response insert bước trước.
 - Tham chiếu UI Stitch (desktop/mobile + DESIGN): `learningdb-second-app/design/import-wizard-reference/`.
 
 ## Gợi ý UX — màn “Data entry”

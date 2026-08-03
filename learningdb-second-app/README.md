@@ -8,14 +8,14 @@ React Router / Vite here are pinned to **7.14 / 8.x** so dependency installs res
 
 The multi-step importer writes through the FastAPI **`POST /api/tables/insert`** helpers (same CRUD backend as the main app):
 
-1. **`ACTIVITY_LOG`** — wizard-only context; **Reading** (`includeReading`) is a UI/draft checkbox and is **never** persisted on this row or any new SQL column.
+1. **`ACTIVITY_LOG`** — wizard-only context; **work type** (`workType`) is a UI/draft select (specialty `KIT_*` table, excluding `KIT_COUNT`) and is **never** persisted on this row or any new SQL column.
 2. **`ACTIVITY_OUTPUT`** — links via `ACTI_LOG_ID`; response provides `AO_ID`.
 3. **`KIT_COUNT`** — one or more rows; **`AO_ID`** is injected automatically.
-4. **`KIT_READING`** — **optional.** Shown only when Step 1 has Reading enabled (`includeReading`). Inserts mirror Kit count (**`AO_ID`** injected automatically). Multiple rows use the **+ Add kit reading row** control. Confirming Step 3 **Next** writes Kit count rows immediately; Kit Reading stays on Step 4 and **cannot navigate back** to earlier steps via the stepper (use **Discard** to abort).
+4. **Specialty kit** — **optional.** Shown only when Step 1 selects a work type (e.g. `KIT_READING`, `KIT_IELTS_LISTENING`, `KIT_WRITING`). Columns/load/insert target that table; **`AO_ID`** is injected automatically. Confirming Step 3 **Next** writes Kit count rows immediately; Step 4 **cannot navigate back** via the stepper (use **Discard** to abort).
 
-**Drafts** (`GET/PUT /api/import-wizard/draft`) store `step` (**1–4**), both table field maps, **`includeReading`**, and **`readingRows`**.
+**Drafts** (`GET/PUT /api/import-wizard/draft`) store `step` (**1–4**), field maps, **`workType`**, and **`specialtyRows`**. Older drafts with `includeReading` / `readingRows` are migrated client-side to `workType=KIT_READING` / `specialtyRows`.
 
-The deployed database **must expose a `KIT_READING` table** (case-insensitive name match via `/api/tables`) for the wizard to load; otherwise schema resolution fails on startup like any other missing table.
+Specialty kit options are discovered from **`GET /api/tables`** (names starting with `KIT_` except `KIT_COUNT`). Core tables `ACTIVITY_LOG`, `ACTIVITY_OUTPUT`, and `KIT_COUNT` must exist for the wizard to load.
 
 ## Ports
 

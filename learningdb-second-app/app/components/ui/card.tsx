@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { cn } from "~/lib/cn";
+import { cn } from "~/utils/cn";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return <div className={cn("stitch-card", className)} {...props} />;

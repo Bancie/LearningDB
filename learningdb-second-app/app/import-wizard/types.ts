@@ -8,7 +8,15 @@ export interface ImportDraftV1 {
   logValues: Record<string, unknown>;
   outputValues: Record<string, unknown>;
   kitRows: Array<Record<string, unknown>>;
-  /** Wizard-only toggle; never written to ACTIVITY_LOG. */
-  includeReading: boolean;
-  readingRows: Array<Record<string, unknown>>;
+  /**
+   * Wizard-only work type: logical specialty kit table (e.g. KIT_READING).
+   * Null means finish after KIT_COUNT. Never written to ACTIVITY_LOG.
+   */
+  workType: string | null;
+  /** Rows for the selected specialty kit table (step 4). */
+  specialtyRows: Array<Record<string, unknown>>;
+  /** @deprecated Prefer workType; retained for older drafts. */
+  includeReading?: boolean;
+  /** @deprecated Prefer specialtyRows; retained for older drafts. */
+  readingRows?: Array<Record<string, unknown>>;
 }

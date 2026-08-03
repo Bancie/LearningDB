@@ -4,7 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
 import { listTableRows } from "~/services/api";
-import { cn } from "~/lib/cn";
+import { cn } from "~/utils/cn";
 import { formatApiError } from "~/utils/formatApiError";
 
 /** Primary “Select” in activity cards / table: clearer affordance + hover / press motion. */

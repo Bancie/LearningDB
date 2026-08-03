@@ -5,10 +5,72 @@ const LOGICAL = {
   log: "ACTIVITY_LOG",
   output: "ACTIVITY_OUTPUT",
   kit: "KIT_COUNT",
-  reading: "KIT_READING",
 } as const;
 
-export type ResolvedTables = { log: string; output: string; kit: string; reading: string };
+/** Performance/count kit used in step 3 — not a selectable specialty work type. */
+export const KIT_COUNT_LOGICAL = "KIT_COUNT";
+
+export type SpecialtyKitOption = {
+  /** Uppercase logical name, e.g. KIT_READING */
+  logical: string;
+  /** Physical DB table name from GET /tables */
+  physical: string;
+  /** Human label for the select, e.g. "IELTS Listening" */
+  label: string;
+};
+
+export type ResolvedTables = {
+  log: string;
+  output: string;
+  kit: string;
+  specialtyKits: SpecialtyKitOption[];
+};
+
+/** KIT_IELTS_LISTENING → "IELTS Listening"; KIT_READING → "Reading". */
+export function formatKitWorkTypeLabel(logicalName: string): string {
+  const stripped = logicalName.replace(/^KIT_/i, "").trim();
+  if (!stripped) return logicalName;
+  return stripped
+    .split("_")
+    .filter(Boolean)
+    .map((part) => {
+      if (/^(IELTS)$/i.test(part)) return part.toUpperCase();
+      if (/^TASK\d+$/i.test(part)) {
+        return `Task ${part.replace(/^TASK/i, "")}`;
+      }
+      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+    })
+    .join(" ");
+}
+
+export function isSpecialtyKitTableName(name: string): boolean {
+  const upper = name.toUpperCase();
+  return upper.startsWith("KIT_") && upper !== KIT_COUNT_LOGICAL;
+}
+
+export function listSpecialtyKitOptions(tableNames: string[]): SpecialtyKitOption[] {
+  const options: SpecialtyKitOption[] = [];
+  for (const physical of tableNames) {
+    if (!isSpecialtyKitTableName(physical)) continue;
+    const logical = physical.toUpperCase();
+    options.push({
+      logical,
+      physical,
+      label: formatKitWorkTypeLabel(logical),
+    });
+  }
+  options.sort((a, b) => a.label.localeCompare(b.label));
+  return options;
+}
+
+export function resolveSpecialtyTable(
+  tables: ResolvedTables,
+  workType: string | null,
+): SpecialtyKitOption | null {
+  if (!workType) return null;
+  const want = workType.toUpperCase();
+  return tables.specialtyKits.find((k) => k.logical === want) ?? null;
+}
 
 export async function resolveImportTables(): Promise<ResolvedTables> {
   const { data } = await getTables();
@@ -24,7 +86,7 @@ export async function resolveImportTables(): Promise<ResolvedTables> {
     log: pick(LOGICAL.log),
     output: pick(LOGICAL.output),
     kit: pick(LOGICAL.kit),
-    reading: pick(LOGICAL.reading),
+    specialtyKits: listSpecialtyKitOptions(names),
   };
 }
 
