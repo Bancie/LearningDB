@@ -5,23 +5,26 @@ import { useAuth } from "~/auth/session";
 import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { Checkbox } from "~/components/ui/checkbox";
+import { Select } from "~/components/ui/select";
 import { ActivityPickerDialog } from "~/import-wizard/ActivityPickerDialog";
 import { clearServerDraft, loadServerDraft, saveServerDraft } from "~/import-wizard/draft-storage";
 import { WizardFields } from "~/import-wizard/WizardFields";
 import {
   buildInsertPayload,
   extractPkInt,
+  formatKitWorkTypeLabel,
   isWizardMetadataComplete,
   resolveImportTables,
+  resolveSpecialtyTable,
   type ResolvedTables,
+  type SpecialtyKitOption,
 } from "~/import-wizard/table-utils";
 import type { ImportDraftV1, WizardStep } from "~/import-wizard/types";
 import type { Column } from "~/services/api";
 import { getTableColumns, insertRecord } from "~/services/api";
 import { useHistoryRefresh } from "~/history/history-refresh-context";
 import { formatApiError } from "~/utils/formatApiError";
-import { cn } from "~/lib/cn";
+import { cn } from "~/utils/cn";
 
 /** Wizard card footers: shared hover / press affordances (all breakpoints). */
 const wizardFooterPrimary = cn(
@@ -48,8 +51,12 @@ type ConfirmAction =
   | "next-step1"
   | "next-step2"
   | "finish"
-  | "advance-to-reading"
-  | "finish-reading";
+  | "advance-to-specialty"
+  | "finish-specialty";
+
+function draftPayload(partial: Omit<ImportDraftV1, "version">): ImportDraftV1 {
+  return { version: 1, ...partial };
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -57,7 +64,7 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "ACTIVITY_LOG → ACTIVITY_OUTPUT → KIT_COUNT, optional KIT_READING when Reading is enabled in step 1.",
+        "ACTIVITY_LOG → ACTIVITY_OUTPUT → KIT_COUNT, optional specialty kit step driven by work type selected in step 1.",
     },
   ];
 }
@@ -69,10 +76,10 @@ export default function ImportWizardRoute() {
   const [colsLog, setColsLog] = React.useState<Column[]>([]);
   const [colsOut, setColsOut] = React.useState<Column[]>([]);
   const [colsKit, setColsKit] = React.useState<Column[]>([]);
-  const [colsReading, setColsReading] = React.useState<Column[]>([]);
+  const [colsSpecialty, setColsSpecialty] = React.useState<Column[]>([]);
 
-  const [includeReading, setIncludeReading] = React.useState(false);
-  const [readingRows, setReadingRows] = React.useState<Array<Record<string, unknown>>>([{}]);
+  const [workType, setWorkType] = React.useState<string | null>(null);
+  const [specialtyRows, setSpecialtyRows] = React.useState<Array<Record<string, unknown>>>([{}]);
 
   const [step, setStep] = React.useState<WizardStep>(1);
   const [actiLogId, setActiLogId] = React.useState<number | null>(null);
@@ -89,18 +96,57 @@ export default function ImportWizardRoute() {
   const [draftSavedFlash, setDraftSavedFlash] = React.useState(false);
   const draftSavedTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const specialtyKit: SpecialtyKitOption | null = React.useMemo(
+    () => (tables ? resolveSpecialtyTable(tables, workType) : null),
+    [tables, workType],
+  );
+  const hasSpecialtyStep = specialtyKit != null;
+
   const STEPS = React.useMemo<StepDef[]>(() => {
     const base: StepDef[] = [
       { id: 1, title: "ActivityLog", subtitle: "Metadata & Context" },
       { id: 2, title: "ActivityOutput", subtitle: "Core Results" },
       { id: 3, title: "KitCount", subtitle: "Task-specific Data" },
     ];
-    return includeReading
-      ? [...base, { id: 4, title: "KitReading", subtitle: "Reading metrics (KIT_READING)" }]
-      : base;
-  }, [includeReading]);
+    if (!specialtyKit) return base;
+    return [
+      ...base,
+      {
+        id: 4,
+        title: specialtyKit.label.replace(/\s+/g, ""),
+        subtitle: `${specialtyKit.label} (${specialtyKit.logical})`,
+      },
+    ];
+  }, [specialtyKit]);
 
   const stepperGridClass = STEPS.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3";
+
+  const currentDraftFields = React.useCallback(
+    (): Omit<ImportDraftV1, "version"> => ({
+      step,
+      actiLogId,
+      aoId,
+      logValues,
+      outputValues,
+      kitRows,
+      workType,
+      specialtyRows,
+    }),
+    [step, actiLogId, aoId, logValues, outputValues, kitRows, workType, specialtyRows],
+  );
+
+  const resetWizardState = React.useCallback(() => {
+    setStep(1);
+    setActiLogId(null);
+    setAoId(null);
+    setLogValues({});
+    setOutputValues({});
+    setKitRows([{}]);
+    setWorkType(null);
+    setSpecialtyRows([{}]);
+    setColsSpecialty([]);
+    setPickedActivityLabel("");
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -109,17 +155,15 @@ export default function ImportWizardRoute() {
         const t = await resolveImportTables();
         if (cancelled) return;
         setTables(t);
-        const [log, out, kit, reading] = await Promise.all([
+        const [log, out, kit] = await Promise.all([
           getTableColumns(t.log),
           getTableColumns(t.output),
           getTableColumns(t.kit),
-          getTableColumns(t.reading),
         ]);
         if (cancelled) return;
         setColsLog(log.data.columns);
         setColsOut(out.data.columns);
         setColsKit(kit.data.columns);
-        setColsReading(reading.data.columns);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to load schema");
       }
@@ -136,9 +180,9 @@ export default function ImportWizardRoute() {
       try {
         const d = await loadServerDraft();
         if (cancelled || !d) return;
-        setIncludeReading(d.includeReading);
-        setReadingRows(d.readingRows.length ? d.readingRows : [{}]);
-        const stepToUse = d.step === 4 && !d.includeReading ? 3 : d.step;
+        setWorkType(d.workType);
+        setSpecialtyRows(d.specialtyRows.length ? d.specialtyRows : [{}]);
+        const stepToUse = d.step === 4 && !d.workType ? 3 : d.step;
         setStep(stepToUse);
         setActiLogId(d.actiLogId);
         setAoId(d.aoId);
@@ -155,10 +199,36 @@ export default function ImportWizardRoute() {
   }, [user]);
 
   React.useEffect(() => {
-    if (!includeReading && step === 4) {
+    if (!hasSpecialtyStep && step === 4) {
       setStep(3);
     }
-  }, [includeReading, step]);
+  }, [hasSpecialtyStep, step]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    if (!specialtyKit) {
+      setColsSpecialty([]);
+      return;
+    }
+    (async () => {
+      try {
+        const { data } = await getTableColumns(specialtyKit.physical);
+        if (!cancelled) setColsSpecialty(data.columns);
+      } catch (e) {
+        if (!cancelled) {
+          setColsSpecialty([]);
+          setError(
+            e instanceof Error
+              ? e.message
+              : `Failed to load columns for ${specialtyKit.logical}`,
+          );
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [specialtyKit]);
 
   React.useEffect(() => {
     if (!error) return;
@@ -176,7 +246,7 @@ export default function ImportWizardRoute() {
   const omitLog = React.useMemo(() => new Set<string>(["USER_ID", "ACTIVITY_ID"]), []);
   const omitOut = React.useMemo(() => new Set<string>(["ACTI_LOG_ID"]), []);
   const omitKit = React.useMemo(() => new Set<string>(["AO_ID"]), []);
-  const omitReading = React.useMemo(() => new Set<string>(["AO_ID"]), []);
+  const omitSpecialty = React.useMemo(() => new Set<string>(["AO_ID"]), []);
 
   const canProceedStep1 = React.useMemo(
     () =>
@@ -209,11 +279,12 @@ export default function ImportWizardRoute() {
   const canProceedStep4 = React.useMemo(
     () =>
       tables != null &&
+      specialtyKit != null &&
       aoId != null &&
-      colsReading.length > 0 &&
-      readingRows.length > 0 &&
-      readingRows.every((row) => isWizardMetadataComplete(colsReading, row, omitReading)),
-    [tables, aoId, colsReading, readingRows, omitReading],
+      colsSpecialty.length > 0 &&
+      specialtyRows.length > 0 &&
+      specialtyRows.every((row) => isWizardMetadataComplete(colsSpecialty, row, omitSpecialty)),
+    [tables, specialtyKit, aoId, colsSpecialty, specialtyRows, omitSpecialty],
   );
 
   const onSaveDraft = React.useCallback(async () => {
@@ -222,19 +293,8 @@ export default function ImportWizardRoute() {
       return;
     }
     setError(null);
-    const payload: ImportDraftV1 = {
-      version: 1,
-      step,
-      actiLogId,
-      aoId,
-      logValues,
-      outputValues,
-      kitRows,
-      includeReading,
-      readingRows,
-    };
     try {
-      await saveServerDraft(payload);
+      await saveServerDraft(draftPayload(currentDraftFields()));
       if (draftSavedTimerRef.current) clearTimeout(draftSavedTimerRef.current);
       setDraftSavedFlash(true);
       draftSavedTimerRef.current = setTimeout(() => {
@@ -244,17 +304,7 @@ export default function ImportWizardRoute() {
     } catch (e) {
       setError(formatApiError(e) || "Failed to save draft");
     }
-  }, [
-    user,
-    step,
-    actiLogId,
-    aoId,
-    logValues,
-    outputValues,
-    kitRows,
-    includeReading,
-    readingRows,
-  ]);
+  }, [user, currentDraftFields]);
 
   React.useEffect(
     () => () => {
@@ -272,19 +322,11 @@ export default function ImportWizardRoute() {
         return;
       }
     }
-    setStep(1);
-    setActiLogId(null);
-    setAoId(null);
-    setLogValues({});
-    setOutputValues({});
-    setKitRows([{}]);
-    setIncludeReading(false);
-    setReadingRows([{}]);
-    setPickedActivityLabel("");
+    resetWizardState();
     setError(null);
     setSuccessMsg("Draft discarded. Wizard reset.");
     setTimeout(() => setSuccessMsg(null), 2200);
-  }, [user]);
+  }, [user, resetWizardState]);
 
   const onDiscardDraftWithConfirm = React.useCallback(() => {
     setConfirmAction("discard");
@@ -295,10 +337,17 @@ export default function ImportWizardRoute() {
   const changeKitRow = (idx: number, name: string, value: unknown) =>
     setKitRows((prev) => prev.map((row, i) => (i === idx ? { ...row, [name]: value } : row)));
 
-  const changeReadingRow = (idx: number, name: string, value: unknown) =>
-    setReadingRows((prev) =>
+  const changeSpecialtyRow = (idx: number, name: string, value: unknown) =>
+    setSpecialtyRows((prev) =>
       prev.map((row, i) => (i === idx ? { ...row, [name]: value } : row)),
     );
+
+  const onWorkTypeChange = (next: string) => {
+    const normalized = next.trim() ? next.trim().toUpperCase() : null;
+    setWorkType(normalized);
+    setSpecialtyRows([{}]);
+    if (!normalized && step === 4) setStep(3);
+  };
 
   const handleStep1Next = async () => {
     if (!tables || !user) return;
@@ -308,6 +357,10 @@ export default function ImportWizardRoute() {
     }
     if (!isWizardMetadataComplete(colsLog, logValues, omitLog)) {
       setError("Please complete all activity log fields before continuing.");
+      return;
+    }
+    if (workType && tables && !resolveSpecialtyTable(tables, workType)) {
+      setError(`Work type "${workType}" is not available in this database.`);
       return;
     }
     setError(null);
@@ -322,17 +375,13 @@ export default function ImportWizardRoute() {
       if (id == null) throw new Error("Insert succeeded but API did not return ACTI_LOG_ID.");
       setActiLogId(id);
       setStep(2);
-      await saveServerDraft({
-        version: 1,
-        step: 2,
-        actiLogId: id,
-        aoId,
-        logValues,
-        outputValues,
-        kitRows,
-        includeReading,
-        readingRows,
-      });
+      await saveServerDraft(
+        draftPayload({
+          ...currentDraftFields(),
+          step: 2,
+          actiLogId: id,
+        }),
+      );
     } catch (e) {
       setError(formatApiError(e) || "Step 1 failed");
     } finally {
@@ -355,21 +404,32 @@ export default function ImportWizardRoute() {
       if (id == null) throw new Error("Insert succeeded but API did not return AO_ID.");
       setAoId(id);
       setStep(3);
-      await saveServerDraft({
-        version: 1,
-        step: 3,
-        actiLogId,
-        aoId: id,
-        logValues,
-        outputValues,
-        kitRows,
-        includeReading,
-        readingRows,
-      });
+      await saveServerDraft(
+        draftPayload({
+          ...currentDraftFields(),
+          step: 3,
+          aoId: id,
+        }),
+      );
     } catch (e) {
       setError(formatApiError(e) || "Step 2 failed");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const insertKitCountRows = async () => {
+    if (!tables || aoId == null) {
+      throw new Error("Missing kit count context.");
+    }
+    for (let i = 0; i < kitRows.length; i += 1) {
+      const row = kitRows[i];
+      try {
+        const payload = buildInsertPayload(colsKit, row, { AO_ID: aoId });
+        await insertRecord(tables.kit, payload);
+      } catch (err) {
+        throw new Error(`Kit row #${i + 1} failed: ${formatApiError(err)}`);
+      }
     }
   };
 
@@ -386,15 +446,7 @@ export default function ImportWizardRoute() {
     setError(null);
     setBusy(true);
     try {
-      for (let i = 0; i < kitRows.length; i += 1) {
-        const row = kitRows[i];
-        try {
-          const payload = buildInsertPayload(colsKit, row, { AO_ID: aoId });
-          await insertRecord(tables.kit, payload);
-        } catch (err) {
-          throw new Error(`Kit row #${i + 1} failed: ${formatApiError(err)}`);
-        }
-      }
+      await insertKitCountRows();
       if (user) {
         try {
           await clearServerDraft();
@@ -404,15 +456,7 @@ export default function ImportWizardRoute() {
       }
       setSuccessMsg("Import complete. Kit count rows saved.");
       setTimeout(() => setSuccessMsg(null), 5000);
-      setStep(1);
-      setActiLogId(null);
-      setAoId(null);
-      setLogValues({});
-      setOutputValues({});
-      setKitRows([{}]);
-      setIncludeReading(false);
-      setReadingRows([{}]);
-      setPickedActivityLabel("");
+      resetWizardState();
       bumpHistory();
     } catch (e) {
       setError(formatApiError(e) || "Step 3 failed");
@@ -421,9 +465,9 @@ export default function ImportWizardRoute() {
     }
   };
 
-  /** Inserts KitCount rows after step 3, then opens KitReading (step 4). */
-  const handleStep3AdvanceToReading = async () => {
-    if (!tables || aoId == null || !user) return;
+  /** Inserts KitCount rows after step 3, then opens specialty kit step (step 4). */
+  const handleStep3AdvanceToSpecialty = async () => {
+    if (!tables || aoId == null || !user || !specialtyKit) return;
     if (kitRows.length === 0) {
       setError("Please add at least one kit count row.");
       return;
@@ -435,27 +479,14 @@ export default function ImportWizardRoute() {
     setError(null);
     setBusy(true);
     try {
-      for (let i = 0; i < kitRows.length; i += 1) {
-        const row = kitRows[i];
-        try {
-          const payload = buildInsertPayload(colsKit, row, { AO_ID: aoId });
-          await insertRecord(tables.kit, payload);
-        } catch (err) {
-          throw new Error(`Kit row #${i + 1} failed: ${formatApiError(err)}`);
-        }
-      }
+      await insertKitCountRows();
       setStep(4);
-      await saveServerDraft({
-        version: 1,
-        step: 4,
-        actiLogId,
-        aoId,
-        logValues,
-        outputValues,
-        kitRows,
-        includeReading,
-        readingRows,
-      });
+      await saveServerDraft(
+        draftPayload({
+          ...currentDraftFields(),
+          step: 4,
+        }),
+      );
     } catch (e) {
       setError(formatApiError(e) || "Saving kit count rows failed.");
     } finally {
@@ -464,25 +495,25 @@ export default function ImportWizardRoute() {
   };
 
   const handleStep4Finish = async () => {
-    if (!tables || aoId == null) return;
-    if (readingRows.length === 0) {
-      setError("Please add at least one kit reading row.");
+    if (!tables || aoId == null || !specialtyKit) return;
+    if (specialtyRows.length === 0) {
+      setError(`Please add at least one ${specialtyKit.label} row.`);
       return;
     }
-    if (!readingRows.every((row) => isWizardMetadataComplete(colsReading, row, omitReading))) {
-      setError("Please complete all fields in every kit reading row.");
+    if (!specialtyRows.every((row) => isWizardMetadataComplete(colsSpecialty, row, omitSpecialty))) {
+      setError(`Please complete all fields in every ${specialtyKit.label} row.`);
       return;
     }
     setError(null);
     setBusy(true);
     try {
-      for (let i = 0; i < readingRows.length; i += 1) {
-        const row = readingRows[i];
+      for (let i = 0; i < specialtyRows.length; i += 1) {
+        const row = specialtyRows[i];
         try {
-          const payload = buildInsertPayload(colsReading, row, { AO_ID: aoId });
-          await insertRecord(tables.reading, payload);
+          const payload = buildInsertPayload(colsSpecialty, row, { AO_ID: aoId });
+          await insertRecord(specialtyKit.physical, payload);
         } catch (err) {
-          throw new Error(`Reading row #${i + 1} failed: ${formatApiError(err)}`);
+          throw new Error(`${specialtyKit.logical} row #${i + 1} failed: ${formatApiError(err)}`);
         }
       }
       if (user) {
@@ -492,17 +523,9 @@ export default function ImportWizardRoute() {
           setError(formatApiError(e) || "Import saved but failed to clear draft on server");
         }
       }
-      setSuccessMsg("Import complete. Kit count and Kit reading rows saved.");
+      setSuccessMsg(`Import complete. Kit count and ${specialtyKit.logical} rows saved.`);
       setTimeout(() => setSuccessMsg(null), 5000);
-      setStep(1);
-      setActiLogId(null);
-      setAoId(null);
-      setLogValues({});
-      setOutputValues({});
-      setKitRows([{}]);
-      setIncludeReading(false);
-      setReadingRows([{}]);
-      setPickedActivityLabel("");
+      resetWizardState();
       bumpHistory();
     } catch (e) {
       setError(formatApiError(e) || "Step 4 failed");
@@ -516,15 +539,17 @@ export default function ImportWizardRoute() {
       setError("Please complete all fields in every kit count row before continuing.");
       return;
     }
-    setConfirmAction(includeReading ? "advance-to-reading" : "finish");
+    setConfirmAction(hasSpecialtyStep ? "advance-to-specialty" : "finish");
   };
 
   const handleStep4FinishWithConfirm = () => {
     if (!canProceedStep4) {
-      setError("Please complete all fields in every kit reading row before finishing.");
+      setError(
+        `Please complete all fields in every ${specialtyKit?.label ?? "specialty kit"} row before finishing.`,
+      );
       return;
     }
-    setConfirmAction("finish-reading");
+    setConfirmAction("finish-specialty");
   };
 
   const onStep1NextWithConfirm = React.useCallback(() => {
@@ -547,13 +572,17 @@ export default function ImportWizardRoute() {
     setConfirmAction("next-step2");
   }, [colsOut, outputValues, omitOut]);
 
+  const specialtyStepTitle = specialtyKit
+    ? formatKitWorkTypeLabel(specialtyKit.logical)
+    : "Specialty kit";
+
   const confirmTitleMap: Record<ConfirmAction, string> = {
     discard: "Discard",
     "next-step1": "Continue to Output Details",
     "next-step2": "Continue to Kit Count",
     finish: "Finish Import",
-    "advance-to-reading": "Continue to Kit Reading",
-    "finish-reading": "Finish Import",
+    "advance-to-specialty": `Continue to ${specialtyStepTitle}`,
+    "finish-specialty": "Finish Import",
   };
 
   const confirmMessageMap: Record<ConfirmAction, string> = {
@@ -561,9 +590,12 @@ export default function ImportWizardRoute() {
     "next-step1": "Proceed to Step 2 and submit ActivityLog data?",
     "next-step2": "Proceed to Step 3 and submit ActivityOutput data?",
     finish: "Finish import and submit all kit count rows?",
-    "advance-to-reading":
-      "Save all kit count rows to the database, then proceed to Kit Reading (KIT_READING)? You cannot navigate back afterward.",
-    "finish-reading": "Finish import and submit all KIT_READING rows?",
+    "advance-to-specialty": specialtyKit
+      ? `Save all kit count rows to the database, then proceed to ${specialtyKit.label} (${specialtyKit.logical})? You cannot navigate back afterward.`
+      : "Save kit count rows and continue?",
+    "finish-specialty": specialtyKit
+      ? `Finish import and submit all ${specialtyKit.logical} rows?`
+      : "Finish import and submit specialty kit rows?",
   };
 
   const onConfirmAction = async () => {
@@ -582,11 +614,11 @@ export default function ImportWizardRoute() {
       await handleStep2Next();
       return;
     }
-    if (action === "advance-to-reading") {
-      await handleStep3AdvanceToReading();
+    if (action === "advance-to-specialty") {
+      await handleStep3AdvanceToSpecialty();
       return;
     }
-    if (action === "finish-reading") {
+    if (action === "finish-specialty") {
       await handleStep4Finish();
       return;
     }
@@ -594,9 +626,9 @@ export default function ImportWizardRoute() {
   };
 
   const goToStep = (target: WizardStep) => {
-    if (step === 4 && includeReading && target !== 4) {
+    if (step === 4 && hasSpecialtyStep && target !== 4) {
       setError(
-        "Finish Kit Reading or discard the import—you cannot navigate back from this step.",
+        "Finish the specialty kit step or discard the import—you cannot navigate back from this step.",
       );
       return;
     }
@@ -621,12 +653,12 @@ export default function ImportWizardRoute() {
       return;
     }
     if (target === 4) {
-      if (!includeReading) {
-        setError("Reading step is disabled. Turn on Reading in Step 1 to use Kit Reading.");
+      if (!hasSpecialtyStep) {
+        setError("Specialty kit step is disabled. Choose a work type in Step 1 first.");
         return;
       }
       if (actiLogId == null || aoId == null) {
-        setError("Complete steps 1 and 2 before opening Kit Reading.");
+        setError("Complete steps 1 and 2 before opening the specialty kit step.");
         return;
       }
       setStep(4);
@@ -670,7 +702,7 @@ export default function ImportWizardRoute() {
       } else setStep(3);
       return;
     }
-    if (step === 3 && target === 4 && includeReading) {
+    if (step === 3 && target === 4 && hasSpecialtyStep) {
       if (!canProceedStep3) {
         setError("Please complete all fields in every kit count row before continuing.");
         return;
@@ -705,8 +737,8 @@ export default function ImportWizardRoute() {
         <div className="space-y-2">
           <h1 className="text-headline-sm">Logging your data</h1>
           <p className="text-body-md text-[var(--color-on-surface-variant)]">
-            Steps: ActivityLog → ActivityOutput → KitCount, and optionally KitReading (KIT_READING) when you enable reading
-            in Step 1. USER_ID auto-fills from your account.
+            Steps: ActivityLog → ActivityOutput → KitCount, and optionally a specialty kit table chosen as the work
+            type in Step 1. USER_ID auto-fills from your account.
           </p>
         </div>
       </header>
@@ -751,8 +783,8 @@ export default function ImportWizardRoute() {
                   confirmAction === "discard"
                     ? "danger"
                     : confirmAction === "finish" ||
-                        confirmAction === "finish-reading" ||
-                        confirmAction === "advance-to-reading"
+                        confirmAction === "finish-specialty" ||
+                        confirmAction === "advance-to-specialty"
                       ? "success"
                       : "default"
                 }
@@ -784,10 +816,10 @@ export default function ImportWizardRoute() {
                     aria-label={`${s.title}. ${s.subtitle}`}
                     disabled={
                       busy ||
-                      (step === 4 && includeReading && s.id !== 4) ||
+                      (step === 4 && hasSpecialtyStep && s.id !== 4) ||
                       (step === 1 && s.id >= 3) ||
-                      (step === 2 && includeReading && s.id === 4) ||
-                      (step === 3 && includeReading && s.id === 4 && !canProceedStep3) ||
+                      (step === 2 && hasSpecialtyStep && s.id === 4) ||
+                      (step === 3 && hasSpecialtyStep && s.id === 4 && !canProceedStep3) ||
                       (step === 1 && !canProceedStep1 && s.id > step) ||
                       (step === 2 && aoId == null && !canProceedStep2 && s.id > step)
                     }
@@ -849,21 +881,30 @@ export default function ImportWizardRoute() {
               </div>
 
               <div className="mb-6 flex flex-col gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/30 bg-[var(--color-surface-low)] p-4">
-                <p className="text-label-md font-semibold text-[var(--color-on-surface)]">
-                  Include reading data (KIT_READING)?
-                </p>
+                <p className="text-label-md font-semibold text-[var(--color-on-surface)]">Work type (specialty kit)</p>
                 <p className="text-body-sm text-[var(--color-on-surface-variant)]">
-                  Stored only for this wizard session and draft—not saved to ACTIVITY_LOG. Choose Yes for an extra Kit
-                  Reading step after Kit count (you cannot navigate back from that step except by discarding).
+                  Stored only for this wizard session and draft—not saved to ACTIVITY_LOG. Choose a work type to add a
+                  matching specialty kit step after Kit count (you cannot navigate back from that step except by
+                  discarding). Leave as None to finish after Kit count.
                 </p>
-                <label className="flex cursor-pointer items-center gap-2 text-body-md">
-                  <Checkbox
-                    checked={includeReading}
-                    onChange={(ev) => setIncludeReading(ev.target.checked)}
-                    disabled={busy}
-                  />
-                  <span>{includeReading ? "Yes — add KitReading step" : "No — finish after Kit count"}</span>
-                </label>
+                <Select
+                  aria-label="Work type"
+                  value={workType ?? ""}
+                  onChange={(ev) => onWorkTypeChange(ev.target.value)}
+                  disabled={busy || tables == null}
+                >
+                  <option value="">None — finish after Kit count</option>
+                  {(tables?.specialtyKits ?? []).map((kit) => (
+                    <option key={kit.logical} value={kit.logical}>
+                      {kit.label} ({kit.logical})
+                    </option>
+                  ))}
+                </Select>
+                {tables && tables.specialtyKits.length === 0 ? (
+                  <p className="text-body-sm text-[var(--color-on-surface-variant)]">
+                    No specialty KIT_* tables were found in this database.
+                  </p>
+                ) : null}
               </div>
 
               <WizardFields
@@ -943,6 +984,12 @@ export default function ImportWizardRoute() {
               </div>
               <Alert className="mb-4">
                 Linked to ActivityOutput in this session. You do not need to enter <code>AO_ID</code>.
+                {specialtyKit ? (
+                  <>
+                    {" "}
+                    Next step: <code>{specialtyKit.logical}</code> ({specialtyKit.label}).
+                  </>
+                ) : null}
               </Alert>
 
               <div className="space-y-4">
@@ -972,7 +1019,7 @@ export default function ImportWizardRoute() {
                   onClick={handleStep3KitPrimaryWithConfirm}
                   disabled={busy || !canProceedStep3}
                 >
-                  {includeReading ? "Next" : "Finish Import"}
+                  {hasSpecialtyStep ? "Next" : "Finish Import"}
                 </Button>
                 <Button className={wizardFooterSecondary} variant="secondary" onClick={onSaveDraft} disabled={busy}>
                   Save Draft
@@ -1000,22 +1047,22 @@ export default function ImportWizardRoute() {
                     onClick={handleStep3KitPrimaryWithConfirm}
                     disabled={busy || !canProceedStep3}
                   >
-                    {includeReading ? "Next" : "Finish Import"}
+                    {hasSpecialtyStep ? "Next" : "Finish Import"}
                   </Button>
                 </div>
               </div>
             </Card>
           ) : null}
 
-          {step === 4 ? (
+          {step === 4 && specialtyKit ? (
             <Card className="p-6 md:p-8">
               <div className="mb-6 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[var(--color-primary)]">menu_book</span>
-                  <h2 className="text-title-md">KitReading</h2>
+                  <span className="material-symbols-outlined text-[var(--color-primary)]">tune</span>
+                  <h2 className="text-title-md">{specialtyKit.label}</h2>
                 </div>
-                <Button type="button" variant="secondary" onClick={() => setReadingRows((prev) => [...prev, {}])}>
-                  + Add kit reading row
+                <Button type="button" variant="secondary" onClick={() => setSpecialtyRows((prev) => [...prev, {}])}>
+                  + Add {specialtyKit.label.toLowerCase()} row
                 </Button>
               </div>
               <Alert
@@ -1026,33 +1073,36 @@ export default function ImportWizardRoute() {
                 from this stage.
               </Alert>
               <Alert className="mb-4">
-                Linked to ActivityOutput in this session. You do not need to enter <code>AO_ID</code>.
+                Writing to <code>{specialtyKit.logical}</code>. Linked to ActivityOutput in this session — you do not
+                need to enter <code>AO_ID</code>.
               </Alert>
 
               <div className="space-y-4">
-                {readingRows.map((row, idx) => (
+                {specialtyRows.map((row, idx) => (
                   <div
                     key={idx}
                     className="rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/25 p-4"
                   >
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="text-label-md text-[var(--color-on-surface-variant)]">Reading row #{idx + 1}</p>
-                      {readingRows.length > 1 ? (
+                      <p className="text-label-md text-[var(--color-on-surface-variant)]">
+                        {specialtyKit.label} row #{idx + 1}
+                      </p>
+                      {specialtyRows.length > 1 ? (
                         <Button
                           type="button"
                           size="sm"
                           variant="ghost"
-                          onClick={() => setReadingRows((prev) => prev.filter((_, i) => i !== idx))}
+                          onClick={() => setSpecialtyRows((prev) => prev.filter((_, i) => i !== idx))}
                         >
                           Remove
                         </Button>
                       ) : null}
                     </div>
                     <WizardFields
-                      columns={colsReading}
+                      columns={colsSpecialty}
                       values={row}
-                      onChange={(name, value) => changeReadingRow(idx, name, value)}
-                      omit={omitReading}
+                      onChange={(name, value) => changeSpecialtyRow(idx, name, value)}
+                      omit={omitSpecialty}
                     />
                   </div>
                 ))}

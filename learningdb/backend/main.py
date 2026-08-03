@@ -7,7 +7,7 @@ from typing import Any, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import inspect, text
 try:
     from . import crud
@@ -129,6 +129,10 @@ class ImportWizardDraftV1(BaseModel):
     logValues: dict[str, Any] = Field(default_factory=dict)
     outputValues: dict[str, Any] = Field(default_factory=dict)
     kitRows: list[dict[str, Any]] = Field(default_factory=list)
+    # Specialty kit work type (logical table, e.g. KIT_READING). None = finish after KIT_COUNT.
+    workType: Optional[str] = None
+    specialtyRows: list[dict[str, Any]] = Field(default_factory=list)
+    # Backward-compatible aliases for older drafts/clients.
     includeReading: bool = False
     readingRows: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -139,11 +143,35 @@ class ImportWizardDraftV1(BaseModel):
             raise ValueError("step must be 1, 2, 3, or 4")
         return v
 
+    @field_validator("workType")
+    @classmethod
+    def normalize_work_type(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        cleaned = str(v).strip().upper()
+        return cleaned or None
+
+    @model_validator(mode="after")
+    def migrate_legacy_reading_fields(self) -> "ImportWizardDraftV1":
+        """Map older includeReading / readingRows drafts onto workType / specialtyRows."""
+        if self.workType is None and self.includeReading:
+            self.workType = "KIT_READING"
+        if not self.specialtyRows and self.readingRows:
+            self.specialtyRows = list(self.readingRows)
+        return self
+
+
+class LoggingHistorySpecialtyKitUpdate(BaseModel):
+    table: Optional[str] = None
+    logical: Optional[str] = None
+    rows: list[dict[str, Any]] = Field(default_factory=list)
+
 
 class LoggingHistoryUpdateRequest(BaseModel):
     activity_log_updates: dict[str, Any] = Field(default_factory=dict)
     activity_output_updates: dict[str, Any] = Field(default_factory=dict)
     kit_rows: list[dict[str, Any]] = Field(default_factory=list)
+    specialty_kits: list[LoggingHistorySpecialtyKitUpdate] = Field(default_factory=list)
 
 
 def _set_auth_cookie(response: Response, token: str) -> None:
@@ -296,6 +324,7 @@ def update_logging_history_detail(
             activity_log_updates=request.activity_log_updates,
             activity_output_updates=request.activity_output_updates,
             kit_rows=request.kit_rows,
+            specialty_kits=[entry.model_dump() for entry in request.specialty_kits],
         )
         return {"data": data}
     except HTTPException:

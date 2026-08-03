@@ -4,7 +4,11 @@ import { Alert } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { WizardFields } from "~/import-wizard/WizardFields";
-import { resolveImportTables, type ResolvedTables } from "~/import-wizard/table-utils";
+import {
+  formatKitWorkTypeLabel,
+  resolveImportTables,
+  type ResolvedTables,
+} from "~/import-wizard/table-utils";
 import {
   deleteLoggingHistory,
   getLoggingHistoryDetail,
@@ -12,6 +16,7 @@ import {
   updateLoggingHistoryDetail,
   type Column,
   type LoggingHistoryDetail,
+  type LoggingHistorySpecialtyKit,
 } from "~/services/api";
 import { formatApiError } from "~/utils/formatApiError";
 
@@ -22,12 +27,46 @@ type Props = {
   onChanged: () => void;
 };
 
+type SpecialtyKitState = {
+  table: string;
+  logical: string;
+  label: string;
+  rows: Array<Record<string, unknown>>;
+  columns: Column[];
+};
+
 function snapshotState(
   activityLog: Record<string, unknown>,
   activityOutput: Record<string, unknown>,
   kitRows: Array<Record<string, unknown>>,
+  specialtyKits: SpecialtyKitState[],
 ): string {
-  return JSON.stringify({ activityLog, activityOutput, kitRows });
+  return JSON.stringify({
+    activityLog,
+    activityOutput,
+    kitRows,
+    specialtyKits: specialtyKits.map((kit) => ({
+      table: kit.table,
+      logical: kit.logical,
+      rows: kit.rows,
+    })),
+  });
+}
+
+function normalizeSpecialtyKits(
+  kits: LoggingHistorySpecialtyKit[] | undefined,
+  columnMap: Record<string, Column[]>,
+): SpecialtyKitState[] {
+  return (kits ?? []).map((kit) => {
+    const logical = (kit.logical || kit.table).toUpperCase();
+    return {
+      table: kit.table,
+      logical,
+      label: formatKitWorkTypeLabel(logical),
+      rows: kit.rows?.length ? kit.rows : [{}],
+      columns: columnMap[kit.table] ?? columnMap[logical.toLowerCase()] ?? [],
+    };
+  });
 }
 
 export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Props) {
@@ -42,6 +81,7 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
   const [activityLog, setActivityLog] = React.useState<Record<string, unknown>>({});
   const [activityOutput, setActivityOutput] = React.useState<Record<string, unknown>>({});
   const [kitRows, setKitRows] = React.useState<Array<Record<string, unknown>>>([]);
+  const [specialtyKits, setSpecialtyKits] = React.useState<SpecialtyKitState[]>([]);
   const [initialSnapshot, setInitialSnapshot] = React.useState<string | null>(null);
   const [closeConfirmOpen, setCloseConfirmOpen] = React.useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
@@ -84,10 +124,30 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
         const nextActivityLog = data.data.activity_log ?? {};
         const nextActivityOutput = data.data.activity_output ?? {};
         const nextKitRows = data.data.kit_rows ?? [];
+        const specialtyPayload = data.data.specialty_kits ?? [];
+
+        const columnEntries = await Promise.all(
+          specialtyPayload.map(async (specialty) => {
+            const { data: colData } = await getTableColumns(specialty.table);
+            return [specialty.table, colData.columns] as const;
+          }),
+        );
+        if (cancelled) return;
+        const columnMap = Object.fromEntries(columnEntries) as Record<string, Column[]>;
+        const nextSpecialty = normalizeSpecialtyKits(specialtyPayload, columnMap);
+
         setActivityLog(nextActivityLog);
         setActivityOutput(nextActivityOutput ?? {});
         setKitRows(nextKitRows.length ? nextKitRows : [{}]);
-        setInitialSnapshot(snapshotState(nextActivityLog, nextActivityOutput ?? {}, nextKitRows.length ? nextKitRows : [{}]));
+        setSpecialtyKits(nextSpecialty);
+        setInitialSnapshot(
+          snapshotState(
+            nextActivityLog,
+            nextActivityOutput ?? {},
+            nextKitRows.length ? nextKitRows : [{}],
+            nextSpecialty,
+          ),
+        );
       } catch (e) {
         if (!cancelled) setError(formatApiError(e));
       } finally {
@@ -102,7 +162,8 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
   if (!open || actiLogId == null) return null;
 
   const dirty =
-    initialSnapshot != null && initialSnapshot !== snapshotState(activityLog, activityOutput, kitRows);
+    initialSnapshot != null &&
+    initialSnapshot !== snapshotState(activityLog, activityOutput, kitRows, specialtyKits);
 
   const showSaveToast = () => {
     setSaveToast(true);
@@ -113,6 +174,32 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
     }, 3200);
   };
 
+  const applyDetail = async (next: LoggingHistoryDetail) => {
+    const nl = next.activity_log ?? activityLog;
+    const no = next.activity_output ?? activityOutput;
+    const nk = next.kit_rows ?? kitRows;
+    const specialtyPayload = next.specialty_kits ?? [];
+    const missingCols = specialtyPayload.filter(
+      (kit) => !specialtyKits.some((existing) => existing.table === kit.table && existing.columns.length > 0),
+    );
+    const loaded = await Promise.all(
+      missingCols.map(async (kit) => {
+        const { data } = await getTableColumns(kit.table);
+        return [kit.table, data.columns] as const;
+      }),
+    );
+    const columnMap: Record<string, Column[]> = {
+      ...Object.fromEntries(specialtyKits.map((kit) => [kit.table, kit.columns])),
+      ...Object.fromEntries(loaded),
+    };
+    const nextSpecialty = normalizeSpecialtyKits(specialtyPayload, columnMap);
+    setActivityLog(nl);
+    setActivityOutput(no ?? {});
+    setKitRows(nk.length ? nk : [{}]);
+    setSpecialtyKits(nextSpecialty);
+    setInitialSnapshot(snapshotState(nl, no ?? {}, nk.length ? nk : [{}], nextSpecialty));
+  };
+
   const persist = async (closeAfter: boolean) => {
     setSaving(true);
     setError(null);
@@ -121,15 +208,14 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
         activity_log_updates: activityLog,
         activity_output_updates: activityOutput,
         kit_rows: kitRows,
+        specialty_kits: specialtyKits.map((kit) => ({
+          table: kit.table,
+          logical: kit.logical,
+          rows: kit.rows,
+        })),
       });
       setDetail(data.data);
-      const nl = data.data.activity_log ?? activityLog;
-      const no = data.data.activity_output ?? activityOutput;
-      const nk = data.data.kit_rows ?? kitRows;
-      setActivityLog(nl);
-      setActivityOutput(no);
-      setKitRows(nk.length ? nk : [{}]);
-      setInitialSnapshot(snapshotState(nl, no, nk.length ? nk : [{}]));
+      await applyDetail(data.data);
       onChanged();
       if (closeAfter) {
         onClose();
@@ -164,6 +250,19 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
       return;
     }
     onClose();
+  };
+
+  const updateSpecialtyRow = (kitIdx: number, rowIdx: number, name: string, value: unknown) => {
+    setSpecialtyKits((prev) =>
+      prev.map((kit, i) =>
+        i === kitIdx
+          ? {
+              ...kit,
+              rows: kit.rows.map((row, j) => (j === rowIdx ? { ...row, [name]: value } : row)),
+            }
+          : kit,
+      ),
+    );
   };
 
   return (
@@ -242,6 +341,75 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
                   </div>
                 </section>
 
+                {specialtyKits.map((kit, kitIdx) => (
+                  <section key={kit.table}>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h4 className="text-label-md text-[var(--color-on-surface-variant)]">
+                        {kit.logical} rows
+                        <span className="ml-2 font-normal text-[var(--color-on-surface-variant)]/80">
+                          ({kit.label})
+                        </span>
+                      </h4>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          setSpecialtyKits((prev) =>
+                            prev.map((item, i) =>
+                              i === kitIdx
+                                ? {
+                                    ...item,
+                                    rows: [
+                                      ...item.rows,
+                                      activityOutput.AO_ID != null ? { AO_ID: activityOutput.AO_ID } : {},
+                                    ],
+                                  }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        Add row
+                      </Button>
+                    </div>
+                    <div className="space-y-4">
+                      {kit.rows.map((row, rowIdx) => (
+                        <div
+                          key={`${kit.table}-${rowIdx}`}
+                          className="rounded-[var(--radius-md)] border border-[color:var(--color-outline-variant)]/30 p-4"
+                        >
+                          <div className="mb-3 flex items-center justify-between">
+                            <p className="text-label-md text-[var(--color-on-surface-variant)]">
+                              {kit.label} row #{rowIdx + 1}
+                            </p>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setSpecialtyKits((prev) =>
+                                  prev.map((item, i) =>
+                                    i === kitIdx
+                                      ? { ...item, rows: item.rows.filter((_, j) => j !== rowIdx) }
+                                      : item,
+                                  ),
+                                )
+                              }
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                          <WizardFields
+                            columns={kit.columns}
+                            values={row}
+                            onChange={(name, value) => updateSpecialtyRow(kitIdx, rowIdx, name, value)}
+                            omit={omitKit}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+
                 <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                   <Button variant="danger" onClick={() => setDeleteConfirmOpen(true)} disabled={saving}>
                     Delete
@@ -294,7 +462,8 @@ export function HistoryDetailDialog({ actiLogId, open, onClose, onChanged }: Pro
           <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--color-outline-variant)]/40 bg-[var(--color-surface-lowest)] p-5 shadow-[var(--shadow-ambient)]">
             <h4 className="text-title-md">Delete session</h4>
             <p className="mt-2 text-body-md text-[var(--color-on-surface-variant)]">
-              Delete this logging session and all related output and kit count records? This cannot be undone.
+              Delete this logging session and all related output, kit count, and specialty kit records? This cannot be
+              undone.
             </p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button type="button" variant="secondary" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>

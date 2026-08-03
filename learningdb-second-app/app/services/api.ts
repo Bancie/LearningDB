@@ -219,17 +219,29 @@ export interface LoggingHistorySummaryItem {
   duration_minutes: number | null;
 }
 
+export interface LoggingHistorySpecialtyKit {
+  table: string;
+  logical: string;
+  rows: Array<Record<string, unknown>>;
+}
+
 export interface LoggingHistoryDetail {
   summary: LoggingHistorySummaryItem;
   activity_log: Record<string, unknown>;
   activity_output: Record<string, unknown> | null;
   kit_rows: Array<Record<string, unknown>>;
+  specialty_kits: LoggingHistorySpecialtyKit[];
 }
 
 export interface LoggingHistoryUpdateRequest {
   activity_log_updates: Record<string, unknown>;
   activity_output_updates: Record<string, unknown>;
   kit_rows: Array<Record<string, unknown>>;
+  specialty_kits: Array<{
+    table: string;
+    logical?: string;
+    rows: Array<Record<string, unknown>>;
+  }>;
 }
 
 export const registerAuth = (payload: AuthRegisterRequest) =>
